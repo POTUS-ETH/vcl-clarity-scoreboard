@@ -22,8 +22,8 @@ Auto-refreshes every 30 minutes via GitHub Actions. You can also trigger a refre
 
 1. Go to https://www.notion.so/my-integrations
 2. Click **+ New integration**
-3. Name: `VCL Clarity Scoreboard`. Workspace: your CRYPTO POTUS workspace. Capabilities: **Read content** only.
-4. Click **Save**, then copy the **Internal Integration Secret** (starts with `secret_`)
+3. Name: `VCL Clarity Scoreboard`. Workspace: your CRYPTO POTUS workspace. Capabilities: **Read content** AND **Update content** (the second one is required so the script can scrub stale relations on each refresh).
+4. Click **Save**, then copy the **Internal Integration Secret** (starts with `secret_` or `ntn_`)
 
 ### 2. Share the databases with the integration
 

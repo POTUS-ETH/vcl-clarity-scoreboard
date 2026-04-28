@@ -102,6 +102,21 @@ function formulaValue(f) {
   }
 }
 
+// Convert a value that may be either a numeric percentage rate (0-1) or a
+// formatted string like "88.89%" into a 0-1 rate for ranking comparisons.
+function toRate(val) {
+  if (val === null || val === undefined) return 0;
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const m = val.match(/(-?\d+(?:\.\d+)?)/);
+    if (!m) return 0;
+    const n = parseFloat(m[1]);
+    // Strings with "%" come pre-multiplied by 100; convert back to rate.
+    return val.includes('%') ? n / 100 : n;
+  }
+  return 0;
+}
+
 async function getPageTitle(pageId) {
   const r = await fetch(`${NOTION_API}/pages/${pageId}`, { headers });
   if (!r.ok) return null;
@@ -109,14 +124,115 @@ async function getPageTitle(pageId) {
   return getPropValue(j, 'AVWAP') || getPropValue(j, 'Title') || pageId;
 }
 
-(async () => {
-  console.log('Fetching AVWAP Stats DB...');
-  const avwapRows = await queryAll(AVWAP_DB);
-  console.log(`Got ${avwapRows.length} AVWAP Stats rows`);
+async function patchTradesRelation(pageId, tradeIds) {
+  const r = await fetch(`${NOTION_API}/pages/${pageId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      properties: { Trades: { relation: tradeIds.map(id => ({ id })) } },
+    }),
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`PATCH failed for ${pageId}: ${r.status} ${text}`);
+  }
+}
 
+function setsEqual(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
+async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrader) {
+  console.log('Scrubbing AVWAP Stats relations...');
+  const idLookup = {};
+  for (const r of avwapRows) idLookup[r.id] = r;
+
+  const updates = [];
+  for (const row of avwapRows) {
+    const title = getPropValue(row, 'AVWAP');
+    const trader = getPropValue(row, 'Trader');
+    const parentItem = getPropValue(row, 'Parent item');
+    const isSubRow = parentItem && parentItem.length > 0;
+
+    let correctIds;
+    if (!isSubRow) {
+      // Parent or ALL aggregate row
+      if (title && /ALL/i.test(title)) {
+        correctIds = allAliveTradeIds.slice();
+      } else {
+        correctIds = (byAvwap[title] || []).slice();
+      }
+    } else {
+      // Sub-row: filter by parent's AVWAP × this row's Trader
+      const parentRow = idLookup[parentItem[0]];
+      const parentTitle = parentRow ? getPropValue(parentRow, 'AVWAP') : null;
+      correctIds = (byAvwapTrader[`${parentTitle}|${trader}`] || []).slice();
+    }
+
+    const currentRel = getPropValue(row, 'Trades') || [];
+    if (!setsEqual(new Set(currentRel), new Set(correctIds))) {
+      updates.push({ pageId: row.id, ids: correctIds, label: title || `${trader} sub-row` });
+    }
+  }
+
+  console.log(`${updates.length} of ${avwapRows.length} rows need scrubbing`);
+
+  // Notion API rate-limits to ~3 requests/sec; batch with small concurrency + brief pauses
+  const BATCH = 3;
+  for (let i = 0; i < updates.length; i += BATCH) {
+    const batch = updates.slice(i, i + BATCH);
+    await Promise.all(batch.map(async u => {
+      try {
+        await patchTradesRelation(u.pageId, u.ids);
+        console.log(`  scrubbed ${u.label} → ${u.ids.length} trades`);
+      } catch (e) {
+        console.error(`  failed to scrub ${u.label}: ${e.message}`);
+      }
+    }));
+    if (i + BATCH < updates.length) await new Promise(r => setTimeout(r, 400));
+  }
+
+  if (updates.length > 0) {
+    console.log('Waiting 8s for Notion to recompute formulas/rollups...');
+    await new Promise(r => setTimeout(r, 8000));
+  }
+  console.log('Scrub complete.');
+}
+
+(async () => {
   console.log('Fetching Master Trade Log...');
   const trades = await queryAll(MTL_DB);
   console.log(`Got ${trades.length} trades`);
+
+  // Build (avwap, trader) groupings from the source-of-truth (alive MTL rows)
+  const byAvwap = {};
+  const byAvwapTrader = {};
+  const allAliveTradeIds = [];
+  for (const t of trades) {
+    const avwap = getPropValue(t, 'AVWAP TYPE');
+    const trader = getPropValue(t, 'Trader');
+    allAliveTradeIds.push(t.id);
+    if (avwap) {
+      (byAvwap[avwap] = byAvwap[avwap] || []).push(t.id);
+      if (trader) {
+        const k = `${avwap}|${trader}`;
+        (byAvwapTrader[k] = byAvwapTrader[k] || []).push(t.id);
+      }
+    }
+  }
+
+  console.log('Fetching AVWAP Stats DB (pre-scrub)...');
+  let avwapRows = await queryAll(AVWAP_DB);
+  console.log(`Got ${avwapRows.length} AVWAP Stats rows`);
+
+  // Scrub stale Trades relations against the source-of-truth
+  await scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrader);
+
+  // Re-fetch with fresh formula/rollup values after scrub
+  console.log('Re-fetching AVWAP Stats DB (post-scrub)...');
+  avwapRows = await queryAll(AVWAP_DB);
 
   // Identify sub-rows (have a Parent item) and parents (don't)
   const subRows = [];
@@ -147,7 +263,7 @@ async function getPageTitle(pageId) {
         methodology: m.label,
         methodologyCode: m.code,
         totalTrades,
-        winRate: getPropValue(sub.row, m.wrProp) || 0,
+        winRate: toRate(getPropValue(sub.row, m.wrProp)),
         avgR: getPropValue(sub.row, m.avgRProp) || 0,
         expectancy: getPropValue(sub.row, m.expProp) || 0,
         totalR: getPropValue(sub.row, m.totalRProp) || 0,
