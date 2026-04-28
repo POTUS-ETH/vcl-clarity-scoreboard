@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T16:59:36.219Z",
+  "generatedAt": "2026-04-28T17:14:54.050Z",
   "tradeCount": 15,
   "leaders": {
     "topCumulativeR": {
@@ -14,9 +14,9 @@
       "value": "4"
     },
     "biggestTrade": {
-      "label": "Patrick on Session Open",
-      "sublabel": "2026-04-01",
-      "value": "+1.00R"
+      "label": "Eli on Session Open",
+      "sublabel": "15m HA trail · 2026-03-02",
+      "value": "+1.68R"
     },
     "topExpectancy": {
       "label": "Eli on Trend Swing Point",
