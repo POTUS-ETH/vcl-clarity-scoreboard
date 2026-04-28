@@ -11,9 +11,9 @@ if (!NOTION_TOKEN) {
   process.exit(1);
 }
 
-// IDs from your Notion workspace
-const AVWAP_DB = '487f1338-0552-4da9-bd5e-f4544e14bee3';
-const MTL_DB = '6b17e541-46b5-8213-a29c-87e41fc02243';
+// IDs from your Notion workspace (public-API database IDs, i.e. page IDs as shown in URLs)
+const AVWAP_DB = '92b9ba93-1e73-4533-bede-c70f7e7a492e';
+const MTL_DB = 'a227e541-46b5-8367-a59d-01e9e0a499d3';
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
