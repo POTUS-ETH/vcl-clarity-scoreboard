@@ -1,21 +1,17 @@
 {
-  "generatedAt": "2026-04-28T15:36:15.747Z",
+  "generatedAt": "2026-04-28T16:01:40.650Z",
   "tradeCount": 15,
   "leaders": {
     "topCumulativeR": {
       "label": "Eli on Session Open",
       "sublabel": "10m HA Trail",
-      "value": "7.93R"
+      "value": "3.14R"
     },
-    "topWinRate": {
-      "label": "Eli on Session Open",
-      "sublabel": "Full TP · 7 trades",
-      "value": "100.0%"
-    },
+    "topWinRate": null,
     "mostTrades": {
-      "label": "Eli on Session Open",
+      "label": "Eli on Sweep + BoS",
       "sublabel": "",
-      "value": "7"
+      "value": "4"
     },
     "biggestTrade": {
       "label": "Patrick on Session Open",
@@ -28,19 +24,19 @@
       "value": "+1.68R"
     },
     "bestAvwap": {
-      "label": "Session Open",
+      "label": "Session H/L",
       "sublabel": "best methodology: 10m HA Trail",
-      "value": "8.66R"
+      "value": "3.14R"
     },
     "bestMethodology": {
-      "label": "10m HA Trail",
+      "label": "Entry + L1",
       "sublabel": "across all traders × AVWAPs",
-      "value": "13.27R"
+      "value": "5.20R"
     },
     "bestAvwapMethod": {
-      "label": "Session Open × 10m HA Trail",
+      "label": "Session H/L × 10m HA Trail",
       "sublabel": "aggregated across traders",
-      "value": "8.66R"
+      "value": "3.14R"
     }
   }
 }
