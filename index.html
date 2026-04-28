@@ -3,19 +3,17 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
 <title>VCL Clarity Scoreboard</title>
 <style>
   :root {
-    --bg: #0f172a;
-    --surface: #1e293b;
-    --border: #334155;
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --accent: #f59e0b;
-    --accent-strong: #fbbf24;
-    --good: #22c55e;
-    --bad: #ef4444;
-    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25);
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.45);
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-strong: rgba(255, 255, 255, 0.075);
+    --border: rgba(255, 255, 255, 0.085);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --value: rgba(255, 255, 255, 0.96);
   }
   * { box-sizing: border-box; }
   html, body {
@@ -24,105 +22,113 @@
     background: transparent;
     color: var(--text);
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 14px;
+    font-size: 13.5px;
     line-height: 1.5;
+    color-scheme: dark;
   }
   .root {
-    padding: 16px;
+    padding: 12px;
     max-width: 1100px;
     margin: 0 auto;
   }
   .header {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+    padding: 0 4px;
   }
   .title {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--muted);
+    text-transform: uppercase;
   }
   .meta {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 11px;
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
   }
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 16px;
-    box-shadow: var(--shadow);
+    border-radius: 10px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 120px;
+    gap: 6px;
+    min-height: 110px;
   }
   .card.headline {
-    grid-column: span 2;
-    border-color: var(--accent);
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, var(--surface) 60%);
+    grid-column: 1 / -1;
+    background: var(--surface-strong);
+    border-color: var(--border-strong);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    min-height: 0;
   }
+  .card.headline .left { display: flex; flex-direction: column; gap: 4px; }
+  .card.headline .right { text-align: right; }
   .card-head {
     display: flex;
     align-items: center;
     gap: 6px;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
   }
-  .card-head .icon { font-size: 16px; }
+  .card-head .icon { font-size: 14px; opacity: 0.85; }
   .card-label {
-    font-size: 16px;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+  }
+  .card.headline .card-label {
+    font-size: 17px;
     font-weight: 700;
-    line-height: 1.2;
   }
   .card-sublabel {
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--muted);
   }
   .card-value {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--accent-strong);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--value);
     margin-top: auto;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
   .card.headline .card-value {
-    font-size: 28px;
+    font-size: 26px;
+    font-weight: 700;
+    margin-top: 0;
   }
   .footer {
-    margin-top: 16px;
+    margin-top: 10px;
     color: var(--muted);
-    font-size: 11px;
+    font-size: 10.5px;
     text-align: center;
+    opacity: 0.7;
   }
-  .empty {
-    color: var(--muted);
-    font-style: italic;
-  }
-  @media (prefers-color-scheme: light) {
-    :root {
-      --bg: #fafafa;
-      --surface: #ffffff;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --muted: #64748b;
-    }
-  }
+  .empty { color: var(--muted); font-style: italic; font-weight: 400; }
 </style>
 </head>
 <body>
 <div class="root">
   <div class="header">
-    <div class="title">🏆 VCL Clarity Scoreboard</div>
+    <div class="title">🏆 Scoreboard</div>
     <div class="meta" id="meta">Loading…</div>
   </div>
   <div class="grid" id="grid"></div>
@@ -134,8 +140,11 @@
   const meta = document.getElementById('meta');
   const footer = document.getElementById('footer');
 
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
   function card(opts) {
-    const headline = opts.headline ? ' headline' : '';
     const labelHtml = opts.leader && opts.leader.label
       ? `<div class="card-label">${escapeHtml(opts.leader.label)}</div>`
       : `<div class="card-label empty">No data yet</div>`;
@@ -145,16 +154,22 @@
     const valueHtml = opts.leader && opts.leader.value
       ? `<div class="card-value">${escapeHtml(opts.leader.value)}</div>`
       : '';
-    return `<div class="card${headline}">
+    if (opts.headline) {
+      return `<div class="card headline">
+        <div class="left">
+          <div class="card-head"><span class="icon">${opts.icon}</span><span>${escapeHtml(opts.title)}</span></div>
+          ${labelHtml}
+          ${subHtml}
+        </div>
+        <div class="right">${valueHtml}</div>
+      </div>`;
+    }
+    return `<div class="card">
       <div class="card-head"><span class="icon">${opts.icon}</span><span>${escapeHtml(opts.title)}</span></div>
       ${labelHtml}
       ${subHtml}
       ${valueHtml}
     </div>`;
-  }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
   try {
@@ -164,21 +179,21 @@
     const L = data.leaders || {};
 
     const cards = [
-      card({ icon: '👑', title: 'Best AVWAP × Methodology Combo', leader: L.bestAvwapMethod, headline: true }),
-      card({ icon: '🏆', title: 'Top Cumulative R',                leader: L.topCumulativeR }),
-      card({ icon: '🎯', title: 'Top Win Rate (≥5 trades)',         leader: L.topWinRate }),
-      card({ icon: '📊', title: 'Most Trades',                      leader: L.mostTrades }),
-      card({ icon: '⚡', title: 'Top Expectancy',                  leader: L.topExpectancy }),
-      card({ icon: '💥', title: 'Biggest Single Trade',             leader: L.biggestTrade }),
+      card({ icon: '👑', title: 'Best AVWAP × Methodology combo',  leader: L.bestAvwapMethod, headline: true }),
+      card({ icon: '🏆', title: 'Top cumulative R',                leader: L.topCumulativeR }),
+      card({ icon: '🎯', title: 'Top win rate (≥5 trades)',         leader: L.topWinRate }),
+      card({ icon: '📊', title: 'Most trades',                      leader: L.mostTrades }),
+      card({ icon: '⚡', title: 'Top expectancy',                  leader: L.topExpectancy }),
+      card({ icon: '💥', title: 'Biggest single trade',             leader: L.biggestTrade }),
       card({ icon: '⚓', title: 'Best AVWAP',                       leader: L.bestAvwap }),
-      card({ icon: '🎮', title: 'Best Methodology',                 leader: L.bestMethodology }),
+      card({ icon: '🎮', title: 'Best methodology',                 leader: L.bestMethodology }),
     ];
     grid.innerHTML = cards.join('');
 
     const generated = new Date(data.generatedAt);
     const ago = Math.round((Date.now() - generated.getTime()) / 60000);
     meta.textContent = `${data.tradeCount} trades · updated ${ago}m ago`;
-    footer.textContent = `Data refreshes automatically. Last sync: ${generated.toLocaleString()}`;
+    footer.textContent = `Last sync: ${generated.toLocaleString()}`;
   } catch (err) {
     grid.innerHTML = `<div class="card"><div class="card-label empty">Couldn't load scoreboard</div><div class="card-sublabel">${escapeHtml(err.message)}</div></div>`;
     meta.textContent = '';

@@ -194,14 +194,22 @@ async function getPageTitle(pageId) {
     }
   }
 
-  // Best AVWAP — by max combo total R aggregated across methodologies in that AVWAP
-  const avwapTotals = {};
+  // Best AVWAP — for each AVWAP, find the methodology that yields the highest aggregate
+  // Total R across all traders for that AVWAP, then pick the AVWAP whose best score is highest.
+  // (Avoids the double-counting of summing total R across all 9 methodologies for one AVWAP.)
+  const avwapMethodMatrix = {}; // avwap -> methodology -> sum of totalR across traders
   for (const c of combos) {
-    avwapTotals[c.avwap] = (avwapTotals[c.avwap] || 0) + (c.totalR || 0);
+    if (!avwapMethodMatrix[c.avwap]) avwapMethodMatrix[c.avwap] = {};
+    avwapMethodMatrix[c.avwap][c.methodology] = (avwapMethodMatrix[c.avwap][c.methodology] || 0) + (c.totalR || 0);
   }
-  const bestAvwap = Object.entries(avwapTotals).sort((a, b) => b[1] - a[1])[0] || ['(no data)', 0];
+  const avwapBestScores = Object.entries(avwapMethodMatrix).map(([avwap, methods]) => {
+    const [bestMethodology, bestR] = Object.entries(methods).sort((a, b) => b[1] - a[1])[0] || ['(none)', 0];
+    return { avwap, bestMethodology, bestR };
+  });
+  const bestAvwap = avwapBestScores.sort((a, b) => b.bestR - a.bestR)[0] || { avwap: '(no data)', bestMethodology: '', bestR: 0 };
 
-  // Best Methodology — by max total R aggregated across all combos for that methodology
+  // Best Methodology — for each methodology, sum total R across all (trader × AVWAP) combos
+  // using that methodology. Each trade is counted once per methodology (no double counting).
   const methodTotals = {};
   for (const c of combos) {
     methodTotals[c.methodology] = (methodTotals[c.methodology] || 0) + (c.totalR || 0);
@@ -246,13 +254,13 @@ async function getPageTitle(pageId) {
         value: `${topExpectancy.expectancy >= 0 ? '+' : ''}${topExpectancy.expectancy.toFixed(2)}R`,
       } : null,
       bestAvwap: {
-        label: bestAvwap[0],
-        sublabel: 'aggregated across methodologies',
-        value: `${bestAvwap[1].toFixed(2)}R`,
+        label: bestAvwap.avwap,
+        sublabel: bestAvwap.bestMethodology ? `best methodology: ${bestAvwap.bestMethodology}` : '',
+        value: `${bestAvwap.bestR.toFixed(2)}R`,
       },
       bestMethodology: {
         label: bestMethodology[0],
-        sublabel: 'aggregated across AVWAPs',
+        sublabel: 'across all traders × AVWAPs',
         value: `${bestMethodology[1].toFixed(2)}R`,
       },
       bestAvwapMethod: {
