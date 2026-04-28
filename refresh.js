@@ -294,15 +294,40 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
     if (v > mostTradesValue) { mostTradesKey = k; mostTradesValue = v; }
   }
 
-  // Biggest single trade — from MTL R Outcome
+  // Biggest single trade — find the max-magnitude R across all 9 methodology
+  // outcomes on each trade, then pick the trade with the highest such value.
+  // (The MTL `R Outcome` formula returns a binary win/loss flag, not actual R.)
+  const TRADE_R_PROPS = [
+    'Full TP/R',
+    'Entry Partials/R',
+    'Entry + L1 Partials/R',
+    '5m HA trail/R',
+    '5m HA Partials/R',
+    '10m HA trail/R',
+    '10m HA Partials/R',
+    '15m HA trail/R',
+    '15m HA Partials/R',
+  ];
   let biggestTrade = null, biggestAbs = -Infinity;
   for (const t of trades) {
-    const r = getPropValue(t, 'R Outcome');
-    if (r === null || r === undefined) continue;
-    if (Math.abs(r) > biggestAbs) {
-      biggestAbs = Math.abs(r);
+    let bestForThisTrade = null;
+    let bestForThisTradeMethod = null;
+    for (const p of TRADE_R_PROPS) {
+      const v = getPropValue(t, p);
+      if (v === null || v === undefined) continue;
+      const num = typeof v === 'number' ? v : parseFloat(v);
+      if (isNaN(num)) continue;
+      if (bestForThisTrade === null || Math.abs(num) > Math.abs(bestForThisTrade)) {
+        bestForThisTrade = num;
+        bestForThisTradeMethod = p.replace('/R', '');
+      }
+    }
+    if (bestForThisTrade === null) continue;
+    if (Math.abs(bestForThisTrade) > biggestAbs) {
+      biggestAbs = Math.abs(bestForThisTrade);
       biggestTrade = {
-        r,
+        r: bestForThisTrade,
+        method: bestForThisTradeMethod,
         trader: getPropValue(t, 'Trader'),
         avwap: getPropValue(t, 'AVWAP TYPE'),
         date: getPropValue(t, 'Date'),
@@ -361,7 +386,7 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
       } : null,
       biggestTrade: biggestTrade ? {
         label: `${biggestTrade.trader || '?'} on ${biggestTrade.avwap || '?'}`,
-        sublabel: biggestTrade.date || '',
+        sublabel: biggestTrade.method ? `${biggestTrade.method}${biggestTrade.date ? ' · ' + biggestTrade.date : ''}` : (biggestTrade.date || ''),
         value: `${biggestTrade.r >= 0 ? '+' : ''}${biggestTrade.r.toFixed(2)}R`,
       } : null,
       topExpectancy: topExpectancy ? {
