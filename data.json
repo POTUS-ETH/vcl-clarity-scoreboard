@@ -1,0 +1,14 @@
+{
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "tradeCount": 0,
+  "leaders": {
+    "topCumulativeR": null,
+    "topWinRate": null,
+    "mostTrades": null,
+    "biggestTrade": null,
+    "topExpectancy": null,
+    "bestAvwap": { "label": "(no data yet)", "sublabel": "", "value": "—" },
+    "bestMethodology": { "label": "(no data yet)", "sublabel": "", "value": "—" },
+    "bestAvwapMethod": { "label": "(no data yet)", "sublabel": "", "value": "—" }
+  }
+}
