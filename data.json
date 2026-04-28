@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-28T15:07:35.944Z",
+  "generatedAt": "2026-04-28T15:36:15.747Z",
   "tradeCount": 15,
   "leaders": {
     "topCumulativeR": {
@@ -29,12 +29,12 @@
     },
     "bestAvwap": {
       "label": "Session Open",
-      "sublabel": "aggregated across methodologies",
-      "value": "53.46R"
+      "sublabel": "best methodology: 10m HA Trail",
+      "value": "8.66R"
     },
     "bestMethodology": {
       "label": "10m HA Trail",
-      "sublabel": "aggregated across AVWAPs",
+      "sublabel": "across all traders × AVWAPs",
       "value": "13.27R"
     },
     "bestAvwapMethod": {
