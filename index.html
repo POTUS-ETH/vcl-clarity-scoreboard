@@ -49,6 +49,12 @@
     color: var(--muted);
     font-size: 11px;
   }
+  .podium {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -64,19 +70,11 @@
     gap: 6px;
     min-height: 110px;
   }
-  .card.headline {
-    grid-column: 1 / -1;
-    background: var(--surface-strong);
-    border-color: var(--border-strong);
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 18px;
-    min-height: 0;
+  .card.combo {
+    /* AVWAP-tinted via inline --accent variable */
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)) 0%, var(--surface) 70%);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   }
-  .card.headline .left { display: flex; flex-direction: column; gap: 4px; }
-  .card.headline .right { text-align: right; }
   .card-head {
     display: flex;
     align-items: center;
@@ -87,6 +85,7 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
+  .card.combo .card-head { color: var(--accent); }
   .card-head .icon { font-size: 14px; opacity: 0.85; }
   .card-label {
     font-size: 14.5px;
@@ -94,10 +93,7 @@
     line-height: 1.25;
     color: var(--text);
   }
-  .card.headline .card-label {
-    font-size: 17px;
-    font-weight: 700;
-  }
+  .card-label .avwap { color: var(--accent); }
   .card-sublabel {
     font-size: 11.5px;
     color: var(--muted);
@@ -110,11 +106,7 @@
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
   }
-  .card.headline .card-value {
-    font-size: 26px;
-    font-weight: 700;
-    margin-top: 0;
-  }
+  .card.combo .card-value { color: var(--accent); }
   .footer {
     margin-top: 10px;
     color: var(--muted);
@@ -131,20 +123,46 @@
     <div class="title">🏆 Scoreboard</div>
     <div class="meta" id="meta">Loading…</div>
   </div>
+  <div class="podium" id="podium"></div>
   <div class="grid" id="grid"></div>
   <div class="footer" id="footer"></div>
 </div>
 <script>
 (async () => {
+  const podium = document.getElementById('podium');
   const grid = document.getElementById('grid');
   const meta = document.getElementById('meta');
   const footer = document.getElementById('footer');
+
+  // AVWAP accent colors — match Notion's emoji legend
+  const AVWAP_COLORS = {
+    'Daily':              '#a855f7', // purple
+    'Session Open':       '#d4d4d4', // light gray (the "white" emoji)
+    'Session H/L':        '#eab308', // yellow/amber
+    'Trend Swing Point':  '#3b82f6', // blue
+    'Sweep + BoS':        '#22c55e', // green
+  };
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   }
 
-  function card(opts) {
+  function comboCard(rank, combo) {
+    if (!combo) {
+      return `<div class="card combo" style="--accent: var(--muted)">
+        <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
+        <div class="card-label empty">No data yet</div>
+      </div>`;
+    }
+    const accent = AVWAP_COLORS[combo.avwap] || '#9ca3af';
+    return `<div class="card combo" style="--accent: ${accent}">
+      <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
+      <div class="card-label"><span class="avwap">${escapeHtml(combo.avwap)}</span> × ${escapeHtml(combo.methodology)}</div>
+      <div class="card-value">${escapeHtml(combo.value)}</div>
+    </div>`;
+  }
+
+  function statCard(opts) {
     const labelHtml = opts.leader && opts.leader.label
       ? `<div class="card-label">${escapeHtml(opts.leader.label)}</div>`
       : `<div class="card-label empty">No data yet</div>`;
@@ -154,18 +172,8 @@
     const valueHtml = opts.leader && opts.leader.value
       ? `<div class="card-value">${escapeHtml(opts.leader.value)}</div>`
       : '';
-    if (opts.headline) {
-      return `<div class="card headline">
-        <div class="left">
-          <div class="card-head"><span class="icon">${opts.icon}</span><span>${escapeHtml(opts.title)}</span></div>
-          ${labelHtml}
-          ${subHtml}
-        </div>
-        <div class="right">${valueHtml}</div>
-      </div>`;
-    }
     return `<div class="card">
-      <div class="card-head"><span class="icon">${opts.icon}</span><span>${escapeHtml(opts.title)}</span></div>
+      <div class="card-head"><span class="icon">${opts.icon}</span><span>${opts.title}</span></div>
       ${labelHtml}
       ${subHtml}
       ${valueHtml}
@@ -177,24 +185,27 @@
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     const L = data.leaders || {};
+    const combos = L.topCombos || [];
 
-    const cards = [
-      card({ icon: '👑', title: 'Best AVWAP × Methodology combo',  leader: L.bestAvwapMethod, headline: true }),
-      card({ icon: '🏆', title: 'Top cumulative R',                leader: L.topCumulativeR }),
-      card({ icon: '🎯', title: 'Top win rate (≥5 trades)',         leader: L.topWinRate }),
-      card({ icon: '📊', title: 'Most trades',                      leader: L.mostTrades }),
-      card({ icon: '⚡', title: 'Top expectancy',                  leader: L.topExpectancy }),
-      card({ icon: '💥', title: 'Biggest single trade',             leader: L.biggestTrade }),
-      card({ icon: '⚓', title: 'Best AVWAP',                       leader: L.bestAvwap }),
-      card({ icon: '🎮', title: 'Best methodology',                 leader: L.bestMethodology }),
-    ];
-    grid.innerHTML = cards.join('');
+    podium.innerHTML = [
+      comboCard({ icon: '🥇', label: '#1 Best combo' }, combos[0]),
+      comboCard({ icon: '🥈', label: '#2 Best combo' }, combos[1]),
+      comboCard({ icon: '🥉', label: '#3 Best combo' }, combos[2]),
+    ].join('');
+
+    grid.innerHTML = [
+      statCard({ icon: '🎯', title: 'Top win rate (≥5 trades)',  leader: L.topWinRate }),
+      statCard({ icon: '📊', title: 'Most trades',               leader: L.mostTrades }),
+      statCard({ icon: '⚡', title: 'Top expectancy',            leader: L.topExpectancy }),
+      statCard({ icon: '💥', title: 'Biggest single trade',      leader: L.biggestTrade }),
+    ].join('');
 
     const generated = new Date(data.generatedAt);
     const ago = Math.round((Date.now() - generated.getTime()) / 60000);
     meta.textContent = `${data.tradeCount} trades · updated ${ago}m ago`;
     footer.textContent = `Last sync: ${generated.toLocaleString()}`;
   } catch (err) {
+    podium.innerHTML = '';
     grid.innerHTML = `<div class="card"><div class="card-label empty">Couldn't load scoreboard</div><div class="card-sublabel">${escapeHtml(err.message)}</div></div>`;
     meta.textContent = '';
     footer.textContent = 'Make sure data.json exists and the GitHub Action has run at least once.';

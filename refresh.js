@@ -309,11 +309,16 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
     '15m HA Partials/R',
   ];
   let biggestTrade = null, biggestAbs = -Infinity;
+  console.log('--- biggest-trade scan ---');
   for (const t of trades) {
+    const tradeTrader = getPropValue(t, 'Trader');
+    const tradeAvwap = getPropValue(t, 'AVWAP TYPE');
     let bestForThisTrade = null;
     let bestForThisTradeMethod = null;
+    const allRs = {};
     for (const p of TRADE_R_PROPS) {
       const v = getPropValue(t, p);
+      allRs[p] = v;
       if (v === null || v === undefined) continue;
       const num = typeof v === 'number' ? v : parseFloat(v);
       if (isNaN(num)) continue;
@@ -322,18 +327,20 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
         bestForThisTradeMethod = p.replace('/R', '');
       }
     }
+    console.log(`${tradeTrader || '?'} on ${tradeAvwap || '?'}: max=${bestForThisTrade} via ${bestForThisTradeMethod} | values=${JSON.stringify(allRs)}`);
     if (bestForThisTrade === null) continue;
     if (Math.abs(bestForThisTrade) > biggestAbs) {
       biggestAbs = Math.abs(bestForThisTrade);
       biggestTrade = {
         r: bestForThisTrade,
         method: bestForThisTradeMethod,
-        trader: getPropValue(t, 'Trader'),
-        avwap: getPropValue(t, 'AVWAP TYPE'),
+        trader: tradeTrader,
+        avwap: tradeAvwap,
         date: getPropValue(t, 'Date'),
       };
     }
   }
+  console.log(`--- biggest selected: ${JSON.stringify(biggestTrade)} ---`);
 
   // Best AVWAP — for each AVWAP, find the methodology that yields the highest aggregate
   // Total R across all traders for that AVWAP, then pick the AVWAP whose best score is highest.
@@ -357,23 +364,30 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   }
   const bestMethodology = Object.entries(methodTotals).sort((a, b) => b[1] - a[1])[0] || ['(no data)', 0];
 
-  // Best AVWAP × Methodology combo — sum total R across all traders for each (avwap, methodology) pair
-  const avwapMethodTotals = {};
+  // Top 3 (AVWAP × Methodology) combos — sum total R across all traders for each pair, take top 3
+  const avwapMethodTotals = {}; // "avwap||methodology" -> sum
   for (const c of combos) {
-    const k = `${c.avwap} × ${c.methodology}`;
+    const k = `${c.avwap}||${c.methodology}`;
     avwapMethodTotals[k] = (avwapMethodTotals[k] || 0) + (c.totalR || 0);
   }
-  const bestAvwapMethod = Object.entries(avwapMethodTotals).sort((a, b) => b[1] - a[1])[0] || ['(no data)', 0];
+  const topCombos = Object.entries(avwapMethodTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([k, value]) => {
+      const [avwap, methodology] = k.split('||');
+      return { avwap, methodology, value };
+    });
 
   const data = {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
     leaders: {
-      topCumulativeR: topCumulativeR ? {
-        label: `${topCumulativeR.trader} on ${topCumulativeR.avwap}`,
-        sublabel: topCumulativeR.methodology,
-        value: `${topCumulativeR.totalR.toFixed(2)}R`,
-      } : null,
+      topCombos: topCombos.map(c => ({
+        avwap: c.avwap,
+        methodology: c.methodology,
+        label: `${c.avwap} × ${c.methodology}`,
+        value: `${c.value >= 0 ? '+' : ''}${c.value.toFixed(2)}R`,
+      })),
       topWinRate: topWinRate ? {
         label: `${topWinRate.trader} on ${topWinRate.avwap}`,
         sublabel: `${topWinRate.methodology} · ${topWinRate.totalTrades} trades`,
@@ -394,21 +408,6 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
         sublabel: topExpectancy.methodology,
         value: `${topExpectancy.expectancy >= 0 ? '+' : ''}${topExpectancy.expectancy.toFixed(2)}R`,
       } : null,
-      bestAvwap: {
-        label: bestAvwap.avwap,
-        sublabel: bestAvwap.bestMethodology ? `best methodology: ${bestAvwap.bestMethodology}` : '',
-        value: `${bestAvwap.bestR.toFixed(2)}R`,
-      },
-      bestMethodology: {
-        label: bestMethodology[0],
-        sublabel: 'across all traders × AVWAPs',
-        value: `${bestMethodology[1].toFixed(2)}R`,
-      },
-      bestAvwapMethod: {
-        label: bestAvwapMethod[0],
-        sublabel: 'aggregated across traders',
-        value: `${bestAvwapMethod[1].toFixed(2)}R`,
-      },
     },
   };
 
