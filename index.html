@@ -14,6 +14,8 @@
     --border: rgba(255, 255, 255, 0.085);
     --border-strong: rgba(255, 255, 255, 0.18);
     --value: rgba(255, 255, 255, 0.96);
+    --shame: #ef4444;
+    --shame-dim: rgba(239, 68, 68, 0.85);
   }
   * { box-sizing: border-box; }
   html, body {
@@ -35,7 +37,7 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     padding: 0 4px;
   }
   .title {
@@ -49,17 +51,19 @@
     color: var(--muted);
     font-size: 11px;
   }
-  .podium {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 8px;
-    margin-bottom: 8px;
+  .section-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 14px 4px 6px;
   }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 8px;
-  }
+  .section-label.shame { color: var(--shame-dim); }
+  .row { display: grid; gap: 8px; }
+  .row.three { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .row.pair { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -70,11 +74,57 @@
     gap: 6px;
     min-height: 110px;
   }
+  /* Combo cards take their accent from the inline --accent CSS variable */
   .card.combo {
-    /* AVWAP-tinted via inline --accent variable */
     background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)) 0%, var(--surface) 70%);
     border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
   }
+  .card.combo.shame {
+    /* Shame overlay: still colored by AVWAP but with a red-tinted border + value */
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)) 0%, var(--surface) 60%);
+    border: 1px solid color-mix(in srgb, var(--shame) 38%, var(--border));
+  }
+  /* Stat-pair cards: fame on left, shame on right; we use a per-card class */
+  .card.stat.fame { border-left: 3px solid color-mix(in srgb, #22c55e 65%, var(--border)); }
+  .card.stat.shame { border-left: 3px solid color-mix(in srgb, var(--shame) 65%, var(--border)); }
+
+  .champion {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 75%);
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 6px;
+  }
+  .champion .left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .champion .head {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .champion .label {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .champion .label .avwap { color: var(--accent); }
+  .champion .sublabel { font-size: 11.5px; color: var(--muted); }
+  .champion .value {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
   .card-head {
     display: flex;
     align-items: center;
@@ -86,6 +136,7 @@
     letter-spacing: 0.06em;
   }
   .card.combo .card-head { color: var(--accent); }
+  .card.combo.shame .card-head { color: var(--shame-dim); }
   .card-head .icon { font-size: 14px; opacity: 0.85; }
   .card-label {
     font-size: 14.5px;
@@ -94,6 +145,7 @@
     color: var(--text);
   }
   .card-label .avwap { color: var(--accent); }
+  .card.combo.shame .card-label .avwap { color: color-mix(in srgb, var(--accent) 60%, var(--shame-dim)); }
   .card-sublabel {
     font-size: 11.5px;
     color: var(--muted);
@@ -107,8 +159,12 @@
     letter-spacing: -0.01em;
   }
   .card.combo .card-value { color: var(--accent); }
+  .card.combo.shame .card-value { color: var(--shame); }
+  .card.stat.shame .card-value { color: var(--shame); }
+  .card.stat.fame .card-value { color: #22c55e; }
+
   .footer {
-    margin-top: 10px;
+    margin-top: 12px;
     color: var(--muted);
     font-size: 10.5px;
     text-align: center;
@@ -123,56 +179,84 @@
     <div class="title">🏆 Scoreboard</div>
     <div class="meta" id="meta">Loading…</div>
   </div>
-  <div class="podium" id="podium"></div>
-  <div class="grid" id="grid"></div>
+
+  <div id="champion-container"></div>
+
+  <div class="section-label">🌟 Wall of Fame · Top combos</div>
+  <div class="row three" id="fame-podium"></div>
+
+  <div class="section-label shame">💀 Wall of Shame · Worst combos</div>
+  <div class="row three" id="shame-podium"></div>
+
+  <div class="section-label">⚖️ Best vs Worst · Per metric</div>
+  <div class="row pair" id="pair-grid"></div>
+
+  <div id="extras"></div>
+
   <div class="footer" id="footer"></div>
 </div>
 <script>
 (async () => {
-  const podium = document.getElementById('podium');
-  const grid = document.getElementById('grid');
+  const championContainer = document.getElementById('champion-container');
+  const famePodium = document.getElementById('fame-podium');
+  const shamePodium = document.getElementById('shame-podium');
+  const pairGrid = document.getElementById('pair-grid');
+  const extras = document.getElementById('extras');
   const meta = document.getElementById('meta');
   const footer = document.getElementById('footer');
 
-  // AVWAP accent colors — match Notion's emoji legend
   const AVWAP_COLORS = {
-    'Daily':              '#a855f7', // purple
-    'Session Open':       '#d4d4d4', // light gray (the "white" emoji)
-    'Session H/L':        '#eab308', // yellow/amber
-    'Trend Swing Point':  '#3b82f6', // blue
-    'Sweep + BoS':        '#22c55e', // green
+    'Daily':              '#a855f7',
+    'Session Open':       '#d4d4d4',
+    'Session H/L':        '#eab308',
+    'Trend Swing Point':  '#3b82f6',
+    'Sweep + BoS':        '#22c55e',
   };
 
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+  function championCard(c) {
+    if (!c) return '';
+    const accent = AVWAP_COLORS[c.avwap] || '#9ca3af';
+    return `<div class="champion" style="--accent: ${accent}">
+      <div class="left">
+        <div class="head"><span>👑</span><span>Current champion</span></div>
+        <div class="label"><span class="avwap">${escapeHtml(c.avwap)}</span> × ${escapeHtml(c.methodology)}</div>
+        <div class="sublabel">${escapeHtml(c.sublabel || '')}</div>
+      </div>
+      <div class="value">${escapeHtml(c.value)}</div>
+    </div>`;
   }
 
-  function comboCard(rank, combo) {
+  function comboCard(rank, combo, shame) {
+    const klass = shame ? 'card combo shame' : 'card combo';
     if (!combo) {
-      return `<div class="card combo" style="--accent: var(--muted)">
+      return `<div class="${klass}" style="--accent: var(--muted)">
         <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
-        <div class="card-label empty">No data yet</div>
+        <div class="card-label empty">No data</div>
       </div>`;
     }
     const accent = AVWAP_COLORS[combo.avwap] || '#9ca3af';
-    return `<div class="card combo" style="--accent: ${accent}">
+    return `<div class="${klass}" style="--accent: ${accent}">
       <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
       <div class="card-label"><span class="avwap">${escapeHtml(combo.avwap)}</span> × ${escapeHtml(combo.methodology)}</div>
+      <div class="card-sublabel">${escapeHtml(combo.sublabel || '')}</div>
       <div class="card-value">${escapeHtml(combo.value)}</div>
     </div>`;
   }
 
   function statCard(opts) {
+    const klass = `card stat ${opts.tone}`; // fame | shame | neutral
     const labelHtml = opts.leader && opts.leader.label
       ? `<div class="card-label">${escapeHtml(opts.leader.label)}</div>`
-      : `<div class="card-label empty">No data yet</div>`;
+      : `<div class="card-label empty">No data</div>`;
     const subHtml = opts.leader && opts.leader.sublabel
       ? `<div class="card-sublabel">${escapeHtml(opts.leader.sublabel)}</div>`
       : '';
     const valueHtml = opts.leader && opts.leader.value
       ? `<div class="card-value">${escapeHtml(opts.leader.value)}</div>`
       : '';
-    return `<div class="card">
+    return `<div class="${klass}">
       <div class="card-head"><span class="icon">${opts.icon}</span><span>${opts.title}</span></div>
       ${labelHtml}
       ${subHtml}
@@ -185,28 +269,47 @@
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
     const L = data.leaders || {};
-    const combos = L.topCombos || [];
 
-    podium.innerHTML = [
-      comboCard({ icon: '🥇', label: '#1 Best combo' }, combos[0]),
-      comboCard({ icon: '🥈', label: '#2 Best combo' }, combos[1]),
-      comboCard({ icon: '🥉', label: '#3 Best combo' }, combos[2]),
+    championContainer.innerHTML = championCard(L.champion);
+
+    const top = L.topCombos || [];
+    famePodium.innerHTML = [
+      comboCard({ icon: '🥇', label: '#1 Fame' }, top[0]),
+      comboCard({ icon: '🥈', label: '#2 Fame' }, top[1]),
+      comboCard({ icon: '🥉', label: '#3 Fame' }, top[2]),
     ].join('');
 
-    grid.innerHTML = [
-      statCard({ icon: '🎯', title: 'Top win rate (≥5 trades)',  leader: L.topWinRate }),
-      statCard({ icon: '📊', title: 'Most trades',               leader: L.mostTrades }),
-      statCard({ icon: '⚡', title: 'Top expectancy',            leader: L.topExpectancy }),
-      statCard({ icon: '💥', title: 'Biggest single trade',      leader: L.biggestTrade }),
+    const bot = L.bottomCombos || [];
+    shamePodium.innerHTML = [
+      comboCard({ icon: '💀', label: '#1 Shame' }, bot[0], true),
+      comboCard({ icon: '🪦', label: '#2 Shame' }, bot[1], true),
+      comboCard({ icon: '⚰️', label: '#3 Shame' }, bot[2], true),
     ].join('');
+
+    pairGrid.innerHTML = [
+      statCard({ icon: '🎯', title: 'Top win rate (≥5 trades)',  leader: L.topWinRate,    tone: 'fame'  }),
+      statCard({ icon: '🪦', title: 'Worst win rate (≥5 trades)', leader: L.bottomWinRate, tone: 'shame' }),
+      statCard({ icon: '⚡', title: 'Top expectancy',           leader: L.topExpectancy, tone: 'fame'  }),
+      statCard({ icon: '📉', title: 'Worst expectancy',          leader: L.bottomExpectancy, tone: 'shame' }),
+      statCard({ icon: '💥', title: 'Biggest single win',        leader: L.biggestWin,    tone: 'fame'  }),
+      statCard({ icon: '⚓', title: 'Biggest single loss',       leader: L.biggestLoss,   tone: 'shame' }),
+    ].join('');
+
+    if (L.mostTrades) {
+      extras.innerHTML = `<div class="section-label">📊 Activity</div>
+        <div class="row three">
+          ${statCard({ icon: '📊', title: 'Most active trader × AVWAP', leader: L.mostTrades, tone: 'neutral' })}
+        </div>`;
+    } else {
+      extras.innerHTML = '';
+    }
 
     const generated = new Date(data.generatedAt);
     const ago = Math.round((Date.now() - generated.getTime()) / 60000);
     meta.textContent = `${data.tradeCount} trades · updated ${ago}m ago`;
     footer.textContent = `Last sync: ${generated.toLocaleString()}`;
   } catch (err) {
-    podium.innerHTML = '';
-    grid.innerHTML = `<div class="card"><div class="card-label empty">Couldn't load scoreboard</div><div class="card-sublabel">${escapeHtml(err.message)}</div></div>`;
+    championContainer.innerHTML = `<div class="card"><div class="card-label empty">Couldn't load scoreboard</div><div class="card-sublabel">${escapeHtml(err.message)}</div></div>`;
     meta.textContent = '';
     footer.textContent = 'Make sure data.json exists and the GitHub Action has run at least once.';
   }

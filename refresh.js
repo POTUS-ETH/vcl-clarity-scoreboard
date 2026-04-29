@@ -290,9 +290,19 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
     return best;
   };
 
+  const safeMin = (arr, by) => {
+    if (!arr.length) return null;
+    let worst = arr[0];
+    for (const x of arr) if ((by(x) ?? Infinity) < (by(worst) ?? Infinity)) worst = x;
+    return worst;
+  };
+
   const topCumulativeR = safeMax(combos, c => c.totalR);
-  const topWinRate = safeMax(combos.filter(c => c.totalTrades >= MIN_TRADES_FOR_WR), c => c.winRate);
+  const winRateCombos = combos.filter(c => c.totalTrades >= MIN_TRADES_FOR_WR);
+  const topWinRate = safeMax(winRateCombos, c => c.winRate);
+  const bottomWinRate = safeMin(winRateCombos, c => c.winRate);
   const topExpectancy = safeMax(combos, c => c.expectancy);
+  const bottomExpectancy = safeMin(combos.filter(c => c.totalTrades > 0), c => c.expectancy);
 
   // Most trades by trader×AVWAP (not per methodology — methodology doesn't change Total)
   const traderAvwapTotals = {};
@@ -319,39 +329,38 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
     '15m HA trail/R',
     '15m HA Partials/R',
   ];
-  let biggestTrade = null, biggestAbs = -Infinity;
-  console.log('--- biggest-trade scan ---');
+  // Biggest single win (most positive R) and biggest single loss (most negative R)
+  // — scan all 9 methodology R columns on every trade, track positive & negative extrema.
+  let biggestWin = null, biggestWinR = -Infinity;
+  let biggestLoss = null, biggestLossR = Infinity;
   for (const t of trades) {
     const tradeTrader = getPropValue(t, 'Trader');
     const tradeAvwap = getPropValue(t, 'AVWAP TYPE');
-    let bestForThisTrade = null;
-    let bestForThisTradeMethod = null;
-    const allRs = {};
+    let bestPos = null, bestPosMethod = null;
+    let bestNeg = null, bestNegMethod = null;
     for (const p of TRADE_R_PROPS) {
       const v = getPropValue(t, p);
-      allRs[p] = v;
       if (v === null || v === undefined) continue;
       const num = typeof v === 'number' ? v : parseFloat(v);
       if (isNaN(num)) continue;
-      if (bestForThisTrade === null || Math.abs(num) > Math.abs(bestForThisTrade)) {
-        bestForThisTrade = num;
-        bestForThisTradeMethod = p.replace('/R', '');
+      if (num > 0 && (bestPos === null || num > bestPos)) {
+        bestPos = num;
+        bestPosMethod = p.replace('/R', '');
+      }
+      if (num < 0 && (bestNeg === null || num < bestNeg)) {
+        bestNeg = num;
+        bestNegMethod = p.replace('/R', '');
       }
     }
-    console.log(`${tradeTrader || '?'} on ${tradeAvwap || '?'}: max=${bestForThisTrade} via ${bestForThisTradeMethod} | values=${JSON.stringify(allRs)}`);
-    if (bestForThisTrade === null) continue;
-    if (Math.abs(bestForThisTrade) > biggestAbs) {
-      biggestAbs = Math.abs(bestForThisTrade);
-      biggestTrade = {
-        r: bestForThisTrade,
-        method: bestForThisTradeMethod,
-        trader: tradeTrader,
-        avwap: tradeAvwap,
-        date: getPropValue(t, 'Date'),
-      };
+    if (bestPos !== null && bestPos > biggestWinR) {
+      biggestWinR = bestPos;
+      biggestWin = { r: bestPos, method: bestPosMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') };
+    }
+    if (bestNeg !== null && bestNeg < biggestLossR) {
+      biggestLossR = bestNeg;
+      biggestLoss = { r: bestNeg, method: bestNegMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') };
     }
   }
-  console.log(`--- biggest selected: ${JSON.stringify(biggestTrade)} ---`);
 
   // Best AVWAP — for each AVWAP, find the methodology that yields the highest aggregate
   // Total R across all traders for that AVWAP, then pick the AVWAP whose best score is highest.
@@ -375,49 +384,85 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   }
   const bestMethodology = Object.entries(methodTotals).sort((a, b) => b[1] - a[1])[0] || ['(no data)', 0];
 
-  // Top 3 (AVWAP × Methodology) combos — sum total R across all traders for each pair, take top 3
+  // Per-AVWAP trade counts (used for sample-size badges on combos)
+  const avwapTradeCount = {};
+  for (const a of Object.keys(byAvwap)) avwapTradeCount[a] = byAvwap[a].length;
+
+  // All (AVWAP × Methodology) combos sorted by total R — derive top 3 + bottom 3
   const avwapMethodTotals = {}; // "avwap||methodology" -> sum
   for (const c of combos) {
     const k = `${c.avwap}||${c.methodology}`;
     avwapMethodTotals[k] = (avwapMethodTotals[k] || 0) + (c.totalR || 0);
   }
-  const topCombos = Object.entries(avwapMethodTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3)
+  const allCombosSorted = Object.entries(avwapMethodTotals)
     .map(([k, value]) => {
       const [avwap, methodology] = k.split('||');
-      return { avwap, methodology, value };
-    });
+      return { avwap, methodology, value, sampleSize: avwapTradeCount[avwap] || 0 };
+    })
+    .sort((a, b) => b.value - a.value);
+  const topCombos = allCombosSorted.slice(0, 3);
+  const bottomCombos = allCombosSorted.slice(-3).reverse(); // worst first
 
   const data = {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
     leaders: {
+      // Tournament champion (#1 combo, surfaced for the headline)
+      champion: topCombos[0] ? {
+        avwap: topCombos[0].avwap,
+        methodology: topCombos[0].methodology,
+        label: `${topCombos[0].avwap} × ${topCombos[0].methodology}`,
+        sublabel: `n=${topCombos[0].sampleSize}${topCombos[1] ? ` · lead ${(topCombos[0].value - topCombos[1].value).toFixed(2)}R over #2` : ''}`,
+        value: `${topCombos[0].value >= 0 ? '+' : ''}${topCombos[0].value.toFixed(2)}R`,
+      } : null,
       topCombos: topCombos.map(c => ({
         avwap: c.avwap,
         methodology: c.methodology,
         label: `${c.avwap} × ${c.methodology}`,
+        sublabel: `n=${c.sampleSize}`,
+        value: `${c.value >= 0 ? '+' : ''}${c.value.toFixed(2)}R`,
+      })),
+      bottomCombos: bottomCombos.map(c => ({
+        avwap: c.avwap,
+        methodology: c.methodology,
+        label: `${c.avwap} × ${c.methodology}`,
+        sublabel: `n=${c.sampleSize}`,
         value: `${c.value >= 0 ? '+' : ''}${c.value.toFixed(2)}R`,
       })),
       topWinRate: topWinRate ? {
         label: `${topWinRate.trader} on ${topWinRate.avwap}`,
-        sublabel: `${topWinRate.methodology} · ${topWinRate.totalTrades} trades`,
+        sublabel: `${topWinRate.methodology} · n=${topWinRate.totalTrades}`,
         value: `${(topWinRate.winRate * 100).toFixed(1)}%`,
+      } : null,
+      bottomWinRate: bottomWinRate ? {
+        label: `${bottomWinRate.trader} on ${bottomWinRate.avwap}`,
+        sublabel: `${bottomWinRate.methodology} · n=${bottomWinRate.totalTrades}`,
+        value: `${(bottomWinRate.winRate * 100).toFixed(1)}%`,
+      } : null,
+      topExpectancy: topExpectancy ? {
+        label: `${topExpectancy.trader} on ${topExpectancy.avwap}`,
+        sublabel: `${topExpectancy.methodology} · n=${topExpectancy.totalTrades}`,
+        value: `${topExpectancy.expectancy >= 0 ? '+' : ''}${topExpectancy.expectancy.toFixed(2)}R`,
+      } : null,
+      bottomExpectancy: bottomExpectancy ? {
+        label: `${bottomExpectancy.trader} on ${bottomExpectancy.avwap}`,
+        sublabel: `${bottomExpectancy.methodology} · n=${bottomExpectancy.totalTrades}`,
+        value: `${bottomExpectancy.expectancy >= 0 ? '+' : ''}${bottomExpectancy.expectancy.toFixed(2)}R`,
+      } : null,
+      biggestWin: biggestWin ? {
+        label: `${biggestWin.trader || '?'} on ${biggestWin.avwap || '?'}`,
+        sublabel: biggestWin.method ? `${biggestWin.method}${biggestWin.date ? ' · ' + biggestWin.date : ''}` : (biggestWin.date || ''),
+        value: `+${biggestWin.r.toFixed(2)}R`,
+      } : null,
+      biggestLoss: biggestLoss ? {
+        label: `${biggestLoss.trader || '?'} on ${biggestLoss.avwap || '?'}`,
+        sublabel: biggestLoss.method ? `${biggestLoss.method}${biggestLoss.date ? ' · ' + biggestLoss.date : ''}` : (biggestLoss.date || ''),
+        value: `${biggestLoss.r.toFixed(2)}R`,
       } : null,
       mostTrades: mostTradesKey ? {
         label: mostTradesKey,
         sublabel: '',
         value: `${mostTradesValue}`,
-      } : null,
-      biggestTrade: biggestTrade ? {
-        label: `${biggestTrade.trader || '?'} on ${biggestTrade.avwap || '?'}`,
-        sublabel: biggestTrade.method ? `${biggestTrade.method}${biggestTrade.date ? ' · ' + biggestTrade.date : ''}` : (biggestTrade.date || ''),
-        value: `${biggestTrade.r >= 0 ? '+' : ''}${biggestTrade.r.toFixed(2)}R`,
-      } : null,
-      topExpectancy: topExpectancy ? {
-        label: `${topExpectancy.trader} on ${topExpectancy.avwap}`,
-        sublabel: topExpectancy.methodology,
-        value: `${topExpectancy.expectancy >= 0 ? '+' : ''}${topExpectancy.expectancy.toFixed(2)}R`,
       } : null,
     },
   };
