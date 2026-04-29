@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T12:05:53.808Z",
-  "tradeCount": 21,
+  "generatedAt": "2026-04-29T14:40:36.199Z",
+  "tradeCount": 22,
   "leaders": {
     "topCumulativeR": {
       "label": "Eli on Session Open",
@@ -31,7 +31,7 @@
     "bestMethodology": {
       "label": "Entry + L1",
       "sublabel": "across all traders × AVWAPs",
-      "value": "6.04R"
+      "value": "6.23R"
     },
     "bestAvwapMethod": {
       "label": "Session H/L × 10m HA Trail",
