@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T01:18:16.415Z",
-  "tradeCount": 15,
+  "generatedAt": "2026-04-29T07:31:17.307Z",
+  "tradeCount": 21,
   "leaders": {
     "topCumulativeR": {
       "label": "Eli on Session Open",
@@ -14,29 +14,29 @@
       "value": "4"
     },
     "biggestTrade": {
-      "label": "Eli on Session Open",
-      "sublabel": "15m HA trail · 2026-03-02",
-      "value": "+1.68R"
+      "label": "Patrick on Trend Swing Point",
+      "sublabel": "5m HA trail · 2026-04-01",
+      "value": "+1.69R"
     },
     "topExpectancy": {
-      "label": "Eli on Trend Swing Point",
-      "sublabel": "15m HA Trail",
-      "value": "+1.68R"
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "5m HA Trail",
+      "value": "+1.69R"
     },
     "bestAvwap": {
       "label": "Session H/L",
       "sublabel": "best methodology: 10m HA Trail",
-      "value": "3.14R"
+      "value": "2.88R"
     },
     "bestMethodology": {
       "label": "Entry + L1",
       "sublabel": "across all traders × AVWAPs",
-      "value": "5.20R"
+      "value": "6.04R"
     },
     "bestAvwapMethod": {
       "label": "Session H/L × 10m HA Trail",
       "sublabel": "aggregated across traders",
-      "value": "3.14R"
+      "value": "2.88R"
     }
   }
 }
