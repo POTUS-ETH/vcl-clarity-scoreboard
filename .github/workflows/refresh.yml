@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history needed for rebase against remote
 
       - uses: actions/setup-node@v4
         with:
@@ -26,22 +28,30 @@ jobs:
         run: node refresh.js
 
       - name: Commit data.json if changed
+        shell: bash
         run: |
-          if [[ -n "$(git status --porcelain data.json)" ]]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add data.json
-            git commit -m "chore: refresh scoreboard data"
-            # Race-safe push: rebase against remote in case another run / human pushed first
-            for i in 1 2 3; do
-              git pull --rebase --autostash || true
-              if git push; then
-                echo "pushed on attempt $i"
-                break
-              fi
-              echo "push attempt $i failed; retrying..."
-              sleep $((i * 2))
-            done
-          else
+          set +e   # we explicitly handle push failures below
+          if [[ -z "$(git status --porcelain data.json)" ]]; then
             echo "No changes to data.json"
+            exit 0
           fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data.json
+          git commit -m "chore: refresh scoreboard data"
+
+          for i in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main
+            git push
+            if [[ $? -eq 0 ]]; then
+              echo "pushed on attempt $i"
+              exit 0
+            fi
+            echo "push attempt $i failed; retrying in $((i * 3))s..."
+            sleep $((i * 3))
+          done
+
+          echo "all push attempts failed; giving up but not failing the step (data.json was still computed)"
+          exit 0
