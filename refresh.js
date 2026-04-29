@@ -199,6 +199,7 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
     await new Promise(r => setTimeout(r, 8000));
   }
   console.log('Scrub complete.');
+  return updates.length;  // caller can decide if a re-fetch is needed
 }
 
 (async () => {
@@ -228,11 +229,21 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   console.log(`Got ${avwapRows.length} AVWAP Stats rows`);
 
   // Scrub stale Trades relations against the source-of-truth
-  await scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrader);
+  const scrubbedCount = await scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrader);
 
-  // Re-fetch with fresh formula/rollup values after scrub
-  console.log('Re-fetching AVWAP Stats DB (post-scrub)...');
-  avwapRows = await queryAll(AVWAP_DB);
+  // Only re-fetch if the scrub actually changed something — otherwise we already have
+  // valid formula/rollup values from the first query, and avoiding a second query
+  // sidesteps Notion's flaky permission cache.
+  if (scrubbedCount > 0) {
+    console.log('Re-fetching AVWAP Stats DB (post-scrub)...');
+    try {
+      avwapRows = await queryAll(AVWAP_DB);
+    } catch (e) {
+      console.error(`post-scrub re-fetch failed (${e.message}); using pre-scrub data`);
+    }
+  } else {
+    console.log('No scrub changes — using pre-scrub data for leaders');
+  }
 
   // Identify sub-rows (have a Parent item) and parents (don't)
   const subRows = [];
