@@ -1,5 +1,5 @@
 // scoreboard/refresh.js
-// Runs in GitHub Actions. Fetches AVWAP Stats + Master Trade Log from Notion,
+// Runs in GitHub Actions. Fetches AVWAP Stats + Trade Log v2 from Notion,
 // computes leaderboard stats, writes scoreboard/data.json.
 
 const fs = require('fs');
@@ -13,7 +13,8 @@ if (!NOTION_TOKEN) {
 
 // IDs from your Notion workspace (public-API database IDs, i.e. page IDs as shown in URLs)
 const AVWAP_DB = '92b9ba93-1e73-4533-bede-c70f7e7a492e';
-const MTL_DB = 'a227e541-46b5-8367-a59d-01e9e0a499d3';
+// Trade Log v2 — the new master trade log with structured price inputs and convention-A R math
+const MTL_DB = '63a73a27-7602-48ca-9734-db3db281b389';
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
@@ -203,7 +204,7 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
 }
 
 (async () => {
-  console.log('Fetching Master Trade Log...');
+  console.log('Fetching Trade Log v2...');
   const trades = await queryAll(MTL_DB);
   console.log(`Got ${trades.length} trades`);
 
@@ -317,17 +318,17 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
 
   // Biggest single trade — find the max-magnitude R across all 9 methodology
   // outcomes on each trade, then pick the trade with the highest such value.
-  // (The MTL `R Outcome` formula returns a binary win/loss flag, not actual R.)
+  // v2's R formulas return real Convention-A R; we just scan the 9 of them.
   const TRADE_R_PROPS = [
-    'Full TP/R',
-    'Entry Partials/R',
-    'Entry + L1 Partials/R',
-    '5m HA trail/R',
-    '5m HA Partials/R',
-    '10m HA trail/R',
-    '10m HA Partials/R',
-    '15m HA trail/R',
-    '15m HA Partials/R',
+    'Full TP R',
+    'Entry Partials R',
+    'Entry + L1 R',
+    '5m HA Trail R',
+    '5m HA Partials R',
+    '10m HA Trail R',
+    '10m HA Partials R',
+    '15m HA Trail R',
+    '15m HA Partials R',
   ];
   // Biggest single win (most positive R) and biggest single loss (most negative R)
   // — scan all 9 methodology R columns on every trade, track positive & negative extrema.
@@ -345,11 +346,11 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
       if (isNaN(num)) continue;
       if (num > 0 && (bestPos === null || num > bestPos)) {
         bestPos = num;
-        bestPosMethod = p.replace('/R', '');
+        bestPosMethod = p.replace(/ R$/, '');
       }
       if (num < 0 && (bestNeg === null || num < bestNeg)) {
         bestNeg = num;
-        bestNegMethod = p.replace('/R', '');
+        bestNegMethod = p.replace(/ R$/, '');
       }
     }
     if (bestPos !== null && bestPos > biggestWinR) {

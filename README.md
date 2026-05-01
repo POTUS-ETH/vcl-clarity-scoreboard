@@ -1,6 +1,6 @@
 # VCL Clarity Scoreboard
 
-A live-updating leaderboard widget that pulls data from your Notion AVWAP Stats and Master Trade Log, computes leaders across 8 metrics, and renders as a card grid you can embed inline on the VCL Clarity Notion page.
+A live-updating leaderboard widget that pulls data from your Notion AVWAP Stats and Trade Log v2, computes leaders across 8 metrics, and renders as a card grid you can embed inline on the VCL Clarity Notion page.
 
 ## What you get
 
@@ -29,7 +29,7 @@ Auto-refreshes every 30 minutes via GitHub Actions. You can also trigger a refre
 
 In Notion, open each of these:
 - **AVWAP Stats** (the database, not the inline view)
-- **Master Trade Log**
+- **Trade Log v2**
 
 For each: click **...** (top right) → **Connections** → search for `VCL Clarity Scoreboard` → click to add.
 
@@ -85,8 +85,8 @@ Done. The scoreboard will auto-refresh every 30 minutes. To force a refresh, run
 ## Configuration
 
 **Database IDs** are hardcoded in `refresh.js`:
-- AVWAP Stats: `487f1338-0552-4da9-bd5e-f4544e14bee3`
-- Master Trade Log: `6b17e541-46b5-8213-a29c-87e41fc02243`
+- AVWAP Stats: `92b9ba93-1e73-4533-bede-c70f7e7a492e`
+- Trade Log v2: `63a73a27-7602-48ca-9734-db3db281b389`
 
 If you ever rebuild those databases, update the IDs at the top of `refresh.js`.
 
