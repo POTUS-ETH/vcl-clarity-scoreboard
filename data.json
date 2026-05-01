@@ -1,86 +1,74 @@
 {
-  "generatedAt": "2026-05-01T09:17:28.970Z",
-  "tradeCount": 23,
+  "generatedAt": "2026-05-01T10:38:31.424Z",
+  "tradeCount": 1,
   "leaders": {
     "champion": {
-      "avwap": "Session H/L",
-      "methodology": "10m HA Trail",
-      "label": "Session H/L × 10m HA Trail",
-      "sublabel": "n=5 · lead 0.41R over #2",
-      "value": "+2.88R"
+      "avwap": "Trend Swing Point",
+      "methodology": "Full TP",
+      "label": "Trend Swing Point × Full TP",
+      "sublabel": "n=0 · lead 0.00R over #2",
+      "value": "+0.00R"
     },
     "topCombos": [
       {
-        "avwap": "Session H/L",
-        "methodology": "10m HA Trail",
-        "label": "Session H/L × 10m HA Trail",
-        "sublabel": "n=5",
-        "value": "+2.88R"
+        "avwap": "Trend Swing Point",
+        "methodology": "Full TP",
+        "label": "Trend Swing Point × Full TP",
+        "sublabel": "n=0",
+        "value": "+0.00R"
       },
       {
-        "avwap": "Session H/L",
-        "methodology": "5m HA Trail",
-        "label": "Session H/L × 5m HA Trail",
-        "sublabel": "n=5",
-        "value": "+2.47R"
+        "avwap": "Trend Swing Point",
+        "methodology": "Entry Partials",
+        "label": "Trend Swing Point × Entry Partials",
+        "sublabel": "n=0",
+        "value": "+0.00R"
       },
       {
-        "avwap": "Session H/L",
-        "methodology": "15m HA Trail",
-        "label": "Session H/L × 15m HA Trail",
-        "sublabel": "n=5",
-        "value": "+2.39R"
+        "avwap": "Trend Swing Point",
+        "methodology": "Entry + L1",
+        "label": "Trend Swing Point × Entry + L1",
+        "sublabel": "n=0",
+        "value": "+0.00R"
       }
     ],
     "bottomCombos": [
       {
-        "avwap": "Sweep + BoS",
+        "avwap": "Daily",
+        "methodology": "15m HA Partials",
+        "label": "Daily × 15m HA Partials",
+        "sublabel": "n=0",
+        "value": "+0.00R"
+      },
+      {
+        "avwap": "Daily",
         "methodology": "15m HA Trail",
-        "label": "Sweep + BoS × 15m HA Trail",
-        "sublabel": "n=5",
-        "value": "-2.89R"
+        "label": "Daily × 15m HA Trail",
+        "sublabel": "n=0",
+        "value": "+0.00R"
       },
       {
-        "avwap": "Sweep + BoS",
-        "methodology": "10m HA Trail",
-        "label": "Sweep + BoS × 10m HA Trail",
-        "sublabel": "n=5",
-        "value": "-2.58R"
-      },
-      {
-        "avwap": "Sweep + BoS",
-        "methodology": "5m HA Trail",
-        "label": "Sweep + BoS × 5m HA Trail",
-        "sublabel": "n=5",
-        "value": "-2.31R"
+        "avwap": "Daily",
+        "methodology": "10m HA Partials",
+        "label": "Daily × 10m HA Partials",
+        "sublabel": "n=0",
+        "value": "+0.00R"
       }
     ],
     "topWinRate": null,
     "bottomWinRate": null,
     "topExpectancy": {
-      "label": "Patrick on Sweep + BoS",
-      "sublabel": "5m HA Trail · n=1",
-      "value": "+1.69R"
+      "label": "Cole on Trend Swing Point",
+      "sublabel": "Full TP · n=0",
+      "value": "+0.00R"
     },
-    "bottomExpectancy": {
-      "label": "GRANT on Session Open",
-      "sublabel": "5m HA Trail · n=1",
-      "value": "-1.00R"
-    },
-    "biggestWin": {
-      "label": "Patrick on Trend Swing Point",
-      "sublabel": "5m HA trail · 2026-04-01",
-      "value": "+1.69R"
-    },
-    "biggestLoss": {
-      "label": "Patrick on Session Open",
-      "sublabel": "Full TP · 2026-04-01",
-      "value": "-1.00R"
-    },
+    "bottomExpectancy": null,
+    "biggestWin": null,
+    "biggestLoss": null,
     "mostTrades": {
-      "label": "Eli on Sweep + BoS",
+      "label": "Cole on Trend Swing Point",
       "sublabel": "",
-      "value": "4"
+      "value": "0"
     }
   }
 }
