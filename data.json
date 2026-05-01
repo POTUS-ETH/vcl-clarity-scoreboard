@@ -1,33 +1,33 @@
 {
-  "generatedAt": "2026-05-01T12:03:06.607Z",
+  "generatedAt": "2026-05-01T13:56:30.028Z",
   "tradeCount": 2,
   "leaders": {
     "champion": {
-      "avwap": "Trend Swing Point",
+      "avwap": "Session Open",
       "methodology": "Full TP",
-      "label": "Trend Swing Point × Full TP",
-      "sublabel": "n=0 · lead 0.00R over #2",
-      "value": "+0.00R"
+      "label": "Session Open × Full TP",
+      "sublabel": "n=1 · lead 0.00R over #2",
+      "value": "+0.36R"
     },
     "topCombos": [
+      {
+        "avwap": "Session Open",
+        "methodology": "Full TP",
+        "label": "Session Open × Full TP",
+        "sublabel": "n=1",
+        "value": "+0.36R"
+      },
+      {
+        "avwap": "Sweep + BoS",
+        "methodology": "Full TP",
+        "label": "Sweep + BoS × Full TP",
+        "sublabel": "n=1",
+        "value": "+0.36R"
+      },
       {
         "avwap": "Trend Swing Point",
         "methodology": "Full TP",
         "label": "Trend Swing Point × Full TP",
-        "sublabel": "n=0",
-        "value": "+0.00R"
-      },
-      {
-        "avwap": "Trend Swing Point",
-        "methodology": "Entry Partials",
-        "label": "Trend Swing Point × Entry Partials",
-        "sublabel": "n=0",
-        "value": "+0.00R"
-      },
-      {
-        "avwap": "Trend Swing Point",
-        "methodology": "Entry + L1",
-        "label": "Trend Swing Point × Entry + L1",
         "sublabel": "n=0",
         "value": "+0.00R"
       }
@@ -58,16 +58,20 @@
     "topWinRate": null,
     "bottomWinRate": null,
     "topExpectancy": {
-      "label": "Cole on Trend Swing Point",
-      "sublabel": "Full TP · n=0",
-      "value": "+0.00R"
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "Full TP · n=1",
+      "value": "+0.36R"
     },
     "bottomExpectancy": {
       "label": "Patrick on Sweep + BoS",
-      "sublabel": "Full TP · n=1",
+      "sublabel": "Entry Partials · n=1",
       "value": "+0.00R"
     },
-    "biggestWin": null,
+    "biggestWin": {
+      "label": "Patrick on Session Open",
+      "sublabel": "Full TP · 2026-05-01",
+      "value": "+0.36R"
+    },
     "biggestLoss": null,
     "mostTrades": {
       "label": "Patrick on Sweep + BoS",
