@@ -13,8 +13,9 @@ if (!NOTION_TOKEN) {
 
 // IDs from your Notion workspace (public-API database IDs, i.e. page IDs as shown in URLs)
 const AVWAP_DB = '92b9ba93-1e73-4533-bede-c70f7e7a492e';
-// Trade Log v2 — the new master trade log with structured price inputs and convention-A R math
-const MTL_DB = '63a73a27-7602-48ca-9734-db3db281b389';
+// Trade Log v2 — the new master trade log with structured price inputs and convention-A R math.
+// (This is the inline-view block id on VCL Clarity, which doubles as the public-API database id.)
+const MTL_DB = 'edba84db-7e45-4f54-8b23-d8d7c9059c6e';
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';

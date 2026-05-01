@@ -86,7 +86,7 @@ Done. The scoreboard will auto-refresh every 30 minutes. To force a refresh, run
 
 **Database IDs** are hardcoded in `refresh.js`:
 - AVWAP Stats: `92b9ba93-1e73-4533-bede-c70f7e7a492e`
-- Trade Log v2: `63a73a27-7602-48ca-9734-db3db281b389`
+- Trade Log v2: `edba84db-7e45-4f54-8b23-d8d7c9059c6e` (the inline-view block id on VCL Clarity)
 
 If you ever rebuild those databases, update the IDs at the top of `refresh.js`.
 
