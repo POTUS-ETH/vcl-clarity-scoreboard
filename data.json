@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-01T10:53:48.085Z",
-  "tradeCount": 1,
+  "generatedAt": "2026-05-01T12:03:06.607Z",
+  "tradeCount": 2,
   "leaders": {
     "champion": {
       "avwap": "Trend Swing Point",
@@ -62,13 +62,17 @@
       "sublabel": "Full TP · n=0",
       "value": "+0.00R"
     },
-    "bottomExpectancy": null,
+    "bottomExpectancy": {
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "Full TP · n=1",
+      "value": "+0.00R"
+    },
     "biggestWin": null,
     "biggestLoss": null,
     "mostTrades": {
-      "label": "Cole on Trend Swing Point",
+      "label": "Patrick on Sweep + BoS",
       "sublabel": "",
-      "value": "0"
+      "value": "1"
     }
   }
 }
