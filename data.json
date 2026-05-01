@@ -1,35 +1,35 @@
 {
-  "generatedAt": "2026-05-01T15:06:17.549Z",
-  "tradeCount": 0,
+  "generatedAt": "2026-05-01T16:12:03.859Z",
+  "tradeCount": 2,
   "leaders": {
     "champion": {
-      "avwap": "Trend Swing Point",
+      "avwap": "Sweep + BoS",
       "methodology": "Full TP",
-      "label": "Trend Swing Point × Full TP",
-      "sublabel": "n=0 · lead 0.00R over #2",
-      "value": "+0.00R"
+      "label": "Sweep + BoS × Full TP",
+      "sublabel": "n=1 · lead 0.02R over #2",
+      "value": "+0.43R"
     },
     "topCombos": [
       {
-        "avwap": "Trend Swing Point",
+        "avwap": "Sweep + BoS",
         "methodology": "Full TP",
-        "label": "Trend Swing Point × Full TP",
-        "sublabel": "n=0",
-        "value": "+0.00R"
+        "label": "Sweep + BoS × Full TP",
+        "sublabel": "n=1",
+        "value": "+0.43R"
       },
       {
-        "avwap": "Trend Swing Point",
-        "methodology": "Entry Partials",
-        "label": "Trend Swing Point × Entry Partials",
-        "sublabel": "n=0",
-        "value": "+0.00R"
+        "avwap": "Sweep + BoS",
+        "methodology": "5m HA Partials",
+        "label": "Sweep + BoS × 5m HA Partials",
+        "sublabel": "n=1",
+        "value": "+0.41R"
       },
       {
-        "avwap": "Trend Swing Point",
-        "methodology": "Entry + L1",
-        "label": "Trend Swing Point × Entry + L1",
-        "sublabel": "n=0",
-        "value": "+0.00R"
+        "avwap": "Sweep + BoS",
+        "methodology": "5m HA Trail",
+        "label": "Sweep + BoS × 5m HA Trail",
+        "sublabel": "n=1",
+        "value": "+0.39R"
       }
     ],
     "bottomCombos": [
@@ -58,17 +58,25 @@
     "topWinRate": null,
     "bottomWinRate": null,
     "topExpectancy": {
-      "label": "Cole on Trend Swing Point",
-      "sublabel": "Full TP · n=0",
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "Full TP · n=1",
+      "value": "+0.43R"
+    },
+    "bottomExpectancy": {
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "15m HA Trail · n=1",
       "value": "+0.00R"
     },
-    "bottomExpectancy": null,
-    "biggestWin": null,
+    "biggestWin": {
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "Full TP · 2026-02-01",
+      "value": "+0.43R"
+    },
     "biggestLoss": null,
     "mostTrades": {
-      "label": "Cole on Trend Swing Point",
+      "label": "Patrick on Sweep + BoS",
       "sublabel": "",
-      "value": "0"
+      "value": "1"
     }
   }
 }
