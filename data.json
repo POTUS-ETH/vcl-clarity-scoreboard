@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T16:12:03.859Z",
+  "generatedAt": "2026-05-01T17:17:21.708Z",
   "tradeCount": 2,
   "leaders": {
     "champion": {
@@ -34,6 +34,13 @@
     ],
     "bottomCombos": [
       {
+        "avwap": "Sweep + BoS",
+        "methodology": "15m HA Trail",
+        "label": "Sweep + BoS × 15m HA Trail",
+        "sublabel": "n=1",
+        "value": "-0.14R"
+      },
+      {
         "avwap": "Daily",
         "methodology": "15m HA Partials",
         "label": "Daily × 15m HA Partials",
@@ -44,13 +51,6 @@
         "avwap": "Daily",
         "methodology": "15m HA Trail",
         "label": "Daily × 15m HA Trail",
-        "sublabel": "n=0",
-        "value": "+0.00R"
-      },
-      {
-        "avwap": "Daily",
-        "methodology": "10m HA Partials",
-        "label": "Daily × 10m HA Partials",
         "sublabel": "n=0",
         "value": "+0.00R"
       }
@@ -65,14 +65,18 @@
     "bottomExpectancy": {
       "label": "Patrick on Sweep + BoS",
       "sublabel": "15m HA Trail · n=1",
-      "value": "+0.00R"
+      "value": "-0.14R"
     },
     "biggestWin": {
       "label": "Patrick on Sweep + BoS",
       "sublabel": "Full TP · 2026-02-01",
       "value": "+0.43R"
     },
-    "biggestLoss": null,
+    "biggestLoss": {
+      "label": "Patrick on Sweep + BoS",
+      "sublabel": "15m HA Trail · 2026-02-01",
+      "value": "-0.14R"
+    },
     "mostTrades": {
       "label": "Patrick on Sweep + BoS",
       "sublabel": "",
