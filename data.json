@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-02T18:04:00.303Z",
-  "tradeCount": 4,
+  "generatedAt": "2026-05-02T19:19:41.079Z",
+  "tradeCount": 8,
   "leaders": {
     "champion": {
       "avwap": "Trend Swing Point",
@@ -35,24 +35,24 @@
     "bottomCombos": [
       {
         "avwap": "Daily",
-        "methodology": "15m HA Partials",
-        "label": "Daily × 15m HA Partials",
-        "sublabel": "n=0",
-        "value": "+0.00R"
-      },
-      {
-        "avwap": "Daily",
         "methodology": "15m HA Trail",
         "label": "Daily × 15m HA Trail",
-        "sublabel": "n=0",
-        "value": "+0.00R"
+        "sublabel": "n=3",
+        "value": "-0.12R"
       },
       {
         "avwap": "Daily",
-        "methodology": "10m HA Partials",
-        "label": "Daily × 10m HA Partials",
-        "sublabel": "n=0",
-        "value": "+0.00R"
+        "methodology": "15m HA Partials",
+        "label": "Daily × 15m HA Partials",
+        "sublabel": "n=3",
+        "value": "-0.11R"
+      },
+      {
+        "avwap": "Daily",
+        "methodology": "Full TP",
+        "label": "Daily × Full TP",
+        "sublabel": "n=3",
+        "value": "-0.11R"
       }
     ],
     "topWinRate": null,
@@ -63,24 +63,24 @@
       "value": "+0.50R"
     },
     "bottomExpectancy": {
-      "label": "Patrick on Sweep + BoS",
-      "sublabel": "Entry Partials · n=2",
-      "value": "+0.21R"
+      "label": "Patrick on Daily",
+      "sublabel": "Full TP · n=3",
+      "value": "-0.04R"
     },
     "biggestWin": {
-      "label": "Patrick on Trend Swing Point",
-      "sublabel": "10m HA Trail · 2026-02-02",
-      "value": "+0.79R"
+      "label": "Patrick on Daily",
+      "sublabel": "5m HA Trail · 2026-02-03",
+      "value": "+1.11R"
     },
     "biggestLoss": {
-      "label": "Patrick on Sweep + BoS",
-      "sublabel": "15m HA Trail · 2026-02-02",
-      "value": "-0.14R"
+      "label": "Patrick on Daily",
+      "sublabel": "Full TP · 2026-02-03",
+      "value": "-1.00R"
     },
     "mostTrades": {
-      "label": "Patrick on Sweep + BoS",
+      "label": "Patrick on Daily",
       "sublabel": "",
-      "value": "2"
+      "value": "3"
     }
   }
 }
