@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-02T06:15:03.524Z",
+  "generatedAt": "2026-05-02T08:01:55.614Z",
   "tradeCount": 2,
   "leaders": {
     "champion": {
@@ -69,12 +69,12 @@
     },
     "biggestWin": {
       "label": "Patrick on Sweep + BoS",
-      "sublabel": "Full TP · 2026-02-01",
+      "sublabel": "Full TP · 2026-02-02",
       "value": "+0.43R"
     },
     "biggestLoss": {
       "label": "Patrick on Sweep + BoS",
-      "sublabel": "15m HA Trail · 2026-02-01",
+      "sublabel": "15m HA Trail · 2026-02-02",
       "value": "-0.14R"
     },
     "mostTrades": {
