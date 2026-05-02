@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-02T19:19:41.079Z",
-  "tradeCount": 8,
+  "generatedAt": "2026-05-02T20:06:05.878Z",
+  "tradeCount": 9,
   "leaders": {
     "champion": {
       "avwap": "Trend Swing Point",
@@ -37,22 +37,22 @@
         "avwap": "Daily",
         "methodology": "15m HA Trail",
         "label": "Daily × 15m HA Trail",
-        "sublabel": "n=3",
-        "value": "-0.12R"
+        "sublabel": "n=4",
+        "value": "-0.39R"
       },
       {
         "avwap": "Daily",
         "methodology": "15m HA Partials",
         "label": "Daily × 15m HA Partials",
-        "sublabel": "n=3",
-        "value": "-0.11R"
+        "sublabel": "n=4",
+        "value": "-0.04R"
       },
       {
         "avwap": "Daily",
-        "methodology": "Full TP",
-        "label": "Daily × Full TP",
-        "sublabel": "n=3",
-        "value": "-0.11R"
+        "methodology": "10m HA Trail",
+        "label": "Daily × 10m HA Trail",
+        "sublabel": "n=4",
+        "value": "+0.00R"
       }
     ],
     "topWinRate": null,
@@ -64,8 +64,8 @@
     },
     "bottomExpectancy": {
       "label": "Patrick on Daily",
-      "sublabel": "Full TP · n=3",
-      "value": "-0.04R"
+      "sublabel": "15m HA Trail · n=4",
+      "value": "-0.10R"
     },
     "biggestWin": {
       "label": "Patrick on Daily",
@@ -80,7 +80,7 @@
     "mostTrades": {
       "label": "Patrick on Daily",
       "sublabel": "",
-      "value": "3"
+      "value": "4"
     }
   }
 }
