@@ -2,7 +2,7 @@ name: Refresh scoreboard data
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # every 15 minutes
+    - cron: '*/5 * * * *'    # every 5 minutes (GitHub Actions floor — actual cadence may be 6–10 min during peak load)
   workflow_dispatch:          # manual trigger from the Actions tab
   push:
     branches: [main]
