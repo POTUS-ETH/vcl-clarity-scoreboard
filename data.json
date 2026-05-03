@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T14:52:27.426Z",
+  "generatedAt": "2026-05-03T14:53:24.350Z",
   "tradeCount": 18,
   "leaders": {
     "champion": {
@@ -63,9 +63,9 @@
       "value": "+1.61R"
     },
     "bottomExpectancy": {
-      "label": "Patrick on Session Open",
-      "sublabel": "15m HA Trail · n=4",
-      "value": "-0.19R"
+      "label": "Eli on Sweep + BoS",
+      "sublabel": "5m HA Trail · n=1",
+      "value": "-0.69R"
     },
     "biggestWin": {
       "label": "Eli on Session Open",
