@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-03T11:48:53.386Z",
-  "tradeCount": 9,
+  "generatedAt": "2026-05-03T12:36:46.876Z",
+  "tradeCount": 12,
   "leaders": {
     "champion": {
       "avwap": "Trend Swing Point",
@@ -34,25 +34,25 @@
     ],
     "bottomCombos": [
       {
+        "avwap": "Session Open",
+        "methodology": "15m HA Trail",
+        "label": "Session Open × 15m HA Trail",
+        "sublabel": "n=4",
+        "value": "-0.77R"
+      },
+      {
+        "avwap": "Session Open",
+        "methodology": "10m HA Trail",
+        "label": "Session Open × 10m HA Trail",
+        "sublabel": "n=4",
+        "value": "-0.42R"
+      },
+      {
         "avwap": "Daily",
         "methodology": "15m HA Trail",
         "label": "Daily × 15m HA Trail",
         "sublabel": "n=4",
         "value": "-0.39R"
-      },
-      {
-        "avwap": "Daily",
-        "methodology": "15m HA Partials",
-        "label": "Daily × 15m HA Partials",
-        "sublabel": "n=4",
-        "value": "-0.04R"
-      },
-      {
-        "avwap": "Daily",
-        "methodology": "10m HA Trail",
-        "label": "Daily × 10m HA Trail",
-        "sublabel": "n=4",
-        "value": "+0.00R"
       }
     ],
     "topWinRate": null,
@@ -63,14 +63,14 @@
       "value": "+0.50R"
     },
     "bottomExpectancy": {
-      "label": "Patrick on Daily",
+      "label": "Patrick on Session Open",
       "sublabel": "15m HA Trail · n=4",
-      "value": "-0.10R"
+      "value": "-0.19R"
     },
     "biggestWin": {
-      "label": "Patrick on Daily",
+      "label": "Patrick on Session Open",
       "sublabel": "5m HA Trail · 2026-02-03",
-      "value": "+1.11R"
+      "value": "+1.14R"
     },
     "biggestLoss": {
       "label": "Patrick on Daily",
@@ -78,7 +78,7 @@
       "value": "-1.00R"
     },
     "mostTrades": {
-      "label": "Patrick on Daily",
+      "label": "Patrick on Session Open",
       "sublabel": "",
       "value": "4"
     }
