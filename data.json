@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-03T14:36:25.898Z",
+  "generatedAt": "2026-05-03T14:37:30.425Z",
   "tradeCount": 16,
   "leaders": {
     "champion": {
@@ -70,7 +70,7 @@
     "biggestWin": {
       "label": "Eli on Session Open",
       "sublabel": "10m HA Trail · 2026-03-02",
-      "value": "+1.69R"
+      "value": "+1.70R"
     },
     "biggestLoss": {
       "label": "Patrick on Daily",
