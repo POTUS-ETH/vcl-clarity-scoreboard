@@ -1,22 +1,15 @@
 {
-  "generatedAt": "2026-05-03T15:09:24.481Z",
+  "generatedAt": "2026-05-03T15:10:33.808Z",
   "tradeCount": 18,
   "leaders": {
     "champion": {
       "avwap": "Session Open",
-      "methodology": "5m HA Trail",
-      "label": "Session Open × 5m HA Trail",
-      "sublabel": "n=7 · lead 0.69R over #2",
-      "value": "+3.34R"
+      "methodology": "Entry Partials",
+      "label": "Session Open × Entry Partials",
+      "sublabel": "n=7 · lead 0.00R over #2",
+      "value": "+2.65R"
     },
     "topCombos": [
-      {
-        "avwap": "Session Open",
-        "methodology": "5m HA Trail",
-        "label": "Session Open × 5m HA Trail",
-        "sublabel": "n=7",
-        "value": "+3.34R"
-      },
       {
         "avwap": "Session Open",
         "methodology": "Entry Partials",
@@ -30,22 +23,29 @@
         "label": "Session Open × Entry + L1",
         "sublabel": "n=7",
         "value": "+2.65R"
+      },
+      {
+        "avwap": "Session Open",
+        "methodology": "5m HA Partials",
+        "label": "Session Open × 5m HA Partials",
+        "sublabel": "n=7",
+        "value": "+2.46R"
       }
     ],
     "bottomCombos": [
-      {
-        "avwap": "Daily",
-        "methodology": "15m HA Trail",
-        "label": "Daily × 15m HA Trail",
-        "sublabel": "n=4",
-        "value": "-0.39R"
-      },
       {
         "avwap": "Daily",
         "methodology": "15m HA Partials",
         "label": "Daily × 15m HA Partials",
         "sublabel": "n=4",
         "value": "-0.04R"
+      },
+      {
+        "avwap": "Daily",
+        "methodology": "15m HA Trail",
+        "label": "Daily × 15m HA Trail",
+        "sublabel": "n=4",
+        "value": "+0.00R"
       },
       {
         "avwap": "Daily",
@@ -59,18 +59,18 @@
     "bottomWinRate": null,
     "topExpectancy": {
       "label": "Eli on Trend Swing Point",
-      "sublabel": "15m HA Trail · n=1",
-      "value": "+1.61R"
+      "sublabel": "Entry Partials · n=1",
+      "value": "+1.02R"
     },
     "bottomExpectancy": {
       "label": "Eli on Sweep + BoS",
-      "sublabel": "5m HA Trail · n=1",
-      "value": "-0.69R"
+      "sublabel": "5m HA Partials · n=1",
+      "value": "-0.14R"
     },
     "biggestWin": {
-      "label": "Eli on Session Open",
-      "sublabel": "10m HA Trail · 2026-03-02",
-      "value": "+1.70R"
+      "label": "Patrick on Daily",
+      "sublabel": "Entry Partials · 2026-02-03",
+      "value": "+1.08R"
     },
     "biggestLoss": {
       "label": "Patrick on Daily",
