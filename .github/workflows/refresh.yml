@@ -2,7 +2,7 @@ name: Refresh scoreboard data
 
 on:
   schedule:
-    - cron: '*/5 * * * *'    # every 5 minutes (GitHub Actions floor — actual cadence may be 6–10 min during peak load)
+    - cron: '*/5 * * * *'    # every 5 minutes nominal — GitHub may delay; the in-run loop below mitigates
   workflow_dispatch:          # manual trigger from the Actions tab
   push:
     branches: [main]
@@ -10,9 +10,16 @@ on:
 permissions:
   contents: write
 
+# Allow concurrent runs — the loop bodies push commits independently, with retry logic
+concurrency:
+  group: refresh-${{ github.run_id }}
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    timeout-minutes: 6
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,36 +29,58 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run refresh script
+      - name: Refresh loop (5 iterations × ~60s)
+        shell: bash
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: node refresh.js
-
-      - name: Commit data.json if changed
-        shell: bash
         run: |
-          set +e   # we explicitly handle push failures below
-          if [[ -z "$(git status --porcelain data.json)" ]]; then
-            echo "No changes to data.json"
-            exit 0
-          fi
-
+          set +e
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data.json
-          git commit -m "chore: refresh scoreboard data"
 
-          for i in 1 2 3 4 5; do
-            git fetch origin main
-            git rebase origin/main
-            git push
-            if [[ $? -eq 0 ]]; then
-              echo "pushed on attempt $i"
-              exit 0
+          for iter in 1 2 3 4 5; do
+            echo "===== refresh iteration $iter/5 ====="
+            t0=$(date +%s)
+
+            node refresh.js
+            rc=$?
+            if [[ $rc -ne 0 ]]; then
+              echo "refresh.js exit $rc on iteration $iter; will retry next iteration"
             fi
-            echo "push attempt $i failed; retrying in $((i * 3))s..."
-            sleep $((i * 3))
+
+            # Commit + push if data.json changed
+            if [[ -n "$(git status --porcelain data.json)" ]]; then
+              git fetch origin main
+              git rebase origin/main || git rebase --abort
+              git add data.json
+              git commit -m "chore: refresh scoreboard data ($iter/5)"
+
+              for push_try in 1 2 3 4 5; do
+                git fetch origin main
+                git rebase origin/main || git rebase --abort
+                git push
+                if [[ $? -eq 0 ]]; then
+                  echo "pushed iteration $iter on push attempt $push_try"
+                  break
+                fi
+                echo "push attempt $push_try failed; retrying in $((push_try * 2))s..."
+                sleep $((push_try * 2))
+              done
+            else
+              echo "iteration $iter: no changes to data.json"
+            fi
+
+            # Pace the loop to 60s per iteration (skip sleep on final iteration)
+            if [[ $iter -lt 5 ]]; then
+              t1=$(date +%s)
+              elapsed=$((t1 - t0))
+              sleep_for=$((60 - elapsed))
+              if [[ $sleep_for -gt 0 ]]; then
+                echo "sleeping ${sleep_for}s before next iteration..."
+                sleep $sleep_for
+              fi
+            fi
           done
 
-          echo "all push attempts failed; giving up but not failing the step (data.json was still computed)"
+          echo "===== loop complete ====="
           exit 0
