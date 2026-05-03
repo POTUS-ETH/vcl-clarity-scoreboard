@@ -390,7 +390,7 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   const avwapTradeCount = {};
   for (const a of Object.keys(byAvwap)) avwapTradeCount[a] = byAvwap[a].length;
 
-  // All (AVWAP × Methodology) combos sorted by total R — derive top 3 + bottom 3
+  // All (AVWAP × Methodology) combos sorted by total R
   const avwapMethodTotals = {}; // "avwap||methodology" -> sum
   for (const c of combos) {
     const k = `${c.avwap}||${c.methodology}`;
@@ -402,69 +402,119 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
       return { avwap, methodology, value, sampleSize: avwapTradeCount[avwap] || 0 };
     })
     .sort((a, b) => b.value - a.value);
-  const topCombos = allCombosSorted.slice(0, 3);
-  const bottomCombos = allCombosSorted.slice(-3).reverse(); // worst first
+  const top1 = allCombosSorted[0] || null;            // champion (#1 by total R)
+  const worstCombo = allCombosSorted.length ? allCombosSorted[allCombosSorted.length - 1] : null;
+
+  // Champion enrichment: weighted win-rate + best single trade for that AVWAP × Methodology
+  let championWinRate = null;
+  let championBestTrade = null;
+  if (top1) {
+    // Weighted win rate across all trader sub-rows for the champion combo
+    let wins = 0, totalTradesInCombo = 0;
+    for (const c of combos) {
+      if (c.avwap === top1.avwap && c.methodology === top1.methodology) {
+        wins += (c.winRate || 0) * (c.totalTrades || 0);
+        totalTradesInCombo += c.totalTrades || 0;
+      }
+    }
+    championWinRate = totalTradesInCombo > 0 ? (wins / totalTradesInCombo) : null;
+
+    // Best single trade R for this combo's specific methodology column
+    const methodCode = METHODOLOGIES.find(m => m.label === top1.methodology)?.code;
+    const methodColumnMap = {
+      FTP: 'Full TP R', EP: 'Entry Partials R', EL1: 'Entry + L1 R',
+      '5T': '5m HA Trail R', '5P': '5m HA Partials R',
+      '10T': '10m HA Trail R', '10P': '10m HA Partials R',
+      '15T': '15m HA Trail R', '15P': '15m HA Partials R',
+    };
+    const methodColumn = methodColumnMap[methodCode];
+    if (methodColumn) {
+      let best = null;
+      for (const t of trades) {
+        if (getPropValue(t, 'AVWAP TYPE') !== top1.avwap) continue;
+        const v = getPropValue(t, methodColumn);
+        const num = typeof v === 'number' ? v : parseFloat(v);
+        if (!isNaN(num) && (best === null || num > best)) best = num;
+      }
+      championBestTrade = best;
+    }
+  }
+
+  // Top 3 single trades (one row per trade — each trade's best methodology R)
+  const tradeBestPositives = [];
+  for (const t of trades) {
+    const tradeTrader = getPropValue(t, 'Trader');
+    const tradeAvwap = getPropValue(t, 'AVWAP TYPE');
+    let bestPos = null, bestPosMethod = null;
+    for (const p of TRADE_R_PROPS) {
+      const v = getPropValue(t, p);
+      if (v === null || v === undefined) continue;
+      const num = typeof v === 'number' ? v : parseFloat(v);
+      if (isNaN(num)) continue;
+      if (num > 0 && (bestPos === null || num > bestPos)) {
+        bestPos = num;
+        bestPosMethod = p.replace(/ R$/, '');
+      }
+    }
+    if (bestPos !== null) {
+      tradeBestPositives.push({ r: bestPos, method: bestPosMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') });
+    }
+  }
+  const topTrades = tradeBestPositives.sort((a, b) => b.r - a.r).slice(0, 3);
+
+  // Best win rate combo (already filtered to MIN_TRADES_FOR_WR upstream)
+  const bestWinRate = topWinRate;
+
+  // Most active trader×AVWAP — same as before
+  const mostActive = mostTradesKey ? {
+    label: mostTradesKey,
+    sublabel: '',
+    value: `${mostTradesValue}`,
+  } : null;
 
   const data = {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
     leaders: {
-      // Tournament champion (#1 combo, surfaced for the headline)
-      champion: topCombos[0] ? {
-        avwap: topCombos[0].avwap,
-        methodology: topCombos[0].methodology,
-        label: `${topCombos[0].avwap} × ${topCombos[0].methodology}`,
-        sublabel: `n=${topCombos[0].sampleSize}${topCombos[1] ? ` · lead ${(topCombos[0].value - topCombos[1].value).toFixed(2)}R over #2` : ''}`,
-        value: `${topCombos[0].value >= 0 ? '+' : ''}${topCombos[0].value.toFixed(2)}R`,
+      // Champion hero — full multi-stat block
+      champion: top1 ? {
+        avwap: top1.avwap,
+        methodology: top1.methodology,
+        label: `${top1.avwap} × ${top1.methodology}`,
+        totalR: `${top1.value >= 0 ? '+' : ''}${top1.value.toFixed(2)}R`,
+        winRate: championWinRate !== null ? `${(championWinRate * 100).toFixed(1)}%` : '—',
+        bestTrade: championBestTrade !== null ? `${championBestTrade >= 0 ? '+' : ''}${championBestTrade.toFixed(2)}R` : '—',
+        sampleSize: top1.sampleSize,
       } : null,
-      topCombos: topCombos.map(c => ({
-        avwap: c.avwap,
-        methodology: c.methodology,
-        label: `${c.avwap} × ${c.methodology}`,
-        sublabel: `n=${c.sampleSize}`,
-        value: `${c.value >= 0 ? '+' : ''}${c.value.toFixed(2)}R`,
+
+      // Top 3 single biggest trades (any combo)
+      topTrades: topTrades.map(t => ({
+        value: `+${t.r.toFixed(2)}R`,
+        trader: t.trader || '?',
+        avwap: t.avwap || '?',
+        methodology: t.method || '',
+        date: t.date || '',
       })),
-      bottomCombos: bottomCombos.map(c => ({
-        avwap: c.avwap,
-        methodology: c.methodology,
-        label: `${c.avwap} × ${c.methodology}`,
-        sublabel: `n=${c.sampleSize}`,
-        value: `${c.value >= 0 ? '+' : ''}${c.value.toFixed(2)}R`,
-      })),
-      topWinRate: topWinRate ? {
-        label: `${topWinRate.trader} on ${topWinRate.avwap}`,
-        sublabel: `${topWinRate.methodology} · n=${topWinRate.totalTrades}`,
-        value: `${(topWinRate.winRate * 100).toFixed(1)}%`,
+
+      // Best win rate combo (different leader than champion most of the time)
+      bestWinRate: bestWinRate ? {
+        avwap: bestWinRate.avwap,
+        methodology: bestWinRate.methodology,
+        label: `${bestWinRate.avwap} × ${bestWinRate.methodology}`,
+        sublabel: `${bestWinRate.trader} · n=${bestWinRate.totalTrades}`,
+        value: `${(bestWinRate.winRate * 100).toFixed(1)}%`,
       } : null,
-      bottomWinRate: bottomWinRate ? {
-        label: `${bottomWinRate.trader} on ${bottomWinRate.avwap}`,
-        sublabel: `${bottomWinRate.methodology} · n=${bottomWinRate.totalTrades}`,
-        value: `${(bottomWinRate.winRate * 100).toFixed(1)}%`,
-      } : null,
-      topExpectancy: topExpectancy ? {
-        label: `${topExpectancy.trader} on ${topExpectancy.avwap}`,
-        sublabel: `${topExpectancy.methodology} · n=${topExpectancy.totalTrades}`,
-        value: `${topExpectancy.expectancy >= 0 ? '+' : ''}${topExpectancy.expectancy.toFixed(2)}R`,
-      } : null,
-      bottomExpectancy: bottomExpectancy ? {
-        label: `${bottomExpectancy.trader} on ${bottomExpectancy.avwap}`,
-        sublabel: `${bottomExpectancy.methodology} · n=${bottomExpectancy.totalTrades}`,
-        value: `${bottomExpectancy.expectancy >= 0 ? '+' : ''}${bottomExpectancy.expectancy.toFixed(2)}R`,
-      } : null,
-      biggestWin: biggestWin ? {
-        label: `${biggestWin.trader || '?'} on ${biggestWin.avwap || '?'}`,
-        sublabel: biggestWin.method ? `${biggestWin.method}${biggestWin.date ? ' · ' + biggestWin.date : ''}` : (biggestWin.date || ''),
-        value: `+${biggestWin.r.toFixed(2)}R`,
-      } : null,
-      biggestLoss: biggestLoss ? {
-        label: `${biggestLoss.trader || '?'} on ${biggestLoss.avwap || '?'}`,
-        sublabel: biggestLoss.method ? `${biggestLoss.method}${biggestLoss.date ? ' · ' + biggestLoss.date : ''}` : (biggestLoss.date || ''),
-        value: `${biggestLoss.r.toFixed(2)}R`,
-      } : null,
-      mostTrades: mostTradesKey ? {
-        label: mostTradesKey,
-        sublabel: '',
-        value: `${mostTradesValue}`,
+
+      // Most active trader × AVWAP
+      mostActive,
+
+      // Small accountability panel — single weakest combo
+      worstCombo: worstCombo ? {
+        avwap: worstCombo.avwap,
+        methodology: worstCombo.methodology,
+        label: `${worstCombo.avwap} × ${worstCombo.methodology}`,
+        sublabel: `n=${worstCombo.sampleSize}`,
+        value: `${worstCombo.value >= 0 ? '+' : ''}${worstCombo.value.toFixed(2)}R`,
       } : null,
     },
   };

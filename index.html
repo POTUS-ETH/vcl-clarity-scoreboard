@@ -16,6 +16,7 @@
     --value: rgba(255, 255, 255, 0.96);
     --shame: #ef4444;
     --shame-dim: rgba(239, 68, 68, 0.85);
+    --green: #22c55e;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -47,24 +48,77 @@
     color: var(--muted);
     text-transform: uppercase;
   }
-  .meta {
-    color: var(--muted);
-    font-size: 11px;
+  .meta { color: var(--muted); font-size: 11px; }
+  .empty { color: var(--muted); font-style: italic; font-weight: 400; }
+
+  /* === Champion Hero === */
+  .champion {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 80%);
+    border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin-bottom: 10px;
   }
-  .section-label {
+  .champion .head {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .champion .label {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .champion .label .avwap { color: var(--accent); }
+  .champion .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .champion .stats .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .champion .stats .stat dt {
     font-size: 10.5px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
-    margin: 14px 4px 6px;
+    margin: 0;
   }
-  .section-label.shame { color: var(--shame-dim); }
-  .row { display: grid; gap: 8px; }
-  .row.three { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-  .row.pair { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .champion .stats .stat dd {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  /* Sample size n is rendered slightly less prominent */
+  .champion .stats .stat.n dd { color: var(--text); font-size: 22px; }
 
-  .card {
+  /* === Three-up panel row === */
+  .row3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 700px) {
+    .row3 { grid-template-columns: 1fr; }
+    .champion .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .panel {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -72,105 +126,99 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-height: 110px;
+    min-height: 130px;
   }
-  /* Combo cards take their accent from the inline --accent CSS variable */
-  .card.combo {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, var(--surface)) 0%, var(--surface) 70%);
-    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-  }
-  .card.combo.shame {
-    /* Shame overlay: still colored by AVWAP but with a red-tinted border + value */
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)) 0%, var(--surface) 60%);
-    border: 1px solid color-mix(in srgb, var(--shame) 38%, var(--border));
-  }
-  /* Stat-pair cards: fame on left, shame on right; we use a per-card class */
-  .card.stat.fame { border-left: 3px solid color-mix(in srgb, #22c55e 65%, var(--border)); }
-  .card.stat.shame { border-left: 3px solid color-mix(in srgb, var(--shame) 65%, var(--border)); }
-
-  .champion {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 75%);
-    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-    border-radius: 12px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 6px;
-  }
-  .champion .left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .champion .head {
-    color: var(--accent);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .champion .label {
-    font-size: 19px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-  .champion .label .avwap { color: var(--accent); }
-  .champion .sublabel { font-size: 11.5px; color: var(--muted); }
-  .champion .value {
-    font-size: 30px;
-    font-weight: 700;
-    color: var(--accent);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-
-  .card-head {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .panel .head {
     color: var(--muted);
     font-size: 10.5px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
   }
-  .card.combo .card-head { color: var(--accent); }
-  .card.combo.shame .card-head { color: var(--shame-dim); }
-  .card-head .icon { font-size: 14px; opacity: 0.85; }
-  .card-label {
-    font-size: 14.5px;
-    font-weight: 600;
-    line-height: 1.25;
-    color: var(--text);
-  }
-  .card-label .avwap { color: var(--accent); }
-  .card.combo.shame .card-label .avwap { color: color-mix(in srgb, var(--accent) 60%, var(--shame-dim)); }
-  .card-sublabel {
-    font-size: 11.5px;
-    color: var(--muted);
-  }
-  .card-value {
-    font-size: 19px;
-    font-weight: 600;
+  .panel .big {
+    font-size: 26px;
+    font-weight: 700;
     color: var(--value);
-    margin-top: auto;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .panel .label {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .panel .label .avwap { color: var(--accent); }
+  .panel .sublabel { font-size: 11.5px; color: var(--muted); }
+
+  .panel.fame { border-left: 3px solid color-mix(in srgb, var(--green) 70%, var(--border)); }
+  .panel.fame .big { color: var(--green); }
+
+  /* Top 3 trades list */
+  .trades-list { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+  .trade-row { display: flex; gap: 10px; align-items: baseline; }
+  .trade-row .rank {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    width: 14px;
+    flex-shrink: 0;
+  }
+  .trade-row .r {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
+    width: 56px;
+    flex-shrink: 0;
   }
-  .card.combo .card-value { color: var(--accent); }
-  .card.combo.shame .card-value { color: var(--shame); }
-  .card.stat.shame .card-value { color: var(--shame); }
-  .card.stat.fame .card-value { color: #22c55e; }
+  .trade-row .meta-line {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .trade-row .meta-line .avwap { color: var(--accent); }
+
+  /* === Worst combo (small) === */
+  .worst-row {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid color-mix(in srgb, var(--shame) 60%, var(--border));
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+  }
+  .worst-row .head-text {
+    text-transform: uppercase;
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--shame-dim);
+    white-space: nowrap;
+  }
+  .worst-row .body { flex: 1; color: var(--text); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .worst-row .body .avwap { color: var(--accent); }
+  .worst-row .body .sub { color: var(--muted); font-size: 11px; }
+  .worst-row .value { font-size: 14px; font-weight: 700; color: var(--shame); font-variant-numeric: tabular-nums; }
 
   .footer {
-    margin-top: 12px;
+    margin-top: 10px;
     color: var(--muted);
     font-size: 10.5px;
     text-align: center;
     opacity: 0.7;
   }
-  .empty { color: var(--muted); font-style: italic; font-weight: 400; }
 </style>
 </head>
 <body>
@@ -181,27 +229,16 @@
   </div>
 
   <div id="champion-container"></div>
-
-  <div class="section-label">🌟 Wall of Fame · Top combos</div>
-  <div class="row three" id="fame-podium"></div>
-
-  <div class="section-label shame">💀 Wall of Shame · Worst combos</div>
-  <div class="row three" id="shame-podium"></div>
-
-  <div class="section-label">⚖️ Best vs Worst · Per metric</div>
-  <div class="row pair" id="pair-grid"></div>
-
-  <div id="extras"></div>
+  <div class="row3" id="row3"></div>
+  <div id="worst-container"></div>
 
   <div class="footer" id="footer"></div>
 </div>
 <script>
 (async () => {
   const championContainer = document.getElementById('champion-container');
-  const famePodium = document.getElementById('fame-podium');
-  const shamePodium = document.getElementById('shame-podium');
-  const pairGrid = document.getElementById('pair-grid');
-  const extras = document.getElementById('extras');
+  const row3 = document.getElementById('row3');
+  const worstContainer = document.getElementById('worst-container');
   const meta = document.getElementById('meta');
   const footer = document.getElementById('footer');
 
@@ -213,54 +250,82 @@
     'Sweep + BoS':        '#22c55e',
   };
 
-  const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
-  function championCard(c) {
-    if (!c) return '';
+  function championHero(c) {
+    if (!c) return `<div class="panel"><div class="empty">No champion yet — log a trade to start.</div></div>`;
     const accent = AVWAP_COLORS[c.avwap] || '#9ca3af';
     return `<div class="champion" style="--accent: ${accent}">
-      <div class="left">
-        <div class="head"><span>👑</span><span>Current champion</span></div>
-        <div class="label"><span class="avwap">${escapeHtml(c.avwap)}</span> × ${escapeHtml(c.methodology)}</div>
-        <div class="sublabel">${escapeHtml(c.sublabel || '')}</div>
+      <div class="head">👑 Champion combo</div>
+      <div class="label"><span class="avwap">${escapeHtml(c.avwap)}</span> × ${escapeHtml(c.methodology)}</div>
+      <div class="stats">
+        <div class="stat"><dt>Total R</dt><dd>${escapeHtml(c.totalR)}</dd></div>
+        <div class="stat"><dt>Win Rate</dt><dd>${escapeHtml(c.winRate)}</dd></div>
+        <div class="stat"><dt>Best Trade</dt><dd>${escapeHtml(c.bestTrade)}</dd></div>
+        <div class="stat n"><dt>n</dt><dd>${escapeHtml(c.sampleSize)}</dd></div>
       </div>
-      <div class="value">${escapeHtml(c.value)}</div>
     </div>`;
   }
 
-  function comboCard(rank, combo, shame) {
-    const klass = shame ? 'card combo shame' : 'card combo';
-    if (!combo) {
-      return `<div class="${klass}" style="--accent: var(--muted)">
-        <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
-        <div class="card-label empty">No data</div>
+  function topTradesPanel(trades) {
+    const rows = (trades && trades.length)
+      ? trades.map((t, i) => {
+          const accent = AVWAP_COLORS[t.avwap] || '#9ca3af';
+          const sub = [t.trader, t.methodology, t.date].filter(Boolean).join(' · ');
+          return `<div class="trade-row" style="--accent: ${accent}">
+            <div class="rank">#${i+1}</div>
+            <div class="r">${escapeHtml(t.value)}</div>
+            <div class="meta-line"><span class="avwap">${escapeHtml(t.avwap)}</span> · ${escapeHtml(sub)}</div>
+          </div>`;
+        }).join('')
+      : `<div class="empty">No trades yet</div>`;
+    return `<div class="panel fame">
+      <div class="head">💥 Top 3 Trades</div>
+      <div class="trades-list">${rows}</div>
+    </div>`;
+  }
+
+  function bestWinRatePanel(wr) {
+    if (!wr) {
+      return `<div class="panel">
+        <div class="head">🎯 Best Win Rate</div>
+        <div class="empty">Need ≥5 trades in a combo</div>
       </div>`;
     }
-    const accent = AVWAP_COLORS[combo.avwap] || '#9ca3af';
-    return `<div class="${klass}" style="--accent: ${accent}">
-      <div class="card-head"><span class="icon">${rank.icon}</span><span>${rank.label}</span></div>
-      <div class="card-label"><span class="avwap">${escapeHtml(combo.avwap)}</span> × ${escapeHtml(combo.methodology)}</div>
-      <div class="card-sublabel">${escapeHtml(combo.sublabel || '')}</div>
-      <div class="card-value">${escapeHtml(combo.value)}</div>
+    const accent = AVWAP_COLORS[wr.avwap] || '#9ca3af';
+    return `<div class="panel fame" style="--accent: ${accent}">
+      <div class="head">🎯 Best Win Rate</div>
+      <div class="big">${escapeHtml(wr.value)}</div>
+      <div class="label"><span class="avwap">${escapeHtml(wr.avwap)}</span> × ${escapeHtml(wr.methodology)}</div>
+      <div class="sublabel">${escapeHtml(wr.sublabel)}</div>
     </div>`;
   }
 
-  function statCard(opts) {
-    const klass = `card stat ${opts.tone}`; // fame | shame | neutral
-    const labelHtml = opts.leader && opts.leader.label
-      ? `<div class="card-label">${escapeHtml(opts.leader.label)}</div>`
-      : `<div class="card-label empty">No data</div>`;
-    const subHtml = opts.leader && opts.leader.sublabel
-      ? `<div class="card-sublabel">${escapeHtml(opts.leader.sublabel)}</div>`
-      : '';
-    const valueHtml = opts.leader && opts.leader.value
-      ? `<div class="card-value">${escapeHtml(opts.leader.value)}</div>`
-      : '';
-    return `<div class="${klass}">
-      <div class="card-head"><span class="icon">${opts.icon}</span><span>${opts.title}</span></div>
-      ${labelHtml}
-      ${subHtml}
-      ${valueHtml}
+  function mostActivePanel(ma) {
+    if (!ma) {
+      return `<div class="panel">
+        <div class="head">📊 Most Active</div>
+        <div class="empty">No trades yet</div>
+      </div>`;
+    }
+    return `<div class="panel">
+      <div class="head">📊 Most Active</div>
+      <div class="big">${escapeHtml(ma.value)}</div>
+      <div class="label">${escapeHtml(ma.label)}</div>
+      <div class="sublabel">${escapeHtml(ma.sublabel || 'trades')}</div>
+    </div>`;
+  }
+
+  function worstRow(w) {
+    if (!w) return '';
+    const accent = AVWAP_COLORS[w.avwap] || '#9ca3af';
+    return `<div class="worst-row" style="--accent: ${accent}">
+      <div class="head-text">💀 Needs Work</div>
+      <div class="body">
+        <span><span class="avwap">${escapeHtml(w.avwap)}</span> × ${escapeHtml(w.methodology)}</span>
+        <span class="sub">${escapeHtml(w.sublabel)}</span>
+      </div>
+      <div class="value">${escapeHtml(w.value)}</div>
     </div>`;
   }
 
@@ -270,46 +335,20 @@
     const data = await r.json();
     const L = data.leaders || {};
 
-    championContainer.innerHTML = championCard(L.champion);
-
-    const top = L.topCombos || [];
-    famePodium.innerHTML = [
-      comboCard({ icon: '🥇', label: '#1 Fame' }, top[0]),
-      comboCard({ icon: '🥈', label: '#2 Fame' }, top[1]),
-      comboCard({ icon: '🥉', label: '#3 Fame' }, top[2]),
+    championContainer.innerHTML = championHero(L.champion);
+    row3.innerHTML = [
+      topTradesPanel(L.topTrades),
+      bestWinRatePanel(L.bestWinRate),
+      mostActivePanel(L.mostActive),
     ].join('');
-
-    const bot = L.bottomCombos || [];
-    shamePodium.innerHTML = [
-      comboCard({ icon: '💀', label: '#1 Shame' }, bot[0], true),
-      comboCard({ icon: '🪦', label: '#2 Shame' }, bot[1], true),
-      comboCard({ icon: '⚰️', label: '#3 Shame' }, bot[2], true),
-    ].join('');
-
-    pairGrid.innerHTML = [
-      statCard({ icon: '🎯', title: 'Top win rate (≥5 trades)',  leader: L.topWinRate,    tone: 'fame'  }),
-      statCard({ icon: '🪦', title: 'Worst win rate (≥5 trades)', leader: L.bottomWinRate, tone: 'shame' }),
-      statCard({ icon: '⚡', title: 'Top expectancy',           leader: L.topExpectancy, tone: 'fame'  }),
-      statCard({ icon: '📉', title: 'Worst expectancy',          leader: L.bottomExpectancy, tone: 'shame' }),
-      statCard({ icon: '💥', title: 'Biggest single win',        leader: L.biggestWin,    tone: 'fame'  }),
-      statCard({ icon: '⚓', title: 'Biggest single loss',       leader: L.biggestLoss,   tone: 'shame' }),
-    ].join('');
-
-    if (L.mostTrades) {
-      extras.innerHTML = `<div class="section-label">📊 Activity</div>
-        <div class="row three">
-          ${statCard({ icon: '📊', title: 'Most active trader × AVWAP', leader: L.mostTrades, tone: 'neutral' })}
-        </div>`;
-    } else {
-      extras.innerHTML = '';
-    }
+    worstContainer.innerHTML = worstRow(L.worstCombo);
 
     const generated = new Date(data.generatedAt);
     const ago = Math.round((Date.now() - generated.getTime()) / 60000);
     meta.textContent = `${data.tradeCount} trades · updated ${ago}m ago`;
     footer.textContent = `Last sync: ${generated.toLocaleString()}`;
   } catch (err) {
-    championContainer.innerHTML = `<div class="card"><div class="card-label empty">Couldn't load scoreboard</div><div class="card-sublabel">${escapeHtml(err.message)}</div></div>`;
+    championContainer.innerHTML = `<div class="panel"><div class="empty">Couldn't load scoreboard</div><div class="sublabel">${escapeHtml(err.message)}</div></div>`;
     meta.textContent = '';
     footer.textContent = 'Make sure data.json exists and the GitHub Action has run at least once.';
   }
