@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-03T14:40:25.688Z",
-  "tradeCount": 17,
+  "generatedAt": "2026-05-03T14:50:58.831Z",
+  "tradeCount": 18,
   "leaders": {
     "champion": {
       "avwap": "Session Open",
@@ -58,9 +58,9 @@
     "topWinRate": null,
     "bottomWinRate": null,
     "topExpectancy": {
-      "label": "Eli on Session Open",
-      "sublabel": "5m HA Trail · n=3",
-      "value": "+1.01R"
+      "label": "Eli on Trend Swing Point",
+      "sublabel": "15m HA Trail · n=1",
+      "value": "+1.61R"
     },
     "bottomExpectancy": {
       "label": "Patrick on Session Open",
