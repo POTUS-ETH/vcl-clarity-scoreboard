@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-05-04T19:44:32.471Z",
+  "generatedAt": "2026-05-04T19:45:30.722Z",
   "tradeCount": 27,
   "leaders": {
     "champion": {
       "avwap": "Session Open",
-      "methodology": "5m HA Trail",
-      "label": "Session Open × 5m HA Trail",
-      "totalR": "+614.23R",
+      "methodology": "10m HA Trail",
+      "label": "Session Open × 10m HA Trail",
+      "totalR": "+623.62R",
       "winRate": "80.0%",
-      "bestTrade": "+606.58R",
+      "bestTrade": "+614.56R",
       "sampleSize": 10
     },
     "topTrades": [
       {
-        "value": "+606.58R",
+        "value": "+614.56R",
         "trader": "Cole",
         "avwap": "Session Open",
-        "methodology": "5m HA Trail",
+        "methodology": "10m HA Trail",
         "date": "2026-04-27"
       },
       {
