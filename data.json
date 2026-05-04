@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T19:27:25.340Z",
+  "generatedAt": "2026-05-04T19:28:33.579Z",
   "tradeCount": 27,
   "leaders": {
     "champion": {
@@ -7,9 +7,9 @@
       "methodology": "15m HA Trail",
       "label": "Session Open × 15m HA Trail",
       "totalR": "+9.15R",
-      "winRate": "66.7%",
+      "winRate": "60.0%",
       "bestTrade": "+4.03R",
-      "sampleSize": 9
+      "sampleSize": 10
     },
     "topTrades": [
       {
