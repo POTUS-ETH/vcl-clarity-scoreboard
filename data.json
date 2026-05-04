@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T04:15:29.695Z",
+  "generatedAt": "2026-05-04T04:16:30.967Z",
   "tradeCount": 19,
   "leaders": {
     "champion": {
@@ -39,7 +39,7 @@
       "methodology": "Full TP",
       "label": "Session Open × Full TP",
       "sublabel": "Patrick · n=5",
-      "value": "60.0%"
+      "value": "80.0%"
     },
     "mostActive": {
       "label": "Patrick on Session Open",
