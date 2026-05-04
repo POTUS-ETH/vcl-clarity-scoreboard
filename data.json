@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T04:18:21.932Z",
+  "generatedAt": "2026-05-04T04:19:23.816Z",
   "tradeCount": 19,
   "leaders": {
     "champion": {
@@ -13,10 +13,10 @@
     },
     "topTrades": [
       {
-        "value": "+7.63R",
+        "value": "+8.43R",
         "trader": "Patrick",
         "avwap": "Session Open",
-        "methodology": "10m HA Trail",
+        "methodology": "15m HA Trail",
         "date": "2026-02-03"
       },
       {
