@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-04T16:50:23.441Z",
+  "generatedAt": "2026-05-04T16:51:23.560Z",
   "tradeCount": 25,
   "leaders": {
     "champion": {
@@ -13,6 +13,13 @@
     },
     "topTrades": [
       {
+        "value": "+279.52R",
+        "trader": "Patrick",
+        "avwap": "Session H/L",
+        "methodology": "10m HA Trail",
+        "date": "2026-02-03"
+      },
+      {
         "value": "+4.03R",
         "trader": "Patrick",
         "avwap": "Session Open",
@@ -25,13 +32,6 @@
         "avwap": "Session Open",
         "methodology": "10m HA Trail",
         "date": "2026-02-03"
-      },
-      {
-        "value": "+1.70R",
-        "trader": "Eli",
-        "avwap": "Session Open",
-        "methodology": "10m HA Trail",
-        "date": "2026-03-02"
       }
     ],
     "bestWinRate": {
