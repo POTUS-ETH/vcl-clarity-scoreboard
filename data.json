@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-05-04T04:34:27.350Z",
-  "tradeCount": 19,
+  "generatedAt": "2026-05-04T04:35:26.115Z",
+  "tradeCount": 20,
   "leaders": {
     "champion": {
       "avwap": "Session Open",
       "methodology": "5m HA Trail",
       "label": "Session Open × 5m HA Trail",
       "totalR": "+17.33R",
-      "winRate": "87.5%",
+      "winRate": "77.8%",
       "bestTrade": "+7.29R",
-      "sampleSize": 8
+      "sampleSize": 9
     },
     "topTrades": [
       {
@@ -38,13 +38,13 @@
       "avwap": "Session Open",
       "methodology": "Full TP",
       "label": "Session Open × Full TP",
-      "sublabel": "Patrick · n=5",
-      "value": "80.0%"
+      "sublabel": "Patrick · n=6",
+      "value": "66.7%"
     },
     "mostActive": {
       "label": "Patrick on Session Open",
       "sublabel": "",
-      "value": "5"
+      "value": "6"
     },
     "worstCombo": {
       "avwap": "Daily",
