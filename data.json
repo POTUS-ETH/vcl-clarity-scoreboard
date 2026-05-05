@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T15:35:32.784Z",
+  "generatedAt": "2026-05-05T15:36:31.229Z",
   "tradeCount": 36,
   "leaders": {
     "champion": {
@@ -7,9 +7,9 @@
       "methodology": "10m HA Trail",
       "label": "Session Open × 10m HA Trail",
       "totalR": "+8.12R",
-      "winRate": "63.6%",
+      "winRate": "58.3%",
       "bestTrade": "+3.63R",
-      "sampleSize": 11
+      "sampleSize": 12
     },
     "topTrades": [
       {
@@ -42,9 +42,9 @@
       "value": "100.0%"
     },
     "mostActive": {
-      "label": "Patrick on Sweep + BoS",
+      "label": "Patrick on Session Open",
       "sublabel": "",
-      "value": "6"
+      "value": "7"
     },
     "worstCombo": {
       "avwap": "Daily",
