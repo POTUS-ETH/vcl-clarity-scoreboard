@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T12:57:26.924Z",
+  "generatedAt": "2026-05-05T12:58:27.775Z",
   "tradeCount": 32,
   "leaders": {
     "champion": {
@@ -39,7 +39,7 @@
       "methodology": "Full TP",
       "label": "Sweep + BoS × Full TP",
       "sublabel": "Patrick · n=6",
-      "value": "83.3%"
+      "value": "100.0%"
     },
     "mostActive": {
       "label": "Patrick on Sweep + BoS",
