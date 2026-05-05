@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T12:45:26.187Z",
+  "generatedAt": "2026-05-05T12:46:34.254Z",
   "tradeCount": 31,
   "leaders": {
     "champion": {
@@ -35,11 +35,11 @@
       }
     ],
     "bestWinRate": {
-      "avwap": "Session Open",
+      "avwap": "Sweep + BoS",
       "methodology": "Full TP",
-      "label": "Session Open × Full TP",
-      "sublabel": "Patrick · n=6",
-      "value": "83.3%"
+      "label": "Sweep + BoS × Full TP",
+      "sublabel": "Patrick · n=5",
+      "value": "100.0%"
     },
     "mostActive": {
       "label": "Patrick on Session Open",
