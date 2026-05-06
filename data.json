@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T18:30:42.152Z",
+  "generatedAt": "2026-05-06T18:31:42.729Z",
   "tradeCount": 58,
   "leaderboard": [
     {
@@ -203,6 +203,16 @@
       "highestR": 1.65
     },
     {
+      "avwap": "Sweep + BoS",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 10,
+      "winRate": 1,
+      "expectancy": 0.42300000000000004,
+      "totalR": 4.23,
+      "highestR": 0.46
+    },
+    {
       "avwap": "Session Open",
       "methodology": "Full TP",
       "code": "FTP",
@@ -224,13 +234,13 @@
     },
     {
       "avwap": "Sweep + BoS",
-      "methodology": "Full TP",
-      "code": "FTP",
+      "methodology": "Entry + L1",
+      "code": "EL1",
       "trades": 10,
-      "winRate": 0.90001,
-      "expectancy": 0.38,
-      "totalR": 3.8,
-      "highestR": 0.46
+      "winRate": 1,
+      "expectancy": 0.375,
+      "totalR": 3.75,
+      "highestR": 1
     },
     {
       "avwap": "Trend Swing Point",
@@ -264,22 +274,12 @@
     },
     {
       "avwap": "Sweep + BoS",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 10,
-      "winRate": 0.90001,
-      "expectancy": 0.354,
-      "totalR": 3.54,
-      "highestR": 1
-    },
-    {
-      "avwap": "Sweep + BoS",
       "methodology": "Entry Partials",
       "code": "EP",
       "trades": 10,
-      "winRate": 0.90001,
-      "expectancy": 0.311,
-      "totalR": 3.11,
+      "winRate": 1,
+      "expectancy": 0.332,
+      "totalR": 3.3200000000000003,
       "highestR": 1
     },
     {
