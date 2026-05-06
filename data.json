@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T17:56:29.983Z",
+  "generatedAt": "2026-05-06T17:57:31.402Z",
   "tradeCount": 52,
   "leaderboard": [
     {
@@ -41,16 +41,6 @@
       "expectancy": 0.66,
       "totalR": 8.58,
       "highestR": 2.47
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "5m HA Partials",
-      "code": "5P",
-      "trades": 13,
-      "winRate": 0.9230846153846154,
-      "expectancy": 0.6038461538461538,
-      "totalR": 7.85,
-      "highestR": 2.18
     },
     {
       "avwap": "Trend Swing Point",
@@ -161,16 +151,6 @@
       "expectancy": 0.2885,
       "totalR": 5.77,
       "highestR": 2.03
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "Full TP",
-      "code": "FTP",
-      "trades": 13,
-      "winRate": 0.9230846153846154,
-      "expectancy": 0.38153846153846155,
-      "totalR": 4.96,
-      "highestR": 1.11
     },
     {
       "avwap": "Sweep + BoS",
@@ -451,6 +431,26 @@
       "expectancy": -0.0975,
       "totalR": -0.39,
       "highestR": 1
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "5m HA Partials",
+      "code": "5P",
+      "trades": 13,
+      "winRate": 0.8461615384615384,
+      "expectancy": -16.981538461538463,
+      "totalR": -220.76000000000002,
+      "highestR": 2.18
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 13,
+      "winRate": 0.8461615384615384,
+      "expectancy": -34.78923076923077,
+      "totalR": -452.26,
+      "highestR": 1.11
     }
   ]
 }
