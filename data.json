@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T16:36:33.374Z",
+  "generatedAt": "2026-05-06T16:37:36.276Z",
   "tradeCount": 51,
   "leaderboard": [
     {
@@ -58,8 +58,8 @@
       "code": "15T",
       "trades": 20,
       "winRate": 0.4999650000000001,
-      "expectancy": 0.374,
-      "totalR": 7.4799999999999995,
+      "expectancy": 0.37299999999999994,
+      "totalR": 7.459999999999999,
       "highestR": 4.03
     },
     {
@@ -137,9 +137,9 @@
       "methodology": "15m HA Partials",
       "code": "15P",
       "trades": 20,
-      "winRate": 0.6500199999999999,
-      "expectancy": 0.298,
-      "totalR": 5.96,
+      "winRate": 0.70003,
+      "expectancy": 0.308,
+      "totalR": 6.16,
       "highestR": 2.23
     },
     {
