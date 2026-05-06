@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T16:35:39.080Z",
+  "generatedAt": "2026-05-06T16:36:33.374Z",
   "tradeCount": 51,
   "leaderboard": [
     {
@@ -78,8 +78,8 @@
       "code": "5T",
       "trades": 20,
       "winRate": 0.650035,
-      "expectancy": 0.3515,
-      "totalR": 7.029999999999999,
+      "expectancy": 0.3505,
+      "totalR": 7.01,
       "highestR": 3.46
     },
     {
@@ -88,8 +88,8 @@
       "code": "10T",
       "trades": 20,
       "winRate": 0.5500149999999999,
-      "expectancy": 0.3505,
-      "totalR": 7.01,
+      "expectancy": 0.34950000000000003,
+      "totalR": 6.99,
       "highestR": 3.63
     },
     {
@@ -104,22 +104,22 @@
     },
     {
       "avwap": "Session Open",
+      "methodology": "Entry + L1",
+      "code": "EL1",
+      "trades": 20,
+      "winRate": 0.8500150000000002,
+      "expectancy": 0.3305,
+      "totalR": 6.61,
+      "highestR": 1.04
+    },
+    {
+      "avwap": "Session Open",
       "methodology": "Entry Partials",
       "code": "EP",
       "trades": 20,
       "winRate": 0.8500150000000002,
       "expectancy": 0.3285,
       "totalR": 6.57,
-      "highestR": 1.04
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 20,
-      "winRate": 0.800005,
-      "expectancy": 0.31999999999999995,
-      "totalR": 6.3999999999999995,
       "highestR": 1.04
     },
     {
@@ -147,9 +147,9 @@
       "methodology": "5m HA Partials",
       "code": "5P",
       "trades": 20,
-      "winRate": 0.800005,
-      "expectancy": 0.284,
-      "totalR": 5.68,
+      "winRate": 0.8500150000000002,
+      "expectancy": 0.29400000000000004,
+      "totalR": 5.880000000000001,
       "highestR": 1.94
     },
     {
@@ -157,9 +157,9 @@
       "methodology": "10m HA Partials",
       "code": "10P",
       "trades": 20,
-      "winRate": 0.70003,
-      "expectancy": 0.2785,
-      "totalR": 5.57,
+      "winRate": 0.75001,
+      "expectancy": 0.2885,
+      "totalR": 5.77,
       "highestR": 2.03
     },
     {
