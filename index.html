@@ -24,31 +24,67 @@
     background: transparent;
     color: var(--text);
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 13.5px;
+    font-size: 13px;
     line-height: 1.45;
     color-scheme: dark;
   }
-  .root { padding: 12px; max-width: 1100px; margin: 0 auto; }
+  .root { padding: 12px; max-width: 1280px; margin: 0 auto; }
 
   .header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     padding: 0 4px;
   }
   .title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    display: flex; align-items: center; gap: 6px;
   }
   .meta { color: var(--muted); font-size: 11px; }
-  .empty { color: var(--muted); font-style: italic; font-weight: 400; }
 
-  /* === Leaderboard table === */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 880px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 12px;
+  }
+  .panel.top {
+    border-color: color-mix(in srgb, var(--green) 38%, var(--border));
+    background: color-mix(in srgb, var(--green) 6%, var(--surface));
+  }
+  .panel.bottom {
+    border-color: color-mix(in srgb, var(--red) 38%, var(--border));
+    background: color-mix(in srgb, var(--red) 6%, var(--surface));
+  }
+  .panel-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+  .panel-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .panel.top .panel-title { color: var(--green); }
+  .panel.bottom .panel-title { color: var(--red); }
+  .panel-sub { font-size: 10.5px; color: var(--muted); }
+
+  /* === Tables === */
   .lb {
     width: 100%;
     border-collapse: separate;
@@ -56,69 +92,66 @@
     font-variant-numeric: tabular-nums;
   }
   .lb thead th {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
     text-align: right;
-    padding: 6px 12px;
+    padding: 5px 8px;
     border: none;
   }
   .lb thead th:first-child,
   .lb thead th:nth-child(2) { text-align: left; }
 
-  .lb tbody tr {
-    background: var(--surface);
-    border: 1px solid var(--border);
-  }
   .lb tbody td {
-    padding: 10px 12px;
+    padding: 8px 8px;
+    background: var(--surface-strong);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     text-align: right;
-    background: var(--surface);
   }
   .lb tbody td:first-child {
     border-left: 1px solid var(--border);
-    border-radius: 8px 0 0 8px;
+    border-radius: 7px 0 0 7px;
     text-align: left;
-    width: 38px;
+    width: 32px;
     color: var(--muted);
-    font-weight: 600;
-    font-size: 12.5px;
+    font-weight: 700;
+    font-size: 12px;
   }
   .lb tbody td:nth-child(2) {
     text-align: left;
-    /* AVWAP color stripe lives here */
     border-left: 3px solid var(--accent, var(--border-strong));
   }
   .lb tbody td:last-child {
     border-right: 1px solid var(--border);
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 7px 7px 0;
   }
 
-  .lb tbody tr.rank-1 td { background: color-mix(in srgb, var(--accent, #ffffff) 14%, var(--surface)); }
-  .lb tbody tr.rank-1 td:first-child { color: var(--gold); }
-
-  .combo-cell { display: flex; flex-direction: column; gap: 2px; }
+  .combo-cell { display: flex; flex-direction: column; gap: 1px; }
   .combo-avwap {
     color: var(--accent, var(--text));
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
-    letter-spacing: 0.005em;
   }
   .combo-method {
-    font-size: 11.5px;
+    font-size: 11px;
     color: var(--muted);
     font-weight: 500;
   }
 
-  .num { font-weight: 600; color: var(--value); font-size: 13px; }
+  .num { font-weight: 600; color: var(--value); font-size: 12.5px; }
   .num.pos { color: var(--green); }
   .num.neg { color: var(--red); }
   .num.muted { color: var(--muted); font-weight: 500; }
-  .num-sub { display: block; font-size: 10.5px; font-weight: 500; color: var(--muted); margin-top: 1px; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    padding: 16px;
+  }
 
   .footer {
     margin-top: 10px;
@@ -142,21 +175,51 @@
     <div class="meta" id="updated-at">loading…</div>
   </div>
 
-  <table class="lb" id="lb">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Combo</th>
-        <th>Win Rate</th>
-        <th>Expectancy</th>
-        <th>Total R</th>
-        <th>Best Trade</th>
-      </tr>
-    </thead>
-    <tbody id="lb-body">
-      <tr><td colspan="6" style="text-align:center;color:var(--muted)">loading…</td></tr>
-    </tbody>
-  </table>
+  <div class="grid">
+    <div class="panel top">
+      <div class="panel-head">
+        <div class="panel-title">🥇 Top 5</div>
+        <div class="panel-sub">Highest Total R</div>
+      </div>
+      <table class="lb">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Combo</th>
+            <th>WR</th>
+            <th>Exp</th>
+            <th>Total R</th>
+            <th>Best</th>
+          </tr>
+        </thead>
+        <tbody id="top-body">
+          <tr><td colspan="6" class="empty">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel bottom">
+      <div class="panel-head">
+        <div class="panel-title">⚠️ Bottom 5</div>
+        <div class="panel-sub">Lowest Total R</div>
+      </div>
+      <table class="lb">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Combo</th>
+            <th>WR</th>
+            <th>Exp</th>
+            <th>Total R</th>
+            <th>Best</th>
+          </tr>
+        </thead>
+        <tbody id="bottom-body">
+          <tr><td colspan="6" class="empty">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <div class="footer" id="footer"></div>
 </div>
@@ -192,39 +255,51 @@
     return `updated ${d.toLocaleDateString()}`;
   }
 
+  function rowHtml(c, displayRank) {
+    const cls = AVWAP_CLASS[c.avwap] || '';
+    return `
+      <tr class="${cls}">
+        <td>${displayRank}</td>
+        <td>
+          <div class="combo-cell">
+            <span class="combo-avwap">${c.avwap}</span>
+            <span class="combo-method">${c.methodology} · n=${c.trades}</span>
+          </div>
+        </td>
+        <td>${fmtPct(c.winRate)}</td>
+        <td>${fmtR(c.expectancy)}</td>
+        <td>${fmtR(c.totalR)}</td>
+        <td>${fmtR(c.highestR)}</td>
+      </tr>`;
+  }
+
   function render(data) {
     const lb = (data && data.leaderboard) || [];
-    const tbody = document.getElementById('lb-body');
     document.getElementById('updated-at').textContent = timeAgo(data?.generatedAt) || '';
     document.getElementById('trade-count').textContent = data?.tradeCount ? `· ${data.tradeCount} trades` : '';
     document.getElementById('footer').textContent = data?.generatedAt
       ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}`
       : '';
 
-    if (!lb.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No combos yet</td></tr>';
+    // Filter out combos with no trades — they're not "worst", they're "untraded"
+    const active = lb.filter(c => (c.trades || 0) > 0);
+
+    const topBody = document.getElementById('top-body');
+    const bottomBody = document.getElementById('bottom-body');
+
+    if (!active.length) {
+      topBody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
+      bottomBody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
       return;
     }
 
-    tbody.innerHTML = lb.map((c, i) => {
-      const cls = AVWAP_CLASS[c.avwap] || '';
-      const rankCls = i === 0 ? 'rank-1' : '';
-      const rankBadge = i === 0 ? '👑' : (i + 1);
-      return `
-        <tr class="${cls} ${rankCls}">
-          <td>${rankBadge}</td>
-          <td>
-            <div class="combo-cell">
-              <span class="combo-avwap">${c.avwap}</span>
-              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
-            </div>
-          </td>
-          <td>${fmtPct(c.winRate)}</td>
-          <td>${fmtR(c.expectancy)}</td>
-          <td>${fmtR(c.totalR)}</td>
-          <td>${fmtR(c.highestR)}</td>
-        </tr>`;
-    }).join('');
+    // Top 5: best first
+    const top5 = active.slice(0, 5);
+    topBody.innerHTML = top5.map((c, i) => rowHtml(c, i + 1)).join('');
+
+    // Bottom 5: worst first (last 5 of the sorted-desc list, then reversed)
+    const bottom5 = active.slice(-5).reverse();
+    bottomBody.innerHTML = bottom5.map((c, i) => rowHtml(c, i + 1)).join('');
   }
 
   // Cache-busted fetch each load
@@ -232,8 +307,9 @@
     .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
     .then(render)
     .catch(err => {
-      const tbody = document.getElementById('lb-body');
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">Couldn't load scoreboard (${err})</td></tr>`;
+      const msg = `<tr><td colspan="6" class="empty">Couldn't load (${err})</td></tr>`;
+      document.getElementById('top-body').innerHTML = msg;
+      document.getElementById('bottom-body').innerHTML = msg;
     });
 </script>
 </body>
