@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T08:27:36.014Z",
+  "generatedAt": "2026-05-06T08:28:33.309Z",
   "tradeCount": 44,
   "leaderboard": [
     {
@@ -8,9 +8,19 @@
       "code": "10T",
       "trades": 12,
       "winRate": 0.750025,
-      "expectancy": 1.866666666666667,
-      "totalR": 22.400000000000002,
-      "highestR": 7.97
+      "expectancy": 1.9500000000000002,
+      "totalR": 23.400000000000002,
+      "highestR": 8.7
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "15m HA Trail",
+      "code": "15T",
+      "trades": 12,
+      "winRate": 0.583375,
+      "expectancy": 1.7191666666666665,
+      "totalR": 20.63,
+      "highestR": 7.7
     },
     {
       "avwap": "Trend Swing Point",
@@ -21,16 +31,6 @@
       "expectancy": 1.39,
       "totalR": 16.68,
       "highestR": 7.55
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "15m HA Trail",
-      "code": "15T",
-      "trades": 12,
-      "winRate": 0.49995833333333334,
-      "expectancy": 1.0775,
-      "totalR": 12.93,
-      "highestR": 7.3
     },
     {
       "avwap": "Session Open",
@@ -58,9 +58,9 @@
       "code": "10P",
       "trades": 12,
       "winRate": 0.916675,
-      "expectancy": 0.6941666666666667,
-      "totalR": 8.33,
-      "highestR": 2.29
+      "expectancy": 0.715,
+      "totalR": 8.58,
+      "highestR": 2.47
     },
     {
       "avwap": "Session Open",
@@ -71,6 +71,16 @@
       "expectancy": 0.6107692307692307,
       "totalR": 7.9399999999999995,
       "highestR": 4.03
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "15m HA Partials",
+      "code": "15P",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.6466666666666666,
+      "totalR": 7.76,
+      "highestR": 2.22
     },
     {
       "avwap": "Sweep + BoS",
@@ -151,16 +161,6 @@
       "expectancy": 0.4761538461538461,
       "totalR": 6.1899999999999995,
       "highestR": 2.23
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "15m HA Partials",
-      "code": "15P",
-      "trades": 12,
-      "winRate": 0.8333499999999999,
-      "expectancy": 0.4616666666666666,
-      "totalR": 5.539999999999999,
-      "highestR": 2.12
     },
     {
       "avwap": "Sweep + BoS",
