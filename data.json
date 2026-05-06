@@ -1,26 +1,26 @@
 {
-  "generatedAt": "2026-05-06T08:26:30.416Z",
+  "generatedAt": "2026-05-06T08:27:36.014Z",
   "tradeCount": 44,
   "leaderboard": [
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "5m HA Trail",
-      "code": "5T",
-      "trades": 12,
-      "winRate": 0.6667,
-      "expectancy": 1.2308333333333332,
-      "totalR": 14.77,
-      "highestR": 7.55
-    },
     {
       "avwap": "Trend Swing Point",
       "methodology": "10m HA Trail",
       "code": "10T",
       "trades": 12,
-      "winRate": 0.6667,
-      "expectancy": 1.2249999999999999,
-      "totalR": 14.7,
+      "winRate": 0.750025,
+      "expectancy": 1.866666666666667,
+      "totalR": 22.400000000000002,
       "highestR": 7.97
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "5m HA Trail",
+      "code": "5T",
+      "trades": 12,
+      "winRate": 0.750025,
+      "expectancy": 1.39,
+      "totalR": 16.68,
+      "highestR": 7.55
     },
     {
       "avwap": "Trend Swing Point",
@@ -51,6 +51,16 @@
       "expectancy": 0.6715384615384615,
       "totalR": 8.73,
       "highestR": 3.63
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "10m HA Partials",
+      "code": "10P",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.6941666666666667,
+      "totalR": 8.33,
+      "highestR": 2.29
     },
     {
       "avwap": "Session Open",
@@ -93,6 +103,16 @@
       "highestR": 1.04
     },
     {
+      "avwap": "Trend Swing Point",
+      "methodology": "5m HA Partials",
+      "code": "5P",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.5824999999999999,
+      "totalR": 6.989999999999999,
+      "highestR": 2.18
+    },
+    {
       "avwap": "Session Open",
       "methodology": "5m HA Partials",
       "code": "5P",
@@ -123,16 +143,6 @@
       "highestR": 2.89
     },
     {
-      "avwap": "Trend Swing Point",
-      "methodology": "5m HA Partials",
-      "code": "5P",
-      "trades": 12,
-      "winRate": 0.8333499999999999,
-      "expectancy": 0.5183333333333333,
-      "totalR": 6.22,
-      "highestR": 2.18
-    },
-    {
       "avwap": "Session Open",
       "methodology": "15m HA Partials",
       "code": "15P",
@@ -141,16 +151,6 @@
       "expectancy": 0.4761538461538461,
       "totalR": 6.1899999999999995,
       "highestR": 2.23
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "10m HA Partials",
-      "code": "10P",
-      "trades": 12,
-      "winRate": 0.8333499999999999,
-      "expectancy": 0.5091666666666667,
-      "totalR": 6.109999999999999,
-      "highestR": 2.29
     },
     {
       "avwap": "Trend Swing Point",
@@ -171,26 +171,6 @@
       "expectancy": 0.5825,
       "totalR": 4.66,
       "highestR": 1.83
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "Full TP",
-      "code": "FTP",
-      "trades": 12,
-      "winRate": 0.916675,
-      "expectancy": 0.3725,
-      "totalR": 4.47,
-      "highestR": 1.01
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 12,
-      "winRate": 0.916675,
-      "expectancy": 0.3633333333333333,
-      "totalR": 4.359999999999999,
-      "highestR": 1.02
     },
     {
       "avwap": "Session Open",
@@ -223,6 +203,26 @@
       "highestR": 3.31
     },
     {
+      "avwap": "Trend Swing Point",
+      "methodology": "Entry + L1",
+      "code": "EL1",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.33,
+      "totalR": 3.96,
+      "highestR": 1.02
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.32083333333333336,
+      "totalR": 3.85,
+      "highestR": 0.68
+    },
+    {
       "avwap": "Sweep + BoS",
       "methodology": "5m HA Trail",
       "code": "5T",
@@ -231,16 +231,6 @@
       "expectancy": 0.4675,
       "totalR": 3.74,
       "highestR": 2.57
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "Entry Partials",
-      "code": "EP",
-      "trades": 12,
-      "winRate": 0.916675,
-      "expectancy": 0.31083333333333335,
-      "totalR": 3.73,
-      "highestR": 1.02
     },
     {
       "avwap": "Session H/L",
@@ -271,6 +261,16 @@
       "expectancy": 0.39999999999999997,
       "totalR": 3.1999999999999997,
       "highestR": 0.96
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "Entry Partials",
+      "code": "EP",
+      "trades": 12,
+      "winRate": 0.916675,
+      "expectancy": 0.25916666666666666,
+      "totalR": 3.11,
+      "highestR": 1.02
     },
     {
       "avwap": "Sweep + BoS",
