@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T16:03:40.691Z",
+  "generatedAt": "2026-05-06T16:04:49.778Z",
   "tradeCount": 49,
   "leaderboard": [
     {
@@ -98,8 +98,8 @@
       "code": "5T",
       "trades": 18,
       "winRate": 0.6666944444444444,
-      "expectancy": 0.3711111111111111,
-      "totalR": 6.68,
+      "expectancy": 0.35944444444444446,
+      "totalR": 6.47,
       "highestR": 3.46
     },
     {
@@ -144,16 +144,6 @@
     },
     {
       "avwap": "Session Open",
-      "methodology": "5m HA Partials",
-      "code": "5P",
-      "trades": 18,
-      "winRate": 0.83335,
-      "expectancy": 0.29555555555555557,
-      "totalR": 5.32,
-      "highestR": 1.94
-    },
-    {
-      "avwap": "Session Open",
       "methodology": "10m HA Partials",
       "code": "10P",
       "trades": 18,
@@ -161,6 +151,16 @@
       "expectancy": 0.29388888888888887,
       "totalR": 5.29,
       "highestR": 2.03
+    },
+    {
+      "avwap": "Session Open",
+      "methodology": "5m HA Partials",
+      "code": "5P",
+      "trades": 18,
+      "winRate": 0.83335,
+      "expectancy": 0.2894444444444445,
+      "totalR": 5.210000000000001,
+      "highestR": 1.94
     },
     {
       "avwap": "Sweep + BoS",
