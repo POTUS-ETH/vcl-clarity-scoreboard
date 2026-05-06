@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T08:48:39.797Z",
+  "generatedAt": "2026-05-06T08:49:34.292Z",
   "tradeCount": 46,
   "leaderboard": [
     {
@@ -103,6 +103,26 @@
       "highestR": 4.03
     },
     {
+      "avwap": "Session Open",
+      "methodology": "Entry + L1",
+      "code": "EL1",
+      "trades": 15,
+      "winRate": 0.86668,
+      "expectancy": 0.45199999999999996,
+      "totalR": 6.779999999999999,
+      "highestR": 1.04
+    },
+    {
+      "avwap": "Session Open",
+      "methodology": "Entry Partials",
+      "code": "EP",
+      "trades": 15,
+      "winRate": 0.86668,
+      "expectancy": 0.436,
+      "totalR": 6.54,
+      "highestR": 1.04
+    },
+    {
       "avwap": "Sweep + BoS",
       "methodology": "15m HA Trail",
       "code": "15T",
@@ -111,26 +131,6 @@
       "expectancy": 0.77875,
       "totalR": 6.23,
       "highestR": 2.89
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "Entry Partials",
-      "code": "EP",
-      "trades": 15,
-      "winRate": 0.8000200000000001,
-      "expectancy": 0.41133333333333333,
-      "totalR": 6.17,
-      "highestR": 1.04
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 15,
-      "winRate": 0.8000200000000001,
-      "expectancy": 0.41133333333333333,
-      "totalR": 6.17,
-      "highestR": 1.04
     },
     {
       "avwap": "Session Open",
@@ -233,6 +233,16 @@
       "highestR": 3.24
     },
     {
+      "avwap": "Session Open",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 15,
+      "winRate": 0.86668,
+      "expectancy": 0.23333333333333334,
+      "totalR": 3.5,
+      "highestR": 0.45
+    },
+    {
       "avwap": "Sweep + BoS",
       "methodology": "Full TP",
       "code": "FTP",
@@ -251,16 +261,6 @@
       "expectancy": 0.39999999999999997,
       "totalR": 3.1999999999999997,
       "highestR": 0.96
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "Full TP",
-      "code": "FTP",
-      "trades": 15,
-      "winRate": 0.8000200000000001,
-      "expectancy": 0.20866666666666667,
-      "totalR": 3.13,
-      "highestR": 0.45
     },
     {
       "avwap": "Trend Swing Point",
