@@ -1,17 +1,7 @@
 {
-  "generatedAt": "2026-05-06T18:12:33.388Z",
+  "generatedAt": "2026-05-06T18:13:33.555Z",
   "tradeCount": 53,
   "leaderboard": [
-    {
-      "avwap": "Session H/L",
-      "methodology": "Full TP",
-      "code": "FTP",
-      "trades": 7,
-      "winRate": 0.8571428571428571,
-      "expectancy": 122.13857142857144,
-      "totalR": 854.97,
-      "highestR": 3.59
-    },
     {
       "avwap": "Trend Swing Point",
       "methodology": "10m HA Trail",
@@ -351,6 +341,16 @@
       "expectancy": 0.22,
       "totalR": 1.54,
       "highestR": 1.35
+    },
+    {
+      "avwap": "Session H/L",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 7,
+      "winRate": 0.8571428571428571,
+      "expectancy": 0.19714285714285712,
+      "totalR": 1.38,
+      "highestR": 0.43
     },
     {
       "avwap": "Session H/L",
