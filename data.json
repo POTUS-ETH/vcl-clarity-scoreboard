@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T18:19:31.251Z",
+  "generatedAt": "2026-05-06T18:20:36.350Z",
   "tradeCount": 53,
   "leaderboard": [
     {
@@ -188,8 +188,8 @@
       "code": "10T",
       "trades": 7,
       "winRate": 0.5714285714285714,
-      "expectancy": 0.5971428571428571,
-      "totalR": 4.18,
+      "expectancy": 0.5957142857142858,
+      "totalR": 4.17,
       "highestR": 3.31
     },
     {
@@ -328,8 +328,8 @@
       "code": "5T",
       "trades": 7,
       "winRate": 0.5714285714285714,
-      "expectancy": 0.2742857142857143,
-      "totalR": 1.92,
+      "expectancy": 0.27285714285714285,
+      "totalR": 1.91,
       "highestR": 1.35
     },
     {
@@ -358,8 +358,8 @@
       "code": "FTP",
       "trades": 7,
       "winRate": 0.8571428571428571,
-      "expectancy": 0.19428571428571426,
-      "totalR": 1.3599999999999999,
+      "expectancy": 0.19714285714285712,
+      "totalR": 1.38,
       "highestR": 0.43
     },
     {
