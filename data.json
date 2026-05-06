@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T08:05:28.731Z",
+  "generatedAt": "2026-05-06T08:06:25.705Z",
   "tradeCount": 42,
   "leaderboard": [
     {
@@ -43,6 +43,16 @@
       "highestR": 3.24
     },
     {
+      "avwap": "Trend Swing Point",
+      "methodology": "5m HA Trail",
+      "code": "5T",
+      "trades": 10,
+      "winRate": 0.7000300000000002,
+      "expectancy": 0.7220000000000001,
+      "totalR": 7.220000000000001,
+      "highestR": 2.7
+    },
+    {
       "avwap": "Session Open",
       "methodology": "Entry Partials",
       "code": "EP",
@@ -64,22 +74,12 @@
     },
     {
       "avwap": "Trend Swing Point",
-      "methodology": "5m HA Trail",
-      "code": "5T",
-      "trades": 10,
-      "winRate": 0.60004,
-      "expectancy": 0.6849999999999999,
-      "totalR": 6.85,
-      "highestR": 2.7
-    },
-    {
-      "avwap": "Trend Swing Point",
       "methodology": "10m HA Trail",
       "code": "10T",
       "trades": 10,
-      "winRate": 0.60004,
-      "expectancy": 0.6519999999999999,
-      "totalR": 6.52,
+      "winRate": 0.7000300000000002,
+      "expectancy": 0.673,
+      "totalR": 6.73,
       "highestR": 2.6
     },
     {
@@ -128,8 +128,8 @@
       "code": "15T",
       "trades": 10,
       "winRate": 0.4999599999999999,
-      "expectancy": 0.5680000000000001,
-      "totalR": 5.680000000000001,
+      "expectancy": 0.563,
+      "totalR": 5.63,
       "highestR": 2.3
     },
     {
@@ -173,6 +173,26 @@
       "highestR": 3.31
     },
     {
+      "avwap": "Trend Swing Point",
+      "methodology": "5m HA Partials",
+      "code": "5P",
+      "trades": 10,
+      "winRate": 0.90001,
+      "expectancy": 0.404,
+      "totalR": 4.04,
+      "highestR": 0.98
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "10m HA Partials",
+      "code": "10P",
+      "trades": 10,
+      "winRate": 0.90001,
+      "expectancy": 0.382,
+      "totalR": 3.82,
+      "highestR": 1.02
+    },
+    {
       "avwap": "Sweep + BoS",
       "methodology": "5m HA Trail",
       "code": "5T",
@@ -194,13 +214,13 @@
     },
     {
       "avwap": "Trend Swing Point",
-      "methodology": "5m HA Partials",
-      "code": "5P",
+      "methodology": "15m HA Partials",
+      "code": "15P",
       "trades": 10,
-      "winRate": 0.80002,
-      "expectancy": 0.35100000000000003,
-      "totalR": 3.5100000000000002,
-      "highestR": 0.98
+      "winRate": 0.90001,
+      "expectancy": 0.34199999999999997,
+      "totalR": 3.42,
+      "highestR": 1.02
     },
     {
       "avwap": "Sweep + BoS",
@@ -213,16 +233,6 @@
       "highestR": 0.46
     },
     {
-      "avwap": "Trend Swing Point",
-      "methodology": "10m HA Partials",
-      "code": "10P",
-      "trades": 10,
-      "winRate": 0.80002,
-      "expectancy": 0.337,
-      "totalR": 3.37,
-      "highestR": 1.02
-    },
-    {
       "avwap": "Sweep + BoS",
       "methodology": "5m HA Partials",
       "code": "5P",
@@ -231,16 +241,6 @@
       "expectancy": 0.39999999999999997,
       "totalR": 3.1999999999999997,
       "highestR": 0.96
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "15m HA Partials",
-      "code": "15P",
-      "trades": 10,
-      "winRate": 0.80002,
-      "expectancy": 0.31,
-      "totalR": 3.1,
-      "highestR": 1.02
     },
     {
       "avwap": "Trend Swing Point",
@@ -261,6 +261,16 @@
       "expectancy": 0.3675,
       "totalR": 2.94,
       "highestR": 1
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "Entry + L1",
+      "code": "EL1",
+      "trades": 10,
+      "winRate": 0.90001,
+      "expectancy": 0.274,
+      "totalR": 2.74,
+      "highestR": 1.02
     },
     {
       "avwap": "Sweep + BoS",
@@ -300,16 +310,6 @@
       "winRate": 0.90001,
       "expectancy": 0.233,
       "totalR": 2.33,
-      "highestR": 1.02
-    },
-    {
-      "avwap": "Trend Swing Point",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 10,
-      "winRate": 0.80002,
-      "expectancy": 0.23200000000000004,
-      "totalR": 2.3200000000000003,
       "highestR": 1.02
     },
     {
