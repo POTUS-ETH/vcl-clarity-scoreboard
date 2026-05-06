@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T18:13:33.555Z",
+  "generatedAt": "2026-05-06T18:14:34.645Z",
   "tradeCount": 53,
   "leaderboard": [
     {
@@ -317,9 +317,9 @@
       "methodology": "Entry Partials",
       "code": "EP",
       "trades": 7,
-      "winRate": 0.7142857142857143,
-      "expectancy": 0.2557142857142857,
-      "totalR": 1.79,
+      "winRate": 0.8571428571428571,
+      "expectancy": 0.31,
+      "totalR": 2.17,
       "highestR": 1.02
     },
     {
