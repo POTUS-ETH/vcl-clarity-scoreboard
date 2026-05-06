@@ -9,350 +9,232 @@
   :root {
     --text: rgba(255, 255, 255, 0.92);
     --muted: rgba(255, 255, 255, 0.45);
-    --surface: rgba(255, 255, 255, 0.045);
-    --surface-strong: rgba(255, 255, 255, 0.075);
-    --border: rgba(255, 255, 255, 0.085);
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-strong: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.18);
     --value: rgba(255, 255, 255, 0.96);
-    --shame: #ef4444;
-    --shame-dim: rgba(239, 68, 68, 0.85);
     --green: #22c55e;
+    --red: #ef4444;
+    --gold: #f59e0b;
   }
   * { box-sizing: border-box; }
   html, body {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     background: transparent;
     color: var(--text);
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 13.5px;
-    line-height: 1.5;
+    line-height: 1.45;
     color-scheme: dark;
   }
-  .root {
-    padding: 12px;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
+  .root { padding: 12px; max-width: 1100px; margin: 0 auto; }
+
   .header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
     padding: 0 4px;
   }
   .title {
     font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
   }
   .meta { color: var(--muted); font-size: 11px; }
   .empty { color: var(--muted); font-style: italic; font-weight: 400; }
 
-  /* === Champion Hero === */
-  .champion {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--surface)) 0%, var(--surface) 80%);
-    border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
-    border-radius: 14px;
-    padding: 18px 22px;
-    margin-bottom: 10px;
+  /* === Leaderboard table === */
+  .lb {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 3px;
+    font-variant-numeric: tabular-nums;
   }
-  .champion .head {
-    color: var(--accent);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-  }
-  .champion .label {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 14px;
-  }
-  .champion .label .avwap { color: var(--accent); }
-  .champion .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  .champion .stats .stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .champion .stats .stat dt {
+  .lb thead th {
     font-size: 10.5px;
     font-weight: 600;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--muted);
-    margin: 0;
+    text-align: right;
+    padding: 6px 12px;
+    border: none;
   }
-  .champion .stats .stat dd {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--accent);
-    margin: 0;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-  /* Sample size n is rendered slightly less prominent */
-  .champion .stats .stat.n dd { color: var(--text); font-size: 22px; }
+  .lb thead th:first-child,
+  .lb thead th:nth-child(2) { text-align: left; }
 
-  /* === Three-up panel row === */
-  .row3 {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-  @media (max-width: 700px) {
-    .row3 { grid-template-columns: 1fr; }
-    .champion .stats { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  .panel {
+  .lb tbody tr {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-height: 130px;
   }
-  .panel .head {
+  .lb tbody td {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: right;
+    background: var(--surface);
+  }
+  .lb tbody td:first-child {
+    border-left: 1px solid var(--border);
+    border-radius: 8px 0 0 8px;
+    text-align: left;
+    width: 38px;
     color: var(--muted);
-    font-size: 10.5px;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
+    font-size: 12.5px;
   }
-  .panel .big {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--value);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+  .lb tbody td:nth-child(2) {
+    text-align: left;
+    /* AVWAP color stripe lives here */
+    border-left: 3px solid var(--accent, var(--border-strong));
   }
-  .panel .label {
-    font-size: 14px;
-    font-weight: 600;
+  .lb tbody td:last-child {
+    border-right: 1px solid var(--border);
+    border-radius: 0 8px 8px 0;
   }
-  .panel .label .avwap { color: var(--accent); }
-  .panel .sublabel { font-size: 11.5px; color: var(--muted); }
 
-  .panel.fame { border-left: 3px solid color-mix(in srgb, var(--green) 70%, var(--border)); }
-  .panel.fame .big { color: var(--green); }
+  .lb tbody tr.rank-1 td { background: color-mix(in srgb, var(--accent, #ffffff) 14%, var(--surface)); }
+  .lb tbody tr.rank-1 td:first-child { color: var(--gold); }
 
-  /* Top 3 trades list */
-  .trades-list { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
-  .trade-row { display: flex; gap: 10px; align-items: baseline; }
-  .trade-row .rank {
-    font-size: 11px;
+  .combo-cell { display: flex; flex-direction: column; gap: 2px; }
+  .combo-avwap {
+    color: var(--accent, var(--text));
+    font-size: 13px;
     font-weight: 700;
-    color: var(--muted);
-    width: 14px;
-    flex-shrink: 0;
+    letter-spacing: 0.005em;
   }
-  .trade-row .r {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--green);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-    width: 56px;
-    flex-shrink: 0;
-  }
-  .trade-row .meta-line {
+  .combo-method {
     font-size: 11.5px;
     color: var(--muted);
-    line-height: 1.35;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: 500;
   }
-  .trade-row .meta-line .avwap { color: var(--accent); }
 
-  /* === Worst combo (small) === */
-  .worst-row {
-    margin-top: 6px;
-    padding: 8px 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid color-mix(in srgb, var(--shame) 60%, var(--border));
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    font-size: 12px;
-  }
-  .worst-row .head-text {
-    text-transform: uppercase;
-    font-size: 9.5px;
-    letter-spacing: 0.1em;
-    font-weight: 700;
-    color: var(--shame-dim);
-    white-space: nowrap;
-  }
-  .worst-row .body { flex: 1; color: var(--text); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
-  .worst-row .body .avwap { color: var(--accent); }
-  .worst-row .body .sub { color: var(--muted); font-size: 11px; }
-  .worst-row .value { font-size: 14px; font-weight: 700; color: var(--shame); font-variant-numeric: tabular-nums; }
+  .num { font-weight: 600; color: var(--value); font-size: 13px; }
+  .num.pos { color: var(--green); }
+  .num.neg { color: var(--red); }
+  .num.muted { color: var(--muted); font-weight: 500; }
+  .num-sub { display: block; font-size: 10.5px; font-weight: 500; color: var(--muted); margin-top: 1px; }
 
   .footer {
     margin-top: 10px;
+    text-align: center;
     color: var(--muted);
     font-size: 10.5px;
-    text-align: center;
-    opacity: 0.7;
   }
+
+  /* AVWAP color tints */
+  .avwap-daily              { --accent: #a855f7; }
+  .avwap-session-open       { --accent: #d4d4d4; }
+  .avwap-session-hl         { --accent: #eab308; }
+  .avwap-trend-swing-point  { --accent: #3b82f6; }
+  .avwap-sweep-bos          { --accent: #22c55e; }
 </style>
 </head>
 <body>
 <div class="root">
   <div class="header">
-    <div class="title">🏆 Scoreboard</div>
-    <div class="meta" id="meta">Loading…</div>
+    <div class="title">🏆 Scoreboard <span class="meta" id="trade-count" style="margin-left:8px"></span></div>
+    <div class="meta" id="updated-at">loading…</div>
   </div>
 
-  <div id="champion-container"></div>
-  <div class="row3" id="row3"></div>
-  <div id="worst-container"></div>
+  <table class="lb" id="lb">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Combo</th>
+        <th>Win Rate</th>
+        <th>Expectancy</th>
+        <th>Total R</th>
+        <th>Best Trade</th>
+      </tr>
+    </thead>
+    <tbody id="lb-body">
+      <tr><td colspan="6" style="text-align:center;color:var(--muted)">loading…</td></tr>
+    </tbody>
+  </table>
 
   <div class="footer" id="footer"></div>
 </div>
-<script>
-(async () => {
-  const championContainer = document.getElementById('champion-container');
-  const row3 = document.getElementById('row3');
-  const worstContainer = document.getElementById('worst-container');
-  const meta = document.getElementById('meta');
-  const footer = document.getElementById('footer');
 
-  const AVWAP_COLORS = {
-    'Daily':              '#a855f7',
-    'Session Open':       '#d4d4d4',
-    'Session H/L':        '#eab308',
-    'Trend Swing Point':  '#3b82f6',
-    'Sweep + BoS':        '#22c55e',
+<script>
+  const AVWAP_CLASS = {
+    'Daily': 'avwap-daily',
+    'Session Open': 'avwap-session-open',
+    'Session H/L': 'avwap-session-hl',
+    'Trend Swing Point': 'avwap-trend-swing-point',
+    'Sweep + BoS': 'avwap-sweep-bos',
   };
 
-  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-
-  function championHero(c) {
-    if (!c) return `<div class="panel"><div class="empty">No champion yet — log a trade to start.</div></div>`;
-    const accent = AVWAP_COLORS[c.avwap] || '#9ca3af';
-    return `<div class="champion" style="--accent: ${accent}">
-      <div class="head">👑 Champion combo</div>
-      <div class="label"><span class="avwap">${escapeHtml(c.avwap)}</span> × ${escapeHtml(c.methodology)}</div>
-      <div class="stats">
-        <div class="stat"><dt>Total R</dt><dd>${escapeHtml(c.totalR)}</dd></div>
-        <div class="stat"><dt>Win Rate</dt><dd>${escapeHtml(c.winRate)}</dd></div>
-        <div class="stat"><dt>Best Trade</dt><dd>${escapeHtml(c.bestTrade)}</dd></div>
-        <div class="stat n"><dt>n</dt><dd>${escapeHtml(c.sampleSize)}</dd></div>
-      </div>
-    </div>`;
+  function fmtR(n, withSign = true) {
+    if (n === null || n === undefined || Number.isNaN(n)) return '<span class="num muted">—</span>';
+    const sign = withSign ? (n >= 0 ? '+' : '') : '';
+    const cls = n > 0 ? 'pos' : (n < 0 ? 'neg' : '');
+    return `<span class="num ${cls}">${sign}${n.toFixed(2)}R</span>`;
+  }
+  function fmtPct(n) {
+    if (n === null || n === undefined || Number.isNaN(n)) return '<span class="num muted">—</span>';
+    return `<span class="num">${(n * 100).toFixed(1)}%</span>`;
+  }
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const d = new Date(iso); if (isNaN(d)) return '';
+    const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (sec < 60) return `updated ${sec}s ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `updated ${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `updated ${hr}h ago`;
+    return `updated ${d.toLocaleDateString()}`;
   }
 
-  function topTradesPanel(trades) {
-    const rows = (trades && trades.length)
-      ? trades.map((t, i) => {
-          const accent = AVWAP_COLORS[t.avwap] || '#9ca3af';
-          const sub = [t.trader, t.methodology, t.date].filter(Boolean).join(' · ');
-          return `<div class="trade-row" style="--accent: ${accent}">
-            <div class="rank">#${i+1}</div>
-            <div class="r">${escapeHtml(t.value)}</div>
-            <div class="meta-line"><span class="avwap">${escapeHtml(t.avwap)}</span> · ${escapeHtml(sub)}</div>
-          </div>`;
-        }).join('')
-      : `<div class="empty">No trades yet</div>`;
-    return `<div class="panel fame">
-      <div class="head">💥 Top 3 Trades</div>
-      <div class="trades-list">${rows}</div>
-    </div>`;
-  }
+  function render(data) {
+    const lb = (data && data.leaderboard) || [];
+    const tbody = document.getElementById('lb-body');
+    document.getElementById('updated-at').textContent = timeAgo(data?.generatedAt) || '';
+    document.getElementById('trade-count').textContent = data?.tradeCount ? `· ${data.tradeCount} trades` : '';
+    document.getElementById('footer').textContent = data?.generatedAt
+      ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}`
+      : '';
 
-  function bestWinRatePanel(wr) {
-    if (!wr) {
-      return `<div class="panel">
-        <div class="head">🎯 Best Win Rate</div>
-        <div class="empty">Need ≥5 trades in a combo</div>
-      </div>`;
+    if (!lb.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No combos yet</td></tr>';
+      return;
     }
-    const accent = AVWAP_COLORS[wr.avwap] || '#9ca3af';
-    return `<div class="panel fame" style="--accent: ${accent}">
-      <div class="head">🎯 Best Win Rate</div>
-      <div class="big">${escapeHtml(wr.value)}</div>
-      <div class="label"><span class="avwap">${escapeHtml(wr.avwap)}</span> × ${escapeHtml(wr.methodology)}</div>
-      <div class="sublabel">${escapeHtml(wr.sublabel)}</div>
-    </div>`;
+
+    tbody.innerHTML = lb.map((c, i) => {
+      const cls = AVWAP_CLASS[c.avwap] || '';
+      const rankCls = i === 0 ? 'rank-1' : '';
+      const rankBadge = i === 0 ? '👑' : (i + 1);
+      return `
+        <tr class="${cls} ${rankCls}">
+          <td>${rankBadge}</td>
+          <td>
+            <div class="combo-cell">
+              <span class="combo-avwap">${c.avwap}</span>
+              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
+            </div>
+          </td>
+          <td>${fmtPct(c.winRate)}</td>
+          <td>${fmtR(c.expectancy)}</td>
+          <td>${fmtR(c.totalR)}</td>
+          <td>${fmtR(c.highestR)}</td>
+        </tr>`;
+    }).join('');
   }
 
-  function mostActivePanel(ma) {
-    if (!ma) {
-      return `<div class="panel">
-        <div class="head">📊 Most Active</div>
-        <div class="empty">No trades yet</div>
-      </div>`;
-    }
-    return `<div class="panel">
-      <div class="head">📊 Most Active</div>
-      <div class="big">${escapeHtml(ma.value)}</div>
-      <div class="label">${escapeHtml(ma.label)}</div>
-      <div class="sublabel">${escapeHtml(ma.sublabel || 'trades')}</div>
-    </div>`;
-  }
-
-  function worstRow(w) {
-    if (!w) return '';
-    const accent = AVWAP_COLORS[w.avwap] || '#9ca3af';
-    return `<div class="worst-row" style="--accent: ${accent}">
-      <div class="head-text">💀 Needs Work</div>
-      <div class="body">
-        <span><span class="avwap">${escapeHtml(w.avwap)}</span> × ${escapeHtml(w.methodology)}</span>
-        <span class="sub">${escapeHtml(w.sublabel)}</span>
-      </div>
-      <div class="value">${escapeHtml(w.value)}</div>
-    </div>`;
-  }
-
-  try {
-    const r = await fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
-    const L = data.leaders || {};
-
-    championContainer.innerHTML = championHero(L.champion);
-    row3.innerHTML = [
-      topTradesPanel(L.topTrades),
-      bestWinRatePanel(L.bestWinRate),
-      mostActivePanel(L.mostActive),
-    ].join('');
-    worstContainer.innerHTML = worstRow(L.worstCombo);
-
-    const generated = new Date(data.generatedAt);
-    const ago = Math.round((Date.now() - generated.getTime()) / 60000);
-    meta.textContent = `${data.tradeCount} trades · updated ${ago}m ago`;
-    footer.textContent = `Last sync: ${generated.toLocaleString()}`;
-  } catch (err) {
-    championContainer.innerHTML = `<div class="panel"><div class="empty">Couldn't load scoreboard</div><div class="sublabel">${escapeHtml(err.message)}</div></div>`;
-    meta.textContent = '';
-    footer.textContent = 'Make sure data.json exists and the GitHub Action has run at least once.';
-  }
-})();
+  // Cache-busted fetch each load
+  fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+    .then(render)
+    .catch(err => {
+      const tbody = document.getElementById('lb-body');
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted)">Couldn't load scoreboard (${err})</td></tr>`;
+    });
 </script>
 </body>
 </html>

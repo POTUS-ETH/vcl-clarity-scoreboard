@@ -204,6 +204,19 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   return updates.length;  // caller can decide if a re-fetch is needed
 }
 
+// Map from methodology label → R column name on Trade Log v2
+const METHOD_R_COL = {
+  'Full TP':         'Full TP R',
+  'Entry Partials':  'Entry Partials R',
+  'Entry + L1':      'Entry + L1 R',
+  '5m HA Trail':     '5m HA Trail R',
+  '5m HA Partials':  '5m HA Partials R',
+  '10m HA Trail':    '10m HA Trail R',
+  '10m HA Partials': '10m HA Partials R',
+  '15m HA Trail':    '15m HA Trail R',
+  '15m HA Partials': '15m HA Partials R',
+};
+
 (async () => {
   console.log('Fetching Trade Log v2...');
   const trades = await queryAll(MTL_DB);
@@ -244,7 +257,7 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
       console.error(`post-scrub re-fetch failed (${e.message}); using pre-scrub data`);
     }
   } else {
-    console.log('No scrub changes — using pre-scrub data for leaders');
+    console.log('No scrub changes — using leaders from pre-scrub data');
   }
 
   // Identify sub-rows (have a Parent item) and parents (don't)
@@ -262,266 +275,69 @@ async function scrubAvwapStats(avwapRows, allAliveTradeIds, byAvwap, byAvwapTrad
   }
   console.log(`Sub-rows: ${subRows.length}, Parent rows: ${Object.keys(parentRows).length}`);
 
-  // Build leaderboard structures
-  // Each sub-row × each methodology = one (Trader × AVWAP × Methodology) combo
-  const combos = [];
+  // Aggregate per (AVWAP × Methodology) — sum across traders.
+  // winSum / tradeSum gives weighted win rate. totalR is summed directly.
+  const aggByKey = {}; // "avwap||methodology" -> { totalR, winSum, tradeSum, avwap, methodology, code }
   for (const sub of subRows) {
-    const trader = sub.trader;
-    const avwapTitle = parentRows[sub.parentId]?.title || '?';
-    const totalTrades = getPropValue(sub.row, 'Total') || 0;
+    const avwap = parentRows[sub.parentId]?.title || '?';
+    const tradeCount = getPropValue(sub.row, 'Total') || 0;
     for (const m of METHODOLOGIES) {
-      combos.push({
-        trader,
-        avwap: avwapTitle,
-        methodology: m.label,
-        methodologyCode: m.code,
-        totalTrades,
-        winRate: toRate(getPropValue(sub.row, m.wrProp)),
-        avgR: getPropValue(sub.row, m.avgRProp) || 0,
-        expectancy: getPropValue(sub.row, m.expProp) || 0,
-        totalR: getPropValue(sub.row, m.totalRProp) || 0,
-      });
+      const key = `${avwap}||${m.label}`;
+      if (!aggByKey[key]) {
+        aggByKey[key] = { totalR: 0, winSum: 0, tradeSum: 0, avwap, methodology: m.label, code: m.code };
+      }
+      const wr = toRate(getPropValue(sub.row, m.wrProp));
+      const tr = getPropValue(sub.row, m.totalRProp) || 0;
+      aggByKey[key].totalR += tr;
+      aggByKey[key].winSum += wr * tradeCount;
+      aggByKey[key].tradeSum += tradeCount;
     }
   }
 
-  // Compute leaders
-  const safeMax = (arr, by) => {
-    if (!arr.length) return null;
-    let best = arr[0];
-    for (const x of arr) if ((by(x) ?? -Infinity) > (by(best) ?? -Infinity)) best = x;
-    return best;
-  };
-
-  const safeMin = (arr, by) => {
-    if (!arr.length) return null;
-    let worst = arr[0];
-    for (const x of arr) if ((by(x) ?? Infinity) < (by(worst) ?? Infinity)) worst = x;
-    return worst;
-  };
-
-  const topCumulativeR = safeMax(combos, c => c.totalR);
-  const winRateCombos = combos.filter(c => c.totalTrades >= MIN_TRADES_FOR_WR);
-  const topWinRate = safeMax(winRateCombos, c => c.winRate);
-  const bottomWinRate = safeMin(winRateCombos, c => c.winRate);
-  const topExpectancy = safeMax(combos, c => c.expectancy);
-  const bottomExpectancy = safeMin(combos.filter(c => c.totalTrades > 0), c => c.expectancy);
-
-  // Most trades by trader×AVWAP (not per methodology — methodology doesn't change Total)
-  const traderAvwapTotals = {};
-  for (const sub of subRows) {
-    const key = `${sub.trader} on ${parentRows[sub.parentId]?.title || '?'}`;
-    traderAvwapTotals[key] = getPropValue(sub.row, 'Total') || 0;
-  }
-  let mostTradesKey = null, mostTradesValue = -Infinity;
-  for (const [k, v] of Object.entries(traderAvwapTotals)) {
-    if (v > mostTradesValue) { mostTradesKey = k; mostTradesValue = v; }
-  }
-
-  // Biggest single trade — find the max-magnitude R across all 9 methodology
-  // outcomes on each trade, then pick the trade with the highest such value.
-  // v2's R formulas return real Convention-A R; we just scan the 9 of them.
-  const TRADE_R_PROPS = [
-    'Full TP R',
-    'Entry Partials R',
-    'Entry + L1 R',
-    '5m HA Trail R',
-    '5m HA Partials R',
-    '10m HA Trail R',
-    '10m HA Partials R',
-    '15m HA Trail R',
-    '15m HA Partials R',
-  ];
-  // Biggest single win (most positive R) and biggest single loss (most negative R)
-  // — scan all 9 methodology R columns on every trade, track positive & negative extrema.
-  let biggestWin = null, biggestWinR = -Infinity;
-  let biggestLoss = null, biggestLossR = Infinity;
+  // Highest single R per (AVWAP × Methodology) — scan trades.
+  const highestByKey = {}; // "avwap||methodology" -> { r, trader, date }
   for (const t of trades) {
-    const tradeTrader = getPropValue(t, 'Trader');
-    const tradeAvwap = getPropValue(t, 'AVWAP TYPE');
-    let bestPos = null, bestPosMethod = null;
-    let bestNeg = null, bestNegMethod = null;
-    for (const p of TRADE_R_PROPS) {
-      const v = getPropValue(t, p);
+    const avwap = getPropValue(t, 'AVWAP TYPE');
+    if (!avwap) continue;
+    for (const [methLabel, rCol] of Object.entries(METHOD_R_COL)) {
+      const v = getPropValue(t, rCol);
       if (v === null || v === undefined) continue;
       const num = typeof v === 'number' ? v : parseFloat(v);
       if (isNaN(num)) continue;
-      if (num > 0 && (bestPos === null || num > bestPos)) {
-        bestPos = num;
-        bestPosMethod = p.replace(/ R$/, '');
-      }
-      if (num < 0 && (bestNeg === null || num < bestNeg)) {
-        bestNeg = num;
-        bestNegMethod = p.replace(/ R$/, '');
+      const key = `${avwap}||${methLabel}`;
+      if (!highestByKey[key] || num > highestByKey[key].r) {
+        highestByKey[key] = { r: num, trader: getPropValue(t, 'Trader'), date: getPropValue(t, 'Date') };
       }
     }
-    if (bestPos !== null && bestPos > biggestWinR) {
-      biggestWinR = bestPos;
-      biggestWin = { r: bestPos, method: bestPosMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') };
-    }
-    if (bestNeg !== null && bestNeg < biggestLossR) {
-      biggestLossR = bestNeg;
-      biggestLoss = { r: bestNeg, method: bestNegMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') };
-    }
   }
 
-  // Best AVWAP — for each AVWAP, find the methodology that yields the highest aggregate
-  // Total R across all traders for that AVWAP, then pick the AVWAP whose best score is highest.
-  // (Avoids the double-counting of summing total R across all 9 methodologies for one AVWAP.)
-  const avwapMethodMatrix = {}; // avwap -> methodology -> sum of totalR across traders
-  for (const c of combos) {
-    if (!avwapMethodMatrix[c.avwap]) avwapMethodMatrix[c.avwap] = {};
-    avwapMethodMatrix[c.avwap][c.methodology] = (avwapMethodMatrix[c.avwap][c.methodology] || 0) + (c.totalR || 0);
-  }
-  const avwapBestScores = Object.entries(avwapMethodMatrix).map(([avwap, methods]) => {
-    const [bestMethodology, bestR] = Object.entries(methods).sort((a, b) => b[1] - a[1])[0] || ['(none)', 0];
-    return { avwap, bestMethodology, bestR };
-  });
-  const bestAvwap = avwapBestScores.sort((a, b) => b.bestR - a.bestR)[0] || { avwap: '(no data)', bestMethodology: '', bestR: 0 };
-
-  // Best Methodology — for each methodology, sum total R across all (trader × AVWAP) combos
-  // using that methodology. Each trade is counted once per methodology (no double counting).
-  const methodTotals = {};
-  for (const c of combos) {
-    methodTotals[c.methodology] = (methodTotals[c.methodology] || 0) + (c.totalR || 0);
-  }
-  const bestMethodology = Object.entries(methodTotals).sort((a, b) => b[1] - a[1])[0] || ['(no data)', 0];
-
-  // Per-AVWAP trade counts (used for sample-size badges on combos)
-  const avwapTradeCount = {};
-  for (const a of Object.keys(byAvwap)) avwapTradeCount[a] = byAvwap[a].length;
-
-  // All (AVWAP × Methodology) combos sorted by total R
-  const avwapMethodTotals = {}; // "avwap||methodology" -> sum
-  for (const c of combos) {
-    const k = `${c.avwap}||${c.methodology}`;
-    avwapMethodTotals[k] = (avwapMethodTotals[k] || 0) + (c.totalR || 0);
-  }
-  const allCombosSorted = Object.entries(avwapMethodTotals)
-    .map(([k, value]) => {
-      const [avwap, methodology] = k.split('||');
-      return { avwap, methodology, value, sampleSize: avwapTradeCount[avwap] || 0 };
+  // Build leaderboard rows, sorted by Total R descending.
+  const leaderboard = Object.values(aggByKey)
+    .map(c => {
+      const key = `${c.avwap}||${c.methodology}`;
+      const highest = highestByKey[key]?.r ?? null;
+      return {
+        avwap: c.avwap,
+        methodology: c.methodology,
+        code: c.code,
+        trades: c.tradeSum,
+        winRate: c.tradeSum > 0 ? c.winSum / c.tradeSum : null,
+        expectancy: c.tradeSum > 0 ? c.totalR / c.tradeSum : null,
+        totalR: c.totalR,
+        highestR: highest,
+      };
     })
-    .sort((a, b) => b.value - a.value);
-  const top1 = allCombosSorted[0] || null;            // champion (#1 by total R)
-  const worstCombo = allCombosSorted.length ? allCombosSorted[allCombosSorted.length - 1] : null;
-
-  // Champion enrichment: weighted win-rate + best single trade for that AVWAP × Methodology
-  let championWinRate = null;
-  let championBestTrade = null;
-  if (top1) {
-    // Weighted win rate across all trader sub-rows for the champion combo
-    let wins = 0, totalTradesInCombo = 0;
-    for (const c of combos) {
-      if (c.avwap === top1.avwap && c.methodology === top1.methodology) {
-        wins += (c.winRate || 0) * (c.totalTrades || 0);
-        totalTradesInCombo += c.totalTrades || 0;
-      }
-    }
-    championWinRate = totalTradesInCombo > 0 ? (wins / totalTradesInCombo) : null;
-
-    // Best single trade R for this combo's specific methodology column
-    const methodCode = METHODOLOGIES.find(m => m.label === top1.methodology)?.code;
-    const methodColumnMap = {
-      FTP: 'Full TP R', EP: 'Entry Partials R', EL1: 'Entry + L1 R',
-      '5T': '5m HA Trail R', '5P': '5m HA Partials R',
-      '10T': '10m HA Trail R', '10P': '10m HA Partials R',
-      '15T': '15m HA Trail R', '15P': '15m HA Partials R',
-    };
-    const methodColumn = methodColumnMap[methodCode];
-    if (methodColumn) {
-      let best = null;
-      for (const t of trades) {
-        if (getPropValue(t, 'AVWAP TYPE') !== top1.avwap) continue;
-        const v = getPropValue(t, methodColumn);
-        const num = typeof v === 'number' ? v : parseFloat(v);
-        if (!isNaN(num) && (best === null || num > best)) best = num;
-      }
-      championBestTrade = best;
-    }
-  }
-
-  // Top 3 single trades (one row per trade — each trade's best methodology R)
-  const tradeBestPositives = [];
-  for (const t of trades) {
-    const tradeTrader = getPropValue(t, 'Trader');
-    const tradeAvwap = getPropValue(t, 'AVWAP TYPE');
-    let bestPos = null, bestPosMethod = null;
-    for (const p of TRADE_R_PROPS) {
-      const v = getPropValue(t, p);
-      if (v === null || v === undefined) continue;
-      const num = typeof v === 'number' ? v : parseFloat(v);
-      if (isNaN(num)) continue;
-      if (num > 0 && (bestPos === null || num > bestPos)) {
-        bestPos = num;
-        bestPosMethod = p.replace(/ R$/, '');
-      }
-    }
-    if (bestPos !== null) {
-      tradeBestPositives.push({ r: bestPos, method: bestPosMethod, trader: tradeTrader, avwap: tradeAvwap, date: getPropValue(t, 'Date') });
-    }
-  }
-  const topTrades = tradeBestPositives.sort((a, b) => b.r - a.r).slice(0, 3);
-
-  // Best win rate combo (already filtered to MIN_TRADES_FOR_WR upstream)
-  const bestWinRate = topWinRate;
-
-  // Most active trader×AVWAP — same as before
-  const mostActive = mostTradesKey ? {
-    label: mostTradesKey,
-    sublabel: '',
-    value: `${mostTradesValue}`,
-  } : null;
+    .sort((a, b) => b.totalR - a.totalR);
 
   const data = {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
-    leaders: {
-      // Champion hero — full multi-stat block
-      champion: top1 ? {
-        avwap: top1.avwap,
-        methodology: top1.methodology,
-        label: `${top1.avwap} × ${top1.methodology}`,
-        totalR: `${top1.value >= 0 ? '+' : ''}${top1.value.toFixed(2)}R`,
-        winRate: championWinRate !== null ? `${(championWinRate * 100).toFixed(1)}%` : '—',
-        bestTrade: championBestTrade !== null ? `${championBestTrade >= 0 ? '+' : ''}${championBestTrade.toFixed(2)}R` : '—',
-        sampleSize: top1.sampleSize,
-      } : null,
-
-      // Top 3 single biggest trades (any combo)
-      topTrades: topTrades.map(t => ({
-        value: `+${t.r.toFixed(2)}R`,
-        trader: t.trader || '?',
-        avwap: t.avwap || '?',
-        methodology: t.method || '',
-        date: t.date || '',
-      })),
-
-      // Best win rate combo (different leader than champion most of the time)
-      bestWinRate: bestWinRate ? {
-        avwap: bestWinRate.avwap,
-        methodology: bestWinRate.methodology,
-        label: `${bestWinRate.avwap} × ${bestWinRate.methodology}`,
-        sublabel: `${bestWinRate.trader} · n=${bestWinRate.totalTrades}`,
-        value: `${(bestWinRate.winRate * 100).toFixed(1)}%`,
-      } : null,
-
-      // Most active trader × AVWAP
-      mostActive,
-
-      // Small accountability panel — single weakest combo
-      worstCombo: worstCombo ? {
-        avwap: worstCombo.avwap,
-        methodology: worstCombo.methodology,
-        label: `${worstCombo.avwap} × ${worstCombo.methodology}`,
-        sublabel: `n=${worstCombo.sampleSize}`,
-        value: `${worstCombo.value >= 0 ? '+' : ''}${worstCombo.value.toFixed(2)}R`,
-      } : null,
-    },
+    leaderboard,
   };
 
   const outPath = path.join(__dirname, 'data.json');
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2));
-  console.log(`Wrote ${outPath}`);
+  console.log(`Wrote ${outPath} with ${leaderboard.length} combos`);
 })().catch(err => {
   console.error(err);
   process.exit(1);
