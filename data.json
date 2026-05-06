@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T18:18:30.364Z",
+  "generatedAt": "2026-05-06T18:19:31.251Z",
   "tradeCount": 53,
   "leaderboard": [
     {
@@ -183,6 +183,16 @@
       "highestR": 0.68
     },
     {
+      "avwap": "Session H/L",
+      "methodology": "10m HA Trail",
+      "code": "10T",
+      "trades": 7,
+      "winRate": 0.5714285714285714,
+      "expectancy": 0.5971428571428571,
+      "totalR": 4.18,
+      "highestR": 3.31
+    },
+    {
       "avwap": "Session Open",
       "methodology": "Full TP",
       "code": "FTP",
@@ -201,16 +211,6 @@
       "expectancy": 0.515,
       "totalR": 4.12,
       "highestR": 1.65
-    },
-    {
-      "avwap": "Session H/L",
-      "methodology": "10m HA Trail",
-      "code": "10T",
-      "trades": 7,
-      "winRate": 0.42857142857142855,
-      "expectancy": 0.5800000000000001,
-      "totalR": 4.0600000000000005,
-      "highestR": 3.31
     },
     {
       "avwap": "Trend Swing Point",
@@ -273,6 +273,16 @@
       "highestR": 1.02
     },
     {
+      "avwap": "Session H/L",
+      "methodology": "10m HA Partials",
+      "code": "10P",
+      "trades": 7,
+      "winRate": 0.7142857142857143,
+      "expectancy": 0.42857142857142855,
+      "totalR": 3,
+      "highestR": 1.87
+    },
+    {
       "avwap": "Sweep + BoS",
       "methodology": "Entry + L1",
       "code": "EL1",
@@ -291,16 +301,6 @@
       "expectancy": 0.34125,
       "totalR": 2.73,
       "highestR": 1
-    },
-    {
-      "avwap": "Session H/L",
-      "methodology": "10m HA Partials",
-      "code": "10P",
-      "trades": 7,
-      "winRate": 0.5714285714285714,
-      "expectancy": 0.3842857142857143,
-      "totalR": 2.69,
-      "highestR": 1.87
     },
     {
       "avwap": "Session H/L",
@@ -328,8 +328,8 @@
       "code": "5T",
       "trades": 7,
       "winRate": 0.5714285714285714,
-      "expectancy": 0.27714285714285714,
-      "totalR": 1.94,
+      "expectancy": 0.2742857142857143,
+      "totalR": 1.92,
       "highestR": 1.35
     },
     {
@@ -348,8 +348,8 @@
       "code": "5P",
       "trades": 7,
       "winRate": 0.8571428571428571,
-      "expectancy": 0.23857142857142857,
-      "totalR": 1.67,
+      "expectancy": 0.23714285714285716,
+      "totalR": 1.6600000000000001,
       "highestR": 0.89
     },
     {
@@ -358,8 +358,8 @@
       "code": "FTP",
       "trades": 7,
       "winRate": 0.8571428571428571,
-      "expectancy": 0.19714285714285712,
-      "totalR": 1.38,
+      "expectancy": 0.19428571428571426,
+      "totalR": 1.3599999999999999,
       "highestR": 0.43
     },
     {
