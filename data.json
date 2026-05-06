@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T07:13:28.262Z",
+  "generatedAt": "2026-05-06T07:14:22.149Z",
   "tradeCount": 38,
   "leaderboard": [
     {
@@ -34,16 +34,6 @@
     },
     {
       "avwap": "Trend Swing Point",
-      "methodology": "10m HA Trail",
-      "code": "10T",
-      "trades": 6,
-      "winRate": 0.8333333333333334,
-      "expectancy": 1.29,
-      "totalR": 7.74,
-      "highestR": 2.6
-    },
-    {
-      "avwap": "Trend Swing Point",
       "methodology": "5m HA Trail",
       "code": "5T",
       "trades": 6,
@@ -51,6 +41,16 @@
       "expectancy": 1.2699999999999998,
       "totalR": 7.619999999999999,
       "highestR": 2.7
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "methodology": "10m HA Trail",
+      "code": "10T",
+      "trades": 6,
+      "winRate": 0.8333333333333334,
+      "expectancy": 1.2516666666666667,
+      "totalR": 7.51,
+      "highestR": 2.6
     },
     {
       "avwap": "Sweep + BoS",
@@ -88,8 +88,8 @@
       "code": "15T",
       "trades": 6,
       "winRate": 0.6666666666666666,
-      "expectancy": 1.1383333333333334,
-      "totalR": 6.83,
+      "expectancy": 1.1,
+      "totalR": 6.6000000000000005,
       "highestR": 2.3
     },
     {
@@ -187,9 +187,9 @@
       "methodology": "10m HA Partials",
       "code": "10P",
       "trades": 6,
-      "winRate": 0.8333333333333334,
-      "expectancy": 0.6416666666666667,
-      "totalR": 3.85,
+      "winRate": 1,
+      "expectancy": 0.655,
+      "totalR": 3.93,
       "highestR": 1.02
     },
     {
@@ -217,9 +217,9 @@
       "methodology": "15m HA Partials",
       "code": "15P",
       "trades": 6,
-      "winRate": 0.8333333333333334,
-      "expectancy": 0.59,
-      "totalR": 3.54,
+      "winRate": 1,
+      "expectancy": 0.6033333333333334,
+      "totalR": 3.62,
       "highestR": 1.02
     },
     {
