@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T16:02:45.079Z",
+  "generatedAt": "2026-05-06T16:03:40.691Z",
   "tradeCount": 49,
   "leaderboard": [
     {
@@ -98,8 +98,8 @@
       "code": "5T",
       "trades": 18,
       "winRate": 0.6666944444444444,
-      "expectancy": 0.3794444444444445,
-      "totalR": 6.83,
+      "expectancy": 0.3711111111111111,
+      "totalR": 6.68,
       "highestR": 3.46
     },
     {
@@ -148,8 +148,8 @@
       "code": "5P",
       "trades": 18,
       "winRate": 0.83335,
-      "expectancy": 0.29944444444444446,
-      "totalR": 5.390000000000001,
+      "expectancy": 0.29555555555555557,
+      "totalR": 5.32,
       "highestR": 1.94
     },
     {
