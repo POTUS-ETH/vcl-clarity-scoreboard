@@ -337,10 +337,104 @@ const METHOD_R_COL = {
     })
     .sort((a, b) => b.totalR - a.totalR);
 
+  // ---------- Best combo by Pair ----------
+  // Aggregate per (Pair × AVWAP × Methodology) directly from trades.
+  const byPairCombo = {};
+  for (const t of trades) {
+    const pair = getPropValue(t, 'Pair');
+    const avwapValue = getPropValue(t, 'AVWAP TYPE');
+    const avwaps = Array.isArray(avwapValue) ? avwapValue : (avwapValue ? [avwapValue] : []);
+    if (!pair || !avwaps.length) continue;
+    for (const avwap of avwaps) {
+      for (const m of METHODOLOGIES) {
+        const rCol = METHOD_R_COL[m.label];
+        const v = getPropValue(t, rCol);
+        const num = (v === null || v === undefined) ? null : (typeof v === 'number' ? v : parseFloat(v));
+        const r = (num === null || isNaN(num)) ? null : num;
+        const key = `${pair}||${avwap}||${m.label}`;
+        if (!byPairCombo[key]) {
+          byPairCombo[key] = { pair, avwap, methodology: m.label, totalR: 0, wins: 0, trades: 0, highestR: null };
+        }
+        const g = byPairCombo[key];
+        g.trades += 1;
+        if (r !== null) {
+          g.totalR += r;
+          if (r > 0) g.wins += 1;
+          if (g.highestR === null || r > g.highestR) g.highestR = r;
+        }
+      }
+    }
+  }
+  // For each Pair, find combo with highest Total R.
+  const pairBest = {};
+  for (const c of Object.values(byPairCombo)) {
+    if (c.trades === 0) continue;
+    if (!pairBest[c.pair] || c.totalR > pairBest[c.pair].totalR) {
+      pairBest[c.pair] = c;
+    }
+  }
+  const bestByPair = Object.values(pairBest)
+    .map(c => ({
+      pair: c.pair,
+      avwap: c.avwap,
+      methodology: c.methodology,
+      trades: c.trades,
+      winRate: c.trades > 0 ? c.wins / c.trades : null,
+      totalR: c.totalR,
+      highestR: c.highestR,
+    }))
+    .sort((a, b) => b.totalR - a.totalR);
+
+  // ---------- Best combo by Trader ----------
+  // From sub-rows: each sub-row is a (Trader × AVWAP). For each trader, find
+  // (AVWAP × Methodology) combo with highest Total R across all their sub-rows.
+  const traderBest = {};
+  for (const sub of subRows) {
+    const trader = sub.trader;
+    const avwap = parentRows[sub.parentId]?.title || '?';
+    const tradeCount = getPropValue(sub.row, 'Total') || 0;
+    for (const m of METHODOLOGIES) {
+      const totalR = getPropValue(sub.row, m.totalRProp) || 0;
+      const wr = toRate(getPropValue(sub.row, m.wrProp));
+      if (!traderBest[trader] || totalR > traderBest[trader].totalR) {
+        traderBest[trader] = {
+          trader, avwap, methodology: m.label,
+          totalR, winRate: wr, trades: tradeCount,
+        };
+      }
+    }
+  }
+  const bestByTrader = Object.values(traderBest)
+    .filter(c => c.trades > 0)
+    .sort((a, b) => b.totalR - a.totalR);
+
+  // ---------- Top 3 AVWAP types by Win Rate ----------
+  // For each AVWAP, find its best methodology (highest weighted WR).
+  const avwapBestWR = {};
+  for (const c of Object.values(aggByKey)) {
+    const wr = c.tradeSum > 0 ? c.winSum / c.tradeSum : 0;
+    if (!avwapBestWR[c.avwap] || wr > avwapBestWR[c.avwap].winRate) {
+      avwapBestWR[c.avwap] = {
+        avwap: c.avwap,
+        methodology: c.methodology,
+        winRate: wr,
+        totalR: c.totalR,
+        trades: c.tradeSum,
+      };
+    }
+  }
+  const topAvwapByWR = Object.values(avwapBestWR)
+    .filter(c => c.trades > 0)
+    .sort((a, b) => b.winRate - a.winRate)
+    .slice(0, 3);
+
   const data = {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
     leaderboard,
+    bestByPair,
+    bestByTrader,
+    topAvwapByWR,
   };
 
   const outPath = path.join(__dirname, 'data.json');

@@ -17,6 +17,8 @@
     --green: #22c55e;
     --red: #ef4444;
     --gold: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #a855f7;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -49,7 +51,8 @@
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    grid-auto-rows: auto;
+    gap: 12px;
   }
   @media (max-width: 880px) {
     .grid { grid-template-columns: 1fr; }
@@ -61,18 +64,15 @@
     background: var(--surface);
     padding: 12px;
   }
-  .panel.top {
-    border-color: color-mix(in srgb, var(--green) 38%, var(--border));
-    background: color-mix(in srgb, var(--green) 6%, var(--surface));
-  }
-  .panel.bottom {
-    border-color: color-mix(in srgb, var(--red) 38%, var(--border));
-    background: color-mix(in srgb, var(--red) 6%, var(--surface));
-  }
+  .panel.top    { border-color: color-mix(in srgb, var(--gold)   38%, var(--border)); background: color-mix(in srgb, var(--gold)   6%, var(--surface)); }
+  .panel.pair   { border-color: color-mix(in srgb, var(--blue)   38%, var(--border)); background: color-mix(in srgb, var(--blue)   6%, var(--surface)); }
+  .panel.trader { border-color: color-mix(in srgb, var(--purple) 38%, var(--border)); background: color-mix(in srgb, var(--purple) 6%, var(--surface)); }
+  .panel.avwap  { border-color: color-mix(in srgb, var(--green)  38%, var(--border)); background: color-mix(in srgb, var(--green)  6%, var(--surface)); }
+
   .panel-head {
     display: flex; align-items: baseline; justify-content: space-between;
-    margin-bottom: 10px;
-    padding: 0 4px;
+    margin-bottom: 8px;
+    padding: 0 2px;
   }
   .panel-title {
     font-size: 11.5px;
@@ -80,8 +80,10 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
   }
-  .panel.top .panel-title { color: var(--green); }
-  .panel.bottom .panel-title { color: var(--red); }
+  .panel.top    .panel-title { color: var(--gold); }
+  .panel.pair   .panel-title { color: var(--blue); }
+  .panel.trader .panel-title { color: var(--purple); }
+  .panel.avwap  .panel-title { color: var(--green); }
   .panel-sub { font-size: 10.5px; color: var(--muted); }
 
   /* === Tables === */
@@ -100,9 +102,9 @@
     text-align: right;
     padding: 5px 8px;
     border: none;
+    white-space: nowrap;
   }
-  .lb thead th:first-child,
-  .lb thead th:nth-child(2) { text-align: left; }
+  .lb thead th.l { text-align: left; }
 
   .lb tbody td {
     padding: 8px 8px;
@@ -110,21 +112,14 @@
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     text-align: right;
+    white-space: nowrap;
   }
-  .lb tbody td:first-child {
-    border-left: 1px solid var(--border);
-    border-radius: 7px 0 0 7px;
-    text-align: left;
-    width: 32px;
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 12px;
-  }
-  .lb tbody td:nth-child(2) {
-    text-align: left;
+  .lb tbody td.l { text-align: left; }
+  .lb tbody td.first {
     border-left: 3px solid var(--accent, var(--border-strong));
+    border-radius: 7px 0 0 7px;
   }
-  .lb tbody td:last-child {
+  .lb tbody td.last {
     border-right: 1px solid var(--border);
     border-radius: 0 7px 7px 0;
   }
@@ -135,10 +130,15 @@
     font-size: 12.5px;
     font-weight: 700;
   }
-  .combo-method {
+  .combo-method, .row-sub {
     font-size: 11px;
     color: var(--muted);
     font-weight: 500;
+  }
+  .row-prim {
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 700;
   }
 
   .num { font-weight: 600; color: var(--value); font-size: 12.5px; }
@@ -178,14 +178,14 @@
   <div class="grid">
     <div class="panel top">
       <div class="panel-head">
-        <div class="panel-title">🥇 Top 5</div>
-        <div class="panel-sub">Highest Total R</div>
+        <div class="panel-title">🥇 Top 5 Combos</div>
+        <div class="panel-sub">By Total R</div>
       </div>
       <table class="lb">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Combo</th>
+            <th class="l">#</th>
+            <th class="l">Combo</th>
             <th>WR</th>
             <th>Exp</th>
             <th>Total R</th>
@@ -198,24 +198,64 @@
       </table>
     </div>
 
-    <div class="panel bottom">
+    <div class="panel pair">
       <div class="panel-head">
-        <div class="panel-title">⚠️ Bottom 5</div>
-        <div class="panel-sub">Lowest Total R</div>
+        <div class="panel-title">🎯 Best by Pair</div>
+        <div class="panel-sub">Top combo per pair · ranked by Total R</div>
       </div>
       <table class="lb">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Combo</th>
+            <th class="l">Pair</th>
+            <th class="l">Combo</th>
             <th>WR</th>
-            <th>Exp</th>
             <th>Total R</th>
             <th>Best</th>
           </tr>
         </thead>
-        <tbody id="bottom-body">
-          <tr><td colspan="6" class="empty">loading…</td></tr>
+        <tbody id="pair-body">
+          <tr><td colspan="5" class="empty">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel trader">
+      <div class="panel-head">
+        <div class="panel-title">👤 Best by Trader</div>
+        <div class="panel-sub">Top combo per trader · ranked by Total R</div>
+      </div>
+      <table class="lb">
+        <thead>
+          <tr>
+            <th class="l">Trader</th>
+            <th class="l">Combo</th>
+            <th>WR</th>
+            <th>Total R</th>
+          </tr>
+        </thead>
+        <tbody id="trader-body">
+          <tr><td colspan="4" class="empty">loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel avwap">
+      <div class="panel-head">
+        <div class="panel-title">📈 Top 3 AVWAP by Win Rate</div>
+        <div class="panel-sub">Best methodology per AVWAP</div>
+      </div>
+      <table class="lb">
+        <thead>
+          <tr>
+            <th class="l">AVWAP</th>
+            <th class="l">Best Method</th>
+            <th>WR</th>
+            <th>Total R</th>
+            <th>n</th>
+          </tr>
+        </thead>
+        <tbody id="avwap-body">
+          <tr><td colspan="5" class="empty">loading…</td></tr>
         </tbody>
       </table>
     </div>
@@ -255,61 +295,124 @@
     return `updated ${d.toLocaleDateString()}`;
   }
 
-  function rowHtml(c, displayRank) {
-    const cls = AVWAP_CLASS[c.avwap] || '';
-    return `
-      <tr class="${cls}">
-        <td>${displayRank}</td>
-        <td>
-          <div class="combo-cell">
+  function renderTop(rows) {
+    const tbody = document.getElementById('top-body');
+    const active = (rows || []).filter(c => (c.trades || 0) > 0).slice(0, 5);
+    if (!active.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = active.map((c, i) => {
+      const cls = AVWAP_CLASS[c.avwap] || '';
+      return `
+        <tr class="${cls}">
+          <td class="l first" style="width:30px;color:var(--muted);font-weight:700">${i + 1}</td>
+          <td class="l">
+            <div class="combo-cell">
+              <span class="combo-avwap">${c.avwap}</span>
+              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
+            </div>
+          </td>
+          <td>${fmtPct(c.winRate)}</td>
+          <td>${fmtR(c.expectancy)}</td>
+          <td>${fmtR(c.totalR)}</td>
+          <td class="last">${fmtR(c.highestR)}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderPair(rows) {
+    const tbody = document.getElementById('pair-body');
+    const active = (rows || []).filter(c => (c.trades || 0) > 0);
+    if (!active.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = active.map(c => {
+      const cls = AVWAP_CLASS[c.avwap] || '';
+      return `
+        <tr class="${cls}">
+          <td class="l first row-prim">${c.pair}</td>
+          <td class="l">
+            <div class="combo-cell">
+              <span class="combo-avwap">${c.avwap}</span>
+              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
+            </div>
+          </td>
+          <td>${fmtPct(c.winRate)}</td>
+          <td>${fmtR(c.totalR)}</td>
+          <td class="last">${fmtR(c.highestR)}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderTrader(rows) {
+    const tbody = document.getElementById('trader-body');
+    const active = (rows || []).filter(c => (c.trades || 0) > 0);
+    if (!active.length) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty">No data yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = active.map(c => {
+      const cls = AVWAP_CLASS[c.avwap] || '';
+      return `
+        <tr class="${cls}">
+          <td class="l first row-prim">${c.trader}</td>
+          <td class="l">
+            <div class="combo-cell">
+              <span class="combo-avwap">${c.avwap}</span>
+              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
+            </div>
+          </td>
+          <td>${fmtPct(c.winRate)}</td>
+          <td class="last">${fmtR(c.totalR)}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderAvwap(rows) {
+    const tbody = document.getElementById('avwap-body');
+    const active = (rows || []).filter(c => (c.trades || 0) > 0);
+    if (!active.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = active.map(c => {
+      const cls = AVWAP_CLASS[c.avwap] || '';
+      return `
+        <tr class="${cls}">
+          <td class="l first">
             <span class="combo-avwap">${c.avwap}</span>
-            <span class="combo-method">${c.methodology} · n=${c.trades}</span>
-          </div>
-        </td>
-        <td>${fmtPct(c.winRate)}</td>
-        <td>${fmtR(c.expectancy)}</td>
-        <td>${fmtR(c.totalR)}</td>
-        <td>${fmtR(c.highestR)}</td>
-      </tr>`;
+          </td>
+          <td class="l row-sub">${c.methodology}</td>
+          <td>${fmtPct(c.winRate)}</td>
+          <td>${fmtR(c.totalR)}</td>
+          <td class="last"><span class="num muted">${c.trades}</span></td>
+        </tr>`;
+    }).join('');
   }
 
   function render(data) {
-    const lb = (data && data.leaderboard) || [];
     document.getElementById('updated-at').textContent = timeAgo(data?.generatedAt) || '';
     document.getElementById('trade-count').textContent = data?.tradeCount ? `· ${data.tradeCount} trades` : '';
     document.getElementById('footer').textContent = data?.generatedAt
       ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}`
       : '';
 
-    // Filter out combos with no trades — they're not "worst", they're "untraded"
-    const active = lb.filter(c => (c.trades || 0) > 0);
-
-    const topBody = document.getElementById('top-body');
-    const bottomBody = document.getElementById('bottom-body');
-
-    if (!active.length) {
-      topBody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
-      bottomBody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
-      return;
-    }
-
-    // Top 5: best first
-    const top5 = active.slice(0, 5);
-    topBody.innerHTML = top5.map((c, i) => rowHtml(c, i + 1)).join('');
-
-    // Bottom 5: worst first (last 5 of the sorted-desc list, then reversed)
-    const bottom5 = active.slice(-5).reverse();
-    bottomBody.innerHTML = bottom5.map((c, i) => rowHtml(c, i + 1)).join('');
+    renderTop(data?.leaderboard);
+    renderPair(data?.bestByPair);
+    renderTrader(data?.bestByTrader);
+    renderAvwap(data?.topAvwapByWR);
   }
 
-  // Cache-busted fetch each load
   fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
     .then(render)
     .catch(err => {
       const msg = `<tr><td colspan="6" class="empty">Couldn't load (${err})</td></tr>`;
-      document.getElementById('top-body').innerHTML = msg;
-      document.getElementById('bottom-body').innerHTML = msg;
+      ['top-body', 'pair-body', 'trader-body', 'avwap-body'].forEach(id => {
+        document.getElementById(id).innerHTML = msg;
+      });
     });
 </script>
 </body>
