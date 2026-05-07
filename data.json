@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T09:32:37.740Z",
+  "generatedAt": "2026-05-07T09:33:43.600Z",
   "tradeCount": 65,
   "leaderboard": [
     {
@@ -278,8 +278,8 @@
       "code": "EL1",
       "trades": 12,
       "winRate": 1,
-      "expectancy": 0.29083333333333333,
-      "totalR": 3.4899999999999998,
+      "expectancy": 0.28250000000000003,
+      "totalR": 3.39,
       "highestR": 0.73
     },
     {
@@ -298,8 +298,8 @@
       "code": "EP",
       "trades": 12,
       "winRate": 1,
-      "expectancy": 0.25499999999999995,
-      "totalR": 3.0599999999999996,
+      "expectancy": 0.24666666666666667,
+      "totalR": 2.96,
       "highestR": 0.73
     },
     {
