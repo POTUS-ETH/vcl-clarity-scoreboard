@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T09:18:36.040Z",
+  "generatedAt": "2026-05-07T09:19:41.943Z",
   "tradeCount": 63,
   "leaderboard": [
     {
@@ -131,16 +131,6 @@
       "expectancy": 0.45066666666666666,
       "totalR": 6.76,
       "highestR": 1.31
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "Full TP",
-      "code": "FTP",
-      "trades": 24,
-      "winRate": 0.8333458333333335,
-      "expectancy": 0.2625,
-      "totalR": 6.300000000000001,
-      "highestR": 0.41
     },
     {
       "avwap": "Trend Swing Point",
@@ -451,6 +441,16 @@
       "expectancy": -0.14,
       "totalR": -0.56,
       "highestR": 0.73
+    },
+    {
+      "avwap": "Session Open",
+      "methodology": "Full TP",
+      "code": "FTP",
+      "trades": 24,
+      "winRate": 0.8333458333333335,
+      "expectancy": -45.8675,
+      "totalR": -1100.82,
+      "highestR": 0.41
     }
   ]
 }
