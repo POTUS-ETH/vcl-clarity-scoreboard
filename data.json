@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T09:20:39.340Z",
+  "generatedAt": "2026-05-07T09:21:38.469Z",
   "tradeCount": 63,
   "leaderboard": [
     {
@@ -8,8 +8,8 @@
       "code": "15T",
       "trades": 24,
       "winRate": 0.5416458333333334,
-      "expectancy": 0.5191666666666667,
-      "totalR": 12.46,
+      "expectancy": 0.5158333333333333,
+      "totalR": 12.379999999999999,
       "highestR": 3.25
     },
     {
@@ -17,9 +17,9 @@
       "methodology": "15m HA Partials",
       "code": "15P",
       "trades": 24,
-      "winRate": 0.8333458333333335,
-      "expectancy": 0.48541666666666666,
-      "totalR": 11.65,
+      "winRate": 0.8750125000000001,
+      "expectancy": 0.49041666666666667,
+      "totalR": 11.77,
       "highestR": 1.78
     },
     {
@@ -41,6 +41,16 @@
       "expectancy": 0.7173333333333333,
       "totalR": 10.76,
       "highestR": 2.62
+    },
+    {
+      "avwap": "Session Open",
+      "methodology": "10m HA Partials",
+      "code": "10P",
+      "trades": 24,
+      "winRate": 0.8750125000000001,
+      "expectancy": 0.3945833333333333,
+      "totalR": 9.469999999999999,
+      "highestR": 1.48
     },
     {
       "avwap": "Session Open",
@@ -81,6 +91,16 @@
       "expectancy": 0.32416666666666666,
       "totalR": 7.779999999999999,
       "highestR": 0.76
+    },
+    {
+      "avwap": "Session Open",
+      "methodology": "10m HA Trail",
+      "code": "10T",
+      "trades": 24,
+      "winRate": 0.5833541666666666,
+      "expectancy": 0.32208333333333333,
+      "totalR": 7.7299999999999995,
+      "highestR": 2.65
     },
     {
       "avwap": "Trend Swing Point",
@@ -431,26 +451,6 @@
       "expectancy": -0.14,
       "totalR": -0.56,
       "highestR": 0.73
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "10m HA Partials",
-      "code": "10P",
-      "trades": 24,
-      "winRate": 0.8333458333333335,
-      "expectancy": -32.89625,
-      "totalR": -789.51,
-      "highestR": 1.48
-    },
-    {
-      "avwap": "Session Open",
-      "methodology": "10m HA Trail",
-      "code": "10T",
-      "trades": 24,
-      "winRate": 0.5416875,
-      "expectancy": -132.92499999999998,
-      "totalR": -3190.2,
-      "highestR": 2.65
     }
   ]
 }
