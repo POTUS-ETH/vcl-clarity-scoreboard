@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T09:29:57.831Z",
+  "generatedAt": "2026-05-07T09:30:34.198Z",
   "tradeCount": 65,
   "leaderboard": [
     {
@@ -173,6 +173,16 @@
       "highestR": 0.54
     },
     {
+      "avwap": "Sweep + BoS",
+      "methodology": "10m HA Trail",
+      "code": "10T",
+      "trades": 12,
+      "winRate": 0.6666416666666667,
+      "expectancy": 0.37833333333333335,
+      "totalR": 4.54,
+      "highestR": 2.35
+    },
+    {
       "avwap": "Session H/L",
       "methodology": "10m HA Trail",
       "code": "10T",
@@ -194,22 +204,12 @@
     },
     {
       "avwap": "Sweep + BoS",
-      "methodology": "10m HA Trail",
-      "code": "10T",
-      "trades": 12,
-      "winRate": 0.5833416666666668,
-      "expectancy": 0.3633333333333333,
-      "totalR": 4.359999999999999,
-      "highestR": 2.35
-    },
-    {
-      "avwap": "Sweep + BoS",
       "methodology": "10m HA Partials",
       "code": "10P",
       "trades": 12,
-      "winRate": 0.7499750000000001,
-      "expectancy": 0.33166666666666667,
-      "totalR": 3.98,
+      "winRate": 0.8333333333333334,
+      "expectancy": 0.35250000000000004,
+      "totalR": 4.23,
       "highestR": 1.33
     },
     {
