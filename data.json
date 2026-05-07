@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T08:47:46.161Z",
+  "generatedAt": "2026-05-07T08:48:45.594Z",
   "tradeCount": 61,
   "leaderboard": [
     {
@@ -44,6 +44,16 @@
     },
     {
       "avwap": "Session Open",
+      "methodology": "Entry + L1",
+      "code": "EL1",
+      "trades": 22,
+      "winRate": 0.8636500000000001,
+      "expectancy": 0.3418181818181818,
+      "totalR": 7.52,
+      "highestR": 0.76
+    },
+    {
+      "avwap": "Session Open",
       "methodology": "10m HA Partials",
       "code": "10P",
       "trades": 22,
@@ -54,22 +64,12 @@
     },
     {
       "avwap": "Session Open",
-      "methodology": "Entry + L1",
-      "code": "EL1",
-      "trades": 22,
-      "winRate": 0.8181954545454547,
-      "expectancy": 0.335,
-      "totalR": 7.37,
-      "highestR": 0.76
-    },
-    {
-      "avwap": "Session Open",
       "methodology": "Entry Partials",
       "code": "EP",
       "trades": 22,
-      "winRate": 0.8181954545454547,
-      "expectancy": 0.3331818181818182,
-      "totalR": 7.33,
+      "winRate": 0.8636500000000001,
+      "expectancy": 0.34,
+      "totalR": 7.48,
       "highestR": 0.76
     },
     {
