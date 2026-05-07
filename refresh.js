@@ -74,6 +74,7 @@ function getPropValue(page, name) {
     case 'rich_text':   return p.rich_text.map(t => t.plain_text).join('');
     case 'number':      return p.number;
     case 'select':      return p.select?.name || null;
+    case 'multi_select': return p.multi_select?.map(s => s.name) || [];
     case 'rollup':      return rollupValue(p.rollup);
     case 'formula':     return formulaValue(p.formula);
     case 'relation':    return p.relation.map(r => r.id);
@@ -223,14 +224,17 @@ const METHOD_R_COL = {
   console.log(`Got ${trades.length} trades`);
 
   // Build (avwap, trader) groupings from the source-of-truth (alive MTL rows)
+  // AVWAP TYPE is multi-select — a trade can satisfy multiple AVWAP criteria.
+  // Trade is added to every AVWAP group it qualifies for.
   const byAvwap = {};
   const byAvwapTrader = {};
   const allAliveTradeIds = [];
   for (const t of trades) {
-    const avwap = getPropValue(t, 'AVWAP TYPE');
+    const avwapValue = getPropValue(t, 'AVWAP TYPE');
+    const avwaps = Array.isArray(avwapValue) ? avwapValue : (avwapValue ? [avwapValue] : []);
     const trader = getPropValue(t, 'Trader');
     allAliveTradeIds.push(t.id);
-    if (avwap) {
+    for (const avwap of avwaps) {
       (byAvwap[avwap] = byAvwap[avwap] || []).push(t.id);
       if (trader) {
         const k = `${avwap}|${trader}`;
@@ -295,18 +299,22 @@ const METHOD_R_COL = {
   }
 
   // Highest single R per (AVWAP × Methodology) — scan trades.
+  // Multi-select AVWAP: a trade contributes to every AVWAP it qualifies for.
   const highestByKey = {}; // "avwap||methodology" -> { r, trader, date }
   for (const t of trades) {
-    const avwap = getPropValue(t, 'AVWAP TYPE');
-    if (!avwap) continue;
-    for (const [methLabel, rCol] of Object.entries(METHOD_R_COL)) {
-      const v = getPropValue(t, rCol);
-      if (v === null || v === undefined) continue;
-      const num = typeof v === 'number' ? v : parseFloat(v);
-      if (isNaN(num)) continue;
-      const key = `${avwap}||${methLabel}`;
-      if (!highestByKey[key] || num > highestByKey[key].r) {
-        highestByKey[key] = { r: num, trader: getPropValue(t, 'Trader'), date: getPropValue(t, 'Date') };
+    const avwapValue = getPropValue(t, 'AVWAP TYPE');
+    const avwaps = Array.isArray(avwapValue) ? avwapValue : (avwapValue ? [avwapValue] : []);
+    if (!avwaps.length) continue;
+    for (const avwap of avwaps) {
+      for (const [methLabel, rCol] of Object.entries(METHOD_R_COL)) {
+        const v = getPropValue(t, rCol);
+        if (v === null || v === undefined) continue;
+        const num = typeof v === 'number' ? v : parseFloat(v);
+        if (isNaN(num)) continue;
+        const key = `${avwap}||${methLabel}`;
+        if (!highestByKey[key] || num > highestByKey[key].r) {
+          highestByKey[key] = { r: num, trader: getPropValue(t, 'Trader'), date: getPropValue(t, 'Date') };
+        }
       }
     }
   }
