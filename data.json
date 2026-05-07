@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-05-07T09:28:32.595Z",
-  "tradeCount": 64,
+  "generatedAt": "2026-05-07T09:29:57.831Z",
+  "tradeCount": 65,
   "leaderboard": [
     {
       "avwap": "Session Open",
       "methodology": "15m HA Trail",
       "code": "15T",
-      "trades": 24,
-      "winRate": 0.5416458333333334,
-      "expectancy": 0.5158333333333333,
+      "trades": 25,
+      "winRate": 0.51996,
+      "expectancy": 0.4952,
       "totalR": 12.379999999999999,
       "highestR": 3.25
     },
@@ -16,9 +16,9 @@
       "avwap": "Session Open",
       "methodology": "15m HA Partials",
       "code": "15P",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.49041666666666667,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.4708,
       "totalR": 11.77,
       "highestR": 1.78
     },
@@ -46,9 +46,9 @@
       "avwap": "Session Open",
       "methodology": "10m HA Partials",
       "code": "10P",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.3945833333333333,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.37879999999999997,
       "totalR": 9.469999999999999,
       "highestR": 1.48
     },
@@ -56,9 +56,9 @@
       "avwap": "Session Open",
       "methodology": "5m HA Trail",
       "code": "5T",
-      "trades": 24,
-      "winRate": 0.6666875,
-      "expectancy": 0.39208333333333334,
+      "trades": 25,
+      "winRate": 0.6400359999999999,
+      "expectancy": 0.3764,
       "totalR": 9.41,
       "highestR": 2.52
     },
@@ -66,9 +66,9 @@
       "avwap": "Session Open",
       "methodology": "5m HA Partials",
       "code": "5P",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.34041666666666665,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.3268,
       "totalR": 8.17,
       "highestR": 1.42
     },
@@ -76,9 +76,9 @@
       "avwap": "Session Open",
       "methodology": "Entry + L1",
       "code": "EL1",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.32583333333333336,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.3128,
       "totalR": 7.82,
       "highestR": 0.76
     },
@@ -86,9 +86,9 @@
       "avwap": "Session Open",
       "methodology": "Entry Partials",
       "code": "EP",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.32416666666666666,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.3112,
       "totalR": 7.779999999999999,
       "highestR": 0.76
     },
@@ -96,9 +96,9 @@
       "avwap": "Session Open",
       "methodology": "10m HA Trail",
       "code": "10T",
-      "trades": 24,
-      "winRate": 0.5833541666666666,
-      "expectancy": 0.32208333333333333,
+      "trades": 25,
+      "winRate": 0.56,
+      "expectancy": 0.3092,
       "totalR": 7.7299999999999995,
       "highestR": 2.65
     },
@@ -136,9 +136,9 @@
       "avwap": "Session Open",
       "methodology": "Full TP",
       "code": "FTP",
-      "trades": 24,
-      "winRate": 0.8750125000000001,
-      "expectancy": 0.27541666666666664,
+      "trades": 25,
+      "winRate": 0.840016,
+      "expectancy": 0.26439999999999997,
       "totalR": 6.609999999999999,
       "highestR": 0.41
     },
@@ -277,9 +277,9 @@
       "methodology": "Entry + L1",
       "code": "EL1",
       "trades": 12,
-      "winRate": 0.9166416666666667,
-      "expectancy": 0.26999999999999996,
-      "totalR": 3.2399999999999998,
+      "winRate": 1,
+      "expectancy": 0.28250000000000003,
+      "totalR": 3.39,
       "highestR": 0.73
     },
     {
@@ -287,9 +287,9 @@
       "methodology": "5m HA Partials",
       "code": "5P",
       "trades": 12,
-      "winRate": 0.7499750000000001,
-      "expectancy": 0.23666666666666666,
-      "totalR": 2.84,
+      "winRate": 0.8333333333333334,
+      "expectancy": 0.2525,
+      "totalR": 3.0300000000000002,
       "highestR": 0.46
     },
     {
@@ -297,9 +297,9 @@
       "methodology": "Entry Partials",
       "code": "EP",
       "trades": 12,
-      "winRate": 0.9166416666666667,
-      "expectancy": 0.23416666666666666,
-      "totalR": 2.81,
+      "winRate": 1,
+      "expectancy": 0.24666666666666667,
+      "totalR": 2.96,
       "highestR": 0.73
     },
     {
@@ -383,6 +383,16 @@
       "highestR": 0.58
     },
     {
+      "avwap": "Sweep + BoS",
+      "methodology": "5m HA Trail",
+      "code": "5T",
+      "trades": 12,
+      "winRate": 0.6666666666666666,
+      "expectancy": 0.034999999999999996,
+      "totalR": 0.41999999999999993,
+      "highestR": 0.75
+    },
+    {
       "avwap": "Daily",
       "methodology": "10m HA Partials",
       "code": "10P",
@@ -391,16 +401,6 @@
       "expectancy": 0.09,
       "totalR": 0.36,
       "highestR": 0.58
-    },
-    {
-      "avwap": "Sweep + BoS",
-      "methodology": "5m HA Trail",
-      "code": "5T",
-      "trades": 12,
-      "winRate": 0.5833083333333333,
-      "expectancy": 0.02999999999999999,
-      "totalR": 0.3599999999999999,
-      "highestR": 0.75
     },
     {
       "avwap": "Daily",
