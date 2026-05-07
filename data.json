@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T08:46:40.428Z",
+  "generatedAt": "2026-05-07T08:47:46.161Z",
   "tradeCount": 61,
   "leaderboard": [
     {
@@ -127,9 +127,9 @@
       "methodology": "Full TP",
       "code": "FTP",
       "trades": 22,
-      "winRate": 0.8181954545454547,
-      "expectancy": 0.2590909090909091,
-      "totalR": 5.7,
+      "winRate": 0.8636500000000001,
+      "expectancy": 0.2727272727272727,
+      "totalR": 6,
       "highestR": 0.41
     },
     {
