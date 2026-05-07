@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T18:41:30.548Z",
+  "generatedAt": "2026-05-07T18:42:31.002Z",
   "tradeCount": 67,
   "leaderboard": [
     {
@@ -358,8 +358,8 @@
       "code": "FTP",
       "trades": 8,
       "winRate": 0.7500125,
-      "expectancy": 0.2975,
-      "totalR": 2.38,
+      "expectancy": 0.1725,
+      "totalR": 1.38,
       "highestR": 0.43
     },
     {
