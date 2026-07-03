@@ -42,17 +42,25 @@ jobs:
             echo "===== refresh iteration $iter/5 ====="
             t0=$(date +%s)
 
+            # V1 (VCL Clarity original tracker)
             node refresh.js
-            rc=$?
-            if [[ $rc -ne 0 ]]; then
-              echo "refresh.js exit $rc on iteration $iter; will retry next iteration"
+            rc1=$?
+            if [[ $rc1 -ne 0 ]]; then
+              echo "refresh.js (v1) exit $rc1 on iteration $iter; will retry next iteration"
             fi
 
-            # Commit + push if data.json changed
-            if [[ -n "$(git status --porcelain data.json)" ]]; then
+            # V2 (VCL Clarity V2 tracker — Trade Log v3)
+            node v2/refresh.js
+            rc2=$?
+            if [[ $rc2 -ne 0 ]]; then
+              echo "v2/refresh.js exit $rc2 on iteration $iter; will retry next iteration"
+            fi
+
+            # Commit + push if either data.json changed
+            if [[ -n "$(git status --porcelain data.json v2/data.json)" ]]; then
               git fetch origin main
               git rebase origin/main || git rebase --abort
-              git add data.json
+              git add data.json v2/data.json
               git commit -m "chore: refresh scoreboard data ($iter/5)"
 
               for push_try in 1 2 3 4 5; do
