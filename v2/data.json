@@ -1,42 +1,42 @@
 {
-  "generatedAt": "2026-07-03T18:38:00.134Z",
-  "tradeCount": 1,
+  "generatedAt": "2026-07-03T18:54:29.094Z",
+  "tradeCount": 2,
   "top3": [
     {
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail + 2R",
       "combo": "Trend Swing Point × 10m HA Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.82,
+      "totalR": 3.4400000000000004,
       "highestR": 1.82,
       "winRate": 1,
-      "expectancy": 1.82
+      "expectancy": 1.7200000000000002
     },
     {
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail",
       "combo": "Trend Swing Point × 10m HA Trail",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.65,
+      "totalR": 2.88,
       "highestR": 1.65,
       "winRate": 1,
-      "expectancy": 1.65
+      "expectancy": 1.44
     },
     {
       "avwap": "Trend Swing Point",
       "method": "BoS Swing Trail + 2R",
       "combo": "Trend Swing Point × BoS Swing Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.25,
+      "totalR": 2.18,
       "highestR": 1.25,
       "winRate": 1,
-      "expectancy": 1.25
+      "expectancy": 1.09
     }
   ],
   "byPair": [
@@ -45,13 +45,13 @@
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail + 2R",
       "combo": "Trend Swing Point × 10m HA Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.82,
+      "totalR": 3.4400000000000004,
       "highestR": 1.82,
       "winRate": 1,
-      "expectancy": 1.82
+      "expectancy": 1.7200000000000002
     }
   ],
   "bestPerAvwap": [
@@ -59,13 +59,13 @@
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail + 2R",
       "combo": "Trend Swing Point × 10m HA Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.82,
+      "totalR": 3.4400000000000004,
       "highestR": 1.82,
       "winRate": 1,
-      "expectancy": 1.82
+      "expectancy": 1.7200000000000002
     }
   ],
   "topWR": [
@@ -73,37 +73,37 @@
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail + 2R",
       "combo": "Trend Swing Point × 10m HA Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.82,
+      "totalR": 3.4400000000000004,
       "highestR": 1.82,
       "winRate": 1,
-      "expectancy": 1.82
+      "expectancy": 1.7200000000000002
     },
     {
       "avwap": "Trend Swing Point",
       "method": "10m HA Trail",
       "combo": "Trend Swing Point × 10m HA Trail",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.65,
+      "totalR": 2.88,
       "highestR": 1.65,
       "winRate": 1,
-      "expectancy": 1.65
+      "expectancy": 1.44
     },
     {
       "avwap": "Trend Swing Point",
       "method": "BoS Swing Trail + 2R",
       "combo": "Trend Swing Point × BoS Swing Trail + 2R",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
-      "totalR": 1.25,
+      "totalR": 2.18,
       "highestR": 1.25,
       "winRate": 1,
-      "expectancy": 1.25
+      "expectancy": 1.09
     }
   ],
   "bestPerSession": [
@@ -119,6 +119,19 @@
       "highestR": 1.82,
       "winRate": 1,
       "expectancy": 1.82
+    },
+    {
+      "session": "NY",
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.62,
+      "highestR": 1.62,
+      "winRate": 1,
+      "expectancy": 1.62
     }
   ],
   "remaining": [
@@ -126,13 +139,13 @@
       "avwap": "Trend Swing Point",
       "method": "BoS Swing Trail",
       "combo": "Trend Swing Point × BoS Swing Trail",
-      "trades": 1,
+      "trades": 2,
       "wins": 1,
-      "losses": 0,
-      "totalR": 0.5,
+      "losses": 1,
+      "totalR": 0.37,
       "highestR": 0.5,
-      "winRate": 1,
-      "expectancy": 0.5
+      "winRate": 0.5,
+      "expectancy": 0.185
     }
   ]
 }
