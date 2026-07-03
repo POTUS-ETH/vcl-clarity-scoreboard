@@ -1,10 +1,323 @@
 {
-  "generatedAt": null,
-  "tradeCount": 0,
-  "top3": [],
-  "byPair": [],
-  "bestPerAvwap": [],
-  "topWR": [],
-  "bestPerSession": [],
-  "remaining": []
+  "generatedAt": "2026-07-03T16:52:01.079Z",
+  "tradeCount": 11,
+  "top3": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "totalR": 6.99,
+      "highestR": 2.02,
+      "winRate": 1,
+      "expectancy": 1.7475
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail",
+      "combo": "Trend Swing Point × 10m HA Trail",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "totalR": 6.4,
+      "highestR": 2.04,
+      "winRate": 1,
+      "expectancy": 1.6
+    },
+    {
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 5.09,
+      "highestR": 3.55,
+      "winRate": 0.6666666666666666,
+      "expectancy": 1.6966666666666665
+    }
+  ],
+  "byPair": [
+    {
+      "pair": "MNQ",
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail",
+      "combo": "Trend Swing Point × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 2.6,
+      "highestR": 2.6,
+      "winRate": 1,
+      "expectancy": 2.6
+    },
+    {
+      "pair": "MES",
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 2.54,
+      "highestR": 2.54,
+      "winRate": 1,
+      "expectancy": 2.54
+    },
+    {
+      "pair": "SOL",
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 3.55,
+      "highestR": 3.55,
+      "winRate": 1,
+      "expectancy": 3.55
+    },
+    {
+      "pair": "MYM",
+      "avwap": "Sweep + BoS",
+      "method": "BoS Swing Trail",
+      "combo": "Sweep + BoS × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 2.2,
+      "highestR": 2.2,
+      "winRate": 1,
+      "expectancy": 2.2
+    }
+  ],
+  "bestPerAvwap": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "totalR": 6.99,
+      "highestR": 2.02,
+      "winRate": 1,
+      "expectancy": 1.7475
+    },
+    {
+      "avwap": "Sweep + BoS",
+      "method": "10m HA Trail + 2R",
+      "combo": "Sweep + BoS × 10m HA Trail + 2R",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 1.4500000000000002,
+      "highestR": 1.78,
+      "winRate": 0.6666666666666666,
+      "expectancy": 0.4833333333333334
+    },
+    {
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 5.09,
+      "highestR": 3.55,
+      "winRate": 0.6666666666666666,
+      "expectancy": 1.6966666666666665
+    }
+  ],
+  "topWR": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "totalR": 6.99,
+      "highestR": 2.02,
+      "winRate": 1,
+      "expectancy": 1.7475
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail",
+      "combo": "Trend Swing Point × 10m HA Trail",
+      "trades": 4,
+      "wins": 4,
+      "losses": 0,
+      "totalR": 6.4,
+      "highestR": 2.04,
+      "winRate": 1,
+      "expectancy": 1.6
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Trend Swing Point × BoS Swing Trail + 2R",
+      "trades": 4,
+      "wins": 3,
+      "losses": 1,
+      "totalR": 4.06,
+      "highestR": 2.3,
+      "winRate": 0.75,
+      "expectancy": 1.015
+    }
+  ],
+  "bestPerSession": [
+    {
+      "session": "ASIA",
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 2,
+      "wins": 1,
+      "losses": 1,
+      "totalR": 1.54,
+      "highestR": 2.54,
+      "winRate": 0.5,
+      "expectancy": 0.77
+    },
+    {
+      "session": "LON",
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail",
+      "combo": "Session H/L × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 3.55,
+      "highestR": 3.55,
+      "winRate": 1,
+      "expectancy": 3.55
+    },
+    {
+      "session": "NY",
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "totalR": 5.42,
+      "highestR": 2.02,
+      "winRate": 1,
+      "expectancy": 1.8066666666666666
+    }
+  ],
+  "remaining": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Trend Swing Point × BoS Swing Trail + 2R",
+      "trades": 4,
+      "wins": 3,
+      "losses": 1,
+      "totalR": 4.06,
+      "highestR": 2.3,
+      "winRate": 0.75,
+      "expectancy": 1.015
+    },
+    {
+      "avwap": "Session H/L",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Session H/L × BoS Swing Trail + 2R",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 4.04,
+      "highestR": 2.77,
+      "winRate": 0.6666666666666666,
+      "expectancy": 1.3466666666666667
+    },
+    {
+      "avwap": "Session H/L",
+      "method": "10m HA Trail + 2R",
+      "combo": "Session H/L × 10m HA Trail + 2R",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 3.4999999999999996,
+      "highestR": 2.32,
+      "winRate": 0.6666666666666666,
+      "expectancy": 1.1666666666666665
+    },
+    {
+      "avwap": "Session H/L",
+      "method": "10m HA Trail",
+      "combo": "Session H/L × 10m HA Trail",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 3.21,
+      "highestR": 2.64,
+      "winRate": 0.6666666666666666,
+      "expectancy": 1.07
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail",
+      "combo": "Trend Swing Point × BoS Swing Trail",
+      "trades": 4,
+      "wins": 3,
+      "losses": 1,
+      "totalR": 3.1100000000000003,
+      "highestR": 2.6,
+      "winRate": 0.75,
+      "expectancy": 0.7775000000000001
+    },
+    {
+      "avwap": "Sweep + BoS",
+      "method": "10m HA Trail + 2R",
+      "combo": "Sweep + BoS × 10m HA Trail + 2R",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 1.4500000000000002,
+      "highestR": 1.78,
+      "winRate": 0.6666666666666666,
+      "expectancy": 0.4833333333333334
+    },
+    {
+      "avwap": "Sweep + BoS",
+      "method": "10m HA Trail",
+      "combo": "Sweep + BoS × 10m HA Trail",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "totalR": 1.23,
+      "highestR": 1.56,
+      "winRate": 0.6666666666666666,
+      "expectancy": 0.41
+    },
+    {
+      "avwap": "Sweep + BoS",
+      "method": "BoS Swing Trail",
+      "combo": "Sweep + BoS × BoS Swing Trail",
+      "trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "totalR": 0.20000000000000018,
+      "highestR": 2.2,
+      "winRate": 0.3333333333333333,
+      "expectancy": 0.06666666666666672
+    },
+    {
+      "avwap": "Sweep + BoS",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Sweep + BoS × BoS Swing Trail + 2R",
+      "trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "totalR": 0.10000000000000009,
+      "highestR": 2.1,
+      "winRate": 0.3333333333333333,
+      "expectancy": 0.03333333333333336
+    }
+  ]
 }
