@@ -12,7 +12,9 @@ if (!NOTION_TOKEN) {
 }
 
 // Trade Log v3 (the master trade log for VCL Clarity V2)
-const MTL_DB = '3837e541-46b5-829d-8f32-87ddf071c642';
+// Note: This is the DATABASE block ID (not the collection ID). The Notion
+// public API endpoint /v1/databases/{id}/query requires the database ID.
+const MTL_DB = '5057e541-46b5-82f2-be48-015ef5718571';
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
