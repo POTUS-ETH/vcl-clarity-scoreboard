@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="color-scheme" content="dark" />
-<title>VCL Clarity Scoreboard</title>
+<title>VCL Clarity V2 Scoreboard</title>
 <style>
   :root {
     --text: rgba(255, 255, 255, 0.92);
@@ -17,8 +17,11 @@
     --green: #22c55e;
     --red: #ef4444;
     --gold: #f59e0b;
+    --silver: #cbd5e1;
+    --bronze: #b45309;
     --blue: #3b82f6;
     --purple: #a855f7;
+    --yellow: #eab308;
   }
   * { box-sizing: border-box; }
   html, body {
@@ -27,121 +30,212 @@
     color: var(--text);
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 13px;
-    line-height: 1.45;
+    line-height: 1.4;
     color-scheme: dark;
   }
   .root { padding: 12px; max-width: 1280px; margin: 0 auto; }
 
   .header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 10px;
-    padding: 0 4px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 12px; padding: 0 4px;
   }
   .title {
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--muted);
   }
   .meta { color: var(--muted); font-size: 11px; }
 
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-auto-rows: auto;
-    gap: 12px;
-  }
-  @media (max-width: 880px) {
-    .grid { grid-template-columns: 1fr; }
-  }
+  /* AVWAP color tints — accent per row */
+  .av-trend    { --accent: var(--blue);   }
+  .av-sweep    { --accent: var(--green);  }
+  .av-session  { --accent: var(--yellow); }
 
+  /* ======================= ROW 1: PODIUM ======================= */
+  .podium {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .podium-block {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 14px 14px 12px;
+    display: flex; flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .podium-block.gold   { border-color: color-mix(in srgb, var(--gold)   50%, var(--border)); background: color-mix(in srgb, var(--gold)   10%, var(--surface)); }
+  .podium-block.silver { border-color: color-mix(in srgb, var(--silver) 45%, var(--border)); background: color-mix(in srgb, var(--silver)  6%, var(--surface)); }
+  .podium-block.bronze { border-color: color-mix(in srgb, var(--bronze) 50%, var(--border)); background: color-mix(in srgb, var(--bronze)  8%, var(--surface)); }
+  .podium-rank {
+    font-size: 22px; font-weight: 800;
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 4px;
+  }
+  .podium-block.gold   .podium-rank { color: var(--gold); }
+  .podium-block.silver .podium-rank { color: var(--silver); }
+  .podium-block.bronze .podium-rank { color: var(--bronze); }
+  .podium-avwap {
+    font-size: 15px; font-weight: 700;
+    color: var(--accent, var(--text));
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+  .podium-method {
+    font-size: 11.5px; color: var(--muted); font-weight: 500;
+    margin-bottom: 10px;
+  }
+  .podium-total {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .podium-total.neg { color: var(--red); }
+  .podium-total .unit { font-size: 15px; font-weight: 700; opacity: 0.7; margin-left: 2px; }
+  .podium-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    margin-top: 4px;
+  }
+  .stat { display: flex; flex-direction: column; }
+  .stat-label {
+    font-size: 9.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .stat-value { font-size: 13px; font-weight: 700; color: var(--value); }
+  .stat-value.pos { color: var(--green); }
+  .stat-value.neg { color: var(--red); }
+
+  /* ======================= ROW 2: PAIR ROW ======================= */
+  .pair-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .pair-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    border-left: 3px solid var(--accent, var(--border-strong));
+  }
+  .pair-tag {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .pair-avwap {
+    font-size: 13px; font-weight: 700;
+    color: var(--accent, var(--text));
+    line-height: 1.2;
+  }
+  .pair-method { font-size: 10.5px; color: var(--muted); }
+  .pair-line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .pair-line .val { color: var(--value); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pair-line .val.pos { color: var(--green); }
+  .pair-line .val.neg { color: var(--red); }
+
+  /* ======================= ROW 3: TRIPLE PANELS ======================= */
+  .row3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
   .panel {
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--surface);
     padding: 12px;
   }
-  .panel.top    { border-color: color-mix(in srgb, var(--gold)   38%, var(--border)); background: color-mix(in srgb, var(--gold)   6%, var(--surface)); }
-  .panel.pair   { border-color: color-mix(in srgb, var(--blue)   38%, var(--border)); background: color-mix(in srgb, var(--blue)   6%, var(--surface)); }
-  .panel.trader { border-color: color-mix(in srgb, var(--purple) 38%, var(--border)); background: color-mix(in srgb, var(--purple) 6%, var(--surface)); }
-  .panel.avwap  { border-color: color-mix(in srgb, var(--green)  38%, var(--border)); background: color-mix(in srgb, var(--green)  6%, var(--surface)); }
-
-  .panel-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin-bottom: 8px;
-    padding: 0 2px;
-  }
   .panel-title {
-    font-size: 11.5px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
   }
-  .panel.top    .panel-title { color: var(--gold); }
-  .panel.pair   .panel-title { color: var(--blue); }
-  .panel.trader .panel-title { color: var(--purple); }
-  .panel.avwap  .panel-title { color: var(--green); }
-  .panel-sub { font-size: 10.5px; color: var(--muted); }
+  .mini-list { display: flex; flex-direction: column; gap: 6px; }
+  .mini-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface-strong);
+    border-left: 3px solid var(--accent, var(--border-strong));
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .mini-tag {
+    font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+    min-width: 42px;
+  }
+  .mini-body { display: flex; flex-direction: column; min-width: 0; }
+  .mini-avwap { font-size: 12px; font-weight: 700; color: var(--accent, var(--text)); }
+  .mini-method { font-size: 10px; color: var(--muted); }
+  .mini-metric { text-align: right; }
+  .mini-metric .primary {
+    font-size: 13px; font-weight: 800;
+    color: var(--value);
+  }
+  .mini-metric .primary.pos { color: var(--green); }
+  .mini-metric .primary.neg { color: var(--red); }
+  .mini-metric .secondary { font-size: 10px; color: var(--muted); }
 
-  /* === Tables === */
-  .lb {
+  /* ======================= ROW 4: REMAINING TABLE ======================= */
+  .remaining-panel { margin-bottom: 6px; }
+  .rank-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 3px;
     font-variant-numeric: tabular-nums;
   }
-  .lb thead th {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+  .rank-table thead th {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--muted);
     text-align: right;
-    padding: 5px 8px;
-    border: none;
+    padding: 4px 8px;
     white-space: nowrap;
   }
-  .lb thead th.l { text-align: left; }
-
-  .lb tbody td {
-    padding: 8px 8px;
+  .rank-table thead th.l { text-align: left; }
+  .rank-table tbody td {
+    padding: 8px;
     background: var(--surface-strong);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
     text-align: right;
     white-space: nowrap;
   }
-  .lb tbody td.l { text-align: left; }
-  .lb tbody td.first {
+  .rank-table tbody td.l { text-align: left; }
+  .rank-table tbody td.first {
     border-left: 3px solid var(--accent, var(--border-strong));
-    border-radius: 7px 0 0 7px;
+    border-radius: 6px 0 0 6px;
   }
-  .lb tbody td.last {
+  .rank-table tbody td.last {
     border-right: 1px solid var(--border);
-    border-radius: 0 7px 7px 0;
+    border-radius: 0 6px 6px 0;
   }
-
-  .combo-cell { display: flex; flex-direction: column; gap: 1px; }
-  .combo-avwap {
-    color: var(--accent, var(--text));
-    font-size: 12.5px;
-    font-weight: 700;
-  }
-  .combo-method, .row-sub {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 500;
-  }
-  .row-prim {
-    color: var(--text);
-    font-size: 12.5px;
-    font-weight: 700;
-  }
-
-  .num { font-weight: 600; color: var(--value); font-size: 12.5px; }
+  .rank-num { color: var(--muted); font-weight: 700; }
+  .rank-avwap { color: var(--accent, var(--text)); font-weight: 700; font-size: 12px; }
+  .rank-method { color: var(--muted); font-size: 10.5px; }
   .num.pos { color: var(--green); }
   .num.neg { color: var(--red); }
   .num.muted { color: var(--muted); font-weight: 500; }
@@ -150,127 +244,90 @@
     text-align: center;
     color: var(--muted);
     font-style: italic;
-    padding: 16px;
+    padding: 14px;
+    background: var(--surface-strong);
+    border-radius: 8px;
   }
 
   .footer {
-    margin-top: 10px;
+    margin-top: 12px;
     text-align: center;
     color: var(--muted);
     font-size: 10.5px;
   }
 
-  /* AVWAP color tints */
-  .avwap-daily              { --accent: #a855f7; }
-  .avwap-session-open       { --accent: #d4d4d4; }
-  .avwap-session-hl         { --accent: #eab308; }
-  .avwap-trend-swing-point  { --accent: #3b82f6; }
-  .avwap-sweep-bos          { --accent: #22c55e; }
+  /* Responsive: collapse podium & rows on narrow screens */
+  @media (max-width: 900px) {
+    .podium, .pair-row, .row3 { grid-template-columns: 1fr; }
+    .podium-block { padding: 12px; }
+    .podium-total { font-size: 24px; }
+  }
 </style>
 </head>
 <body>
 <div class="root">
   <div class="header">
-    <div class="title">🏆 Scoreboard <span class="meta" id="trade-count" style="margin-left:8px"></span></div>
+    <div class="title">🏆 VCL Clarity V2 Scoreboard <span class="meta" id="trade-count" style="margin-left:8px"></span></div>
     <div class="meta" id="updated-at">loading…</div>
   </div>
 
-  <div class="grid">
-    <div class="panel top">
-      <div class="panel-head">
-        <div class="panel-title">🥇 Top 5 Combos</div>
-        <div class="panel-sub">By Total R</div>
-      </div>
-      <table class="lb">
-        <thead>
-          <tr>
-            <th class="l">#</th>
-            <th class="l">Combo</th>
-            <th>WR</th>
-            <th>Exp</th>
-            <th>Total R</th>
-            <th>Best</th>
-          </tr>
-        </thead>
-        <tbody id="top-body">
-          <tr><td colspan="6" class="empty">loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- ROW 1: PODIUM (1st / 2nd / 3rd by Total R) -->
+  <div class="podium" id="podium">
+    <div class="podium-block gold"   id="podium-1"><div class="empty">loading…</div></div>
+    <div class="podium-block silver" id="podium-2"><div class="empty">loading…</div></div>
+    <div class="podium-block bronze" id="podium-3"><div class="empty">loading…</div></div>
+  </div>
 
-    <div class="panel pair">
-      <div class="panel-head">
-        <div class="panel-title">🎯 Best by Pair</div>
-        <div class="panel-sub">Top combo per pair · ranked by Total R</div>
-      </div>
-      <table class="lb">
-        <thead>
-          <tr>
-            <th class="l">Pair</th>
-            <th class="l">Combo</th>
-            <th>WR</th>
-            <th>Total R</th>
-            <th>Best</th>
-          </tr>
-        </thead>
-        <tbody id="pair-body">
-          <tr><td colspan="5" class="empty">loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- ROW 2: TOP COMBO BY PAIR -->
+  <div class="pair-row" id="pair-row">
+    <div class="pair-card"><div class="empty">loading…</div></div>
+  </div>
 
-    <div class="panel trader">
-      <div class="panel-head">
-        <div class="panel-title">👤 Best by Trader</div>
-        <div class="panel-sub">Top combo per trader · ranked by Total R</div>
-      </div>
-      <table class="lb">
-        <thead>
-          <tr>
-            <th class="l">Trader</th>
-            <th class="l">Combo</th>
-            <th>WR</th>
-            <th>Total R</th>
-          </tr>
-        </thead>
-        <tbody id="trader-body">
-          <tr><td colspan="4" class="empty">loading…</td></tr>
-        </tbody>
-      </table>
+  <!-- ROW 3: BEST/AVWAP · TOP WR · BEST/SESSION -->
+  <div class="row3">
+    <div class="panel">
+      <div class="panel-title">🎯 Best Method per AVWAP</div>
+      <div class="mini-list" id="best-avwap"><div class="empty">loading…</div></div>
     </div>
+    <div class="panel">
+      <div class="panel-title">📈 Top 3 by Win Rate</div>
+      <div class="mini-list" id="top-wr"><div class="empty">loading…</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">🕐 Best Combo per Session</div>
+      <div class="mini-list" id="best-session"><div class="empty">loading…</div></div>
+    </div>
+  </div>
 
-    <div class="panel avwap">
-      <div class="panel-head">
-        <div class="panel-title">📈 Top 3 AVWAP by Win Rate</div>
-        <div class="panel-sub">Best methodology per AVWAP</div>
-      </div>
-      <table class="lb">
-        <thead>
-          <tr>
-            <th class="l">AVWAP</th>
-            <th class="l">Best Method</th>
-            <th>WR</th>
-            <th>Total R</th>
-            <th>n</th>
-          </tr>
-        </thead>
-        <tbody id="avwap-body">
-          <tr><td colspan="5" class="empty">loading…</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- ROW 4: REMAINING COMBOS -->
+  <div class="panel remaining-panel">
+    <div class="panel-title">📋 Remaining Combos (Ranked by Total R)</div>
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th class="l" style="width:30px">#</th>
+          <th class="l">Combo</th>
+          <th>WR</th>
+          <th>Exp</th>
+          <th>Total R</th>
+          <th>Best</th>
+          <th>n</th>
+        </tr>
+      </thead>
+      <tbody id="remaining-body">
+        <tr><td colspan="7" class="empty">loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div class="footer" id="footer"></div>
 </div>
 
 <script>
-  const AVWAP_CLASS = {
-    'Daily': 'avwap-daily',
-    'Session Open': 'avwap-session-open',
-    'Session H/L': 'avwap-session-hl',
-    'Trend Swing Point': 'avwap-trend-swing-point',
-    'Sweep + BoS': 'avwap-sweep-bos',
+  const AV_CLASS = {
+    'Trend Swing Point': 'av-trend',
+    'Sweep + BoS':       'av-sweep',
+    'Session H/L':       'av-session',
   };
 
   function fmtR(n, withSign = true) {
@@ -279,9 +336,10 @@
     const cls = n > 0 ? 'pos' : (n < 0 ? 'neg' : '');
     return `<span class="num ${cls}">${sign}${n.toFixed(2)}R</span>`;
   }
-  function fmtPct(n) {
-    if (n === null || n === undefined || Number.isNaN(n)) return '<span class="num muted">—</span>';
-    return `<span class="num">${(n * 100).toFixed(1)}%</span>`;
+  function fmtWR(c) {
+    if (c.trades === 0 || c.winRate === null || c.winRate === undefined) return '—';
+    const pct = Math.round(c.winRate * 100);
+    return `${pct}% [${c.wins}W/${c.losses}L]`;
   }
   function timeAgo(iso) {
     if (!iso) return '';
@@ -295,98 +353,162 @@
     return `updated ${d.toLocaleDateString()}`;
   }
 
-  function renderTop(rows) {
-    const tbody = document.getElementById('top-body');
-    const active = (rows || []).filter(c => (c.trades || 0) > 0).slice(0, 5);
-    if (!active.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">No combos yet</td></tr>';
+  // -------- ROW 1: PODIUM --------
+  function renderPodium(top3) {
+    ['gold', 'silver', 'bronze'].forEach((tier, i) => {
+      const el = document.getElementById(`podium-${i + 1}`);
+      const c = top3?.[i];
+      const medal = ['🥇', '🥈', '🥉'][i];
+      if (!c) {
+        el.innerHTML = `<div class="podium-rank">${medal} —</div><div class="empty">No data yet</div>`;
+        return;
+      }
+      const totalCls = c.totalR < 0 ? 'neg' : '';
+      const avClass = AV_CLASS[c.avwap] || '';
+      el.className = `podium-block ${tier} ${avClass}`;
+      el.innerHTML = `
+        <div class="podium-rank">${medal} #${i + 1}</div>
+        <div class="podium-avwap">${c.avwap}</div>
+        <div class="podium-method">${c.method}</div>
+        <div class="podium-total ${totalCls}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}<span class="unit">R</span></div>
+        <div class="podium-stats">
+          <div class="stat">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value">${fmtWR(c)}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Expectancy</div>
+            <div class="stat-value ${c.expectancy > 0 ? 'pos' : c.expectancy < 0 ? 'neg' : ''}">${c.expectancy != null ? (c.expectancy >= 0 ? '+' : '') + c.expectancy.toFixed(2) + 'R' : '—'}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Best Trade</div>
+            <div class="stat-value ${c.highestR > 0 ? 'pos' : c.highestR < 0 ? 'neg' : ''}">${c.highestR != null ? (c.highestR >= 0 ? '+' : '') + c.highestR.toFixed(2) + 'R' : '—'}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Trades</div>
+            <div class="stat-value">${c.trades}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // -------- ROW 2: PAIR ROW --------
+  function renderPairRow(byPair) {
+    const container = document.getElementById('pair-row');
+    if (!byPair || !byPair.length) {
+      container.innerHTML = '<div class="pair-card"><div class="empty">No pair data yet</div></div>';
       return;
     }
-    tbody.innerHTML = active.map((c, i) => {
-      const cls = AVWAP_CLASS[c.avwap] || '';
+    container.innerHTML = byPair.map(c => {
+      const avClass = AV_CLASS[c.avwap] || '';
       return `
-        <tr class="${cls}">
-          <td class="l first" style="width:30px;color:var(--muted);font-weight:700">${i + 1}</td>
+        <div class="pair-card ${avClass}">
+          <div class="pair-tag">${c.pair}</div>
+          <div class="pair-avwap">${c.avwap}</div>
+          <div class="pair-method">${c.method}</div>
+          <div class="pair-line">
+            <span>Total R</span>
+            <span class="val ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</span>
+          </div>
+          <div class="pair-line">
+            <span>WR · n=${c.trades}</span>
+            <span class="val">${fmtWR(c)}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // -------- ROW 3: Left panel — Best method per AVWAP --------
+  function renderBestAvwap(rows) {
+    const el = document.getElementById('best-avwap');
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty">No data yet</div>';
+      return;
+    }
+    el.innerHTML = rows.map(c => {
+      const avClass = AV_CLASS[c.avwap] || '';
+      return `
+        <div class="mini-item ${avClass}">
+          <div class="mini-body">
+            <div class="mini-avwap">${c.avwap}</div>
+            <div class="mini-method">${c.method}</div>
+          </div>
+          <div class="mini-metric">
+            <div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</div>
+            <div class="secondary">n=${c.trades} · WR ${c.winRate != null ? Math.round(c.winRate * 100) + '%' : '—'}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // -------- ROW 3: Middle panel — Top 3 by Win Rate --------
+  function renderTopWR(rows) {
+    const el = document.getElementById('top-wr');
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty">No data yet</div>';
+      return;
+    }
+    el.innerHTML = rows.map((c, i) => {
+      const avClass = AV_CLASS[c.avwap] || '';
+      return `
+        <div class="mini-item ${avClass}">
+          <div class="mini-tag">${['🥇','🥈','🥉'][i] || '#' + (i+1)}</div>
+          <div class="mini-body">
+            <div class="mini-avwap">${c.avwap}</div>
+            <div class="mini-method">${c.method}</div>
+          </div>
+          <div class="mini-metric">
+            <div class="primary">${Math.round(c.winRate * 100)}%</div>
+            <div class="secondary">${c.wins}W/${c.losses}L · n=${c.trades}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // -------- ROW 3: Right panel — Best combo per Session --------
+  function renderBestSession(rows) {
+    const el = document.getElementById('best-session');
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty">No data yet</div>';
+      return;
+    }
+    el.innerHTML = rows.map(c => {
+      const avClass = AV_CLASS[c.avwap] || '';
+      return `
+        <div class="mini-item ${avClass}">
+          <div class="mini-tag">${c.session}</div>
+          <div class="mini-body">
+            <div class="mini-avwap">${c.avwap}</div>
+            <div class="mini-method">${c.method}</div>
+          </div>
+          <div class="mini-metric">
+            <div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</div>
+            <div class="secondary">n=${c.trades}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // -------- ROW 4: Remaining combos (rank 4+) --------
+  function renderRemaining(rows) {
+    const tbody = document.getElementById('remaining-body');
+    if (!rows || !rows.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">All combos are in the podium</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((c, i) => {
+      const avClass = AV_CLASS[c.avwap] || '';
+      return `
+        <tr class="${avClass}">
+          <td class="l first"><span class="rank-num">${i + 4}</span></td>
           <td class="l">
-            <div class="combo-cell">
-              <span class="combo-avwap">${c.avwap}</span>
-              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
-            </div>
+            <div><span class="rank-avwap">${c.avwap}</span></div>
+            <div class="rank-method">${c.method}</div>
           </td>
-          <td>${fmtPct(c.winRate)}</td>
+          <td>${fmtWR(c)}</td>
           <td>${fmtR(c.expectancy)}</td>
           <td>${fmtR(c.totalR)}</td>
-          <td class="last">${fmtR(c.highestR)}</td>
-        </tr>`;
-    }).join('');
-  }
-
-  function renderPair(rows) {
-    const tbody = document.getElementById('pair-body');
-    const active = (rows || []).filter(c => (c.trades || 0) > 0);
-    if (!active.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
-      return;
-    }
-    tbody.innerHTML = active.map(c => {
-      const cls = AVWAP_CLASS[c.avwap] || '';
-      return `
-        <tr class="${cls}">
-          <td class="l first row-prim">${c.pair}</td>
-          <td class="l">
-            <div class="combo-cell">
-              <span class="combo-avwap">${c.avwap}</span>
-              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
-            </div>
-          </td>
-          <td>${fmtPct(c.winRate)}</td>
-          <td>${fmtR(c.totalR)}</td>
-          <td class="last">${fmtR(c.highestR)}</td>
-        </tr>`;
-    }).join('');
-  }
-
-  function renderTrader(rows) {
-    const tbody = document.getElementById('trader-body');
-    const active = (rows || []).filter(c => (c.trades || 0) > 0);
-    if (!active.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty">No data yet</td></tr>';
-      return;
-    }
-    tbody.innerHTML = active.map(c => {
-      const cls = AVWAP_CLASS[c.avwap] || '';
-      return `
-        <tr class="${cls}">
-          <td class="l first row-prim">${c.trader}</td>
-          <td class="l">
-            <div class="combo-cell">
-              <span class="combo-avwap">${c.avwap}</span>
-              <span class="combo-method">${c.methodology} · n=${c.trades}</span>
-            </div>
-          </td>
-          <td>${fmtPct(c.winRate)}</td>
-          <td class="last">${fmtR(c.totalR)}</td>
-        </tr>`;
-    }).join('');
-  }
-
-  function renderAvwap(rows) {
-    const tbody = document.getElementById('avwap-body');
-    const active = (rows || []).filter(c => (c.trades || 0) > 0);
-    if (!active.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">No data yet</td></tr>';
-      return;
-    }
-    tbody.innerHTML = active.map(c => {
-      const cls = AVWAP_CLASS[c.avwap] || '';
-      return `
-        <tr class="${cls}">
-          <td class="l first">
-            <span class="combo-avwap">${c.avwap}</span>
-          </td>
-          <td class="l row-sub">${c.methodology}</td>
-          <td>${fmtPct(c.winRate)}</td>
-          <td>${fmtR(c.totalR)}</td>
+          <td>${fmtR(c.highestR)}</td>
           <td class="last"><span class="num muted">${c.trades}</span></td>
         </tr>`;
     }).join('');
@@ -394,25 +516,29 @@
 
   function render(data) {
     document.getElementById('updated-at').textContent = timeAgo(data?.generatedAt) || '';
-    document.getElementById('trade-count').textContent = data?.tradeCount ? `· ${data.tradeCount} trades` : '';
+    document.getElementById('trade-count').textContent = data?.tradeCount != null ? `· ${data.tradeCount} trades` : '';
     document.getElementById('footer').textContent = data?.generatedAt
       ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}`
       : '';
 
-    renderTop(data?.leaderboard);
-    renderPair(data?.bestByPair);
-    renderTrader(data?.bestByTrader);
-    renderAvwap(data?.topAvwapByWR);
+    renderPodium(data?.top3);
+    renderPairRow(data?.byPair);
+    renderBestAvwap(data?.bestPerAvwap);
+    renderTopWR(data?.topWR);
+    renderBestSession(data?.bestPerSession);
+    renderRemaining(data?.remaining);
   }
 
   fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
     .then(render)
     .catch(err => {
-      const msg = `<tr><td colspan="6" class="empty">Couldn't load (${err})</td></tr>`;
-      ['top-body', 'pair-body', 'trader-body', 'avwap-body'].forEach(id => {
+      const msg = `<div class="empty">Couldn't load (${err})</div>`;
+      ['podium-1','podium-2','podium-3','best-avwap','top-wr','best-session'].forEach(id => {
         document.getElementById(id).innerHTML = msg;
       });
+      document.getElementById('pair-row').innerHTML = `<div class="pair-card">${msg}</div>`;
+      document.getElementById('remaining-body').innerHTML = `<tr><td colspan="7" class="empty">Couldn't load (${err})</td></tr>`;
     });
 </script>
 </body>
