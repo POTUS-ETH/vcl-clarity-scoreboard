@@ -1,10 +1,138 @@
 {
-  "generatedAt": "2026-07-03T18:10:21.725Z",
+  "generatedAt": "2026-07-03T18:33:28.781Z",
   "tradeCount": 1,
-  "top3": [],
-  "byPair": [],
-  "bestPerAvwap": [],
-  "topWR": [],
-  "bestPerSession": [],
-  "remaining": []
+  "top3": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.82,
+      "highestR": 1.82,
+      "winRate": 1,
+      "expectancy": 1.82
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail",
+      "combo": "Trend Swing Point × 10m HA Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.65,
+      "highestR": 1.65,
+      "winRate": 1,
+      "expectancy": 1.65
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Trend Swing Point × BoS Swing Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.25,
+      "highestR": 1.25,
+      "winRate": 1,
+      "expectancy": 1.25
+    }
+  ],
+  "byPair": [
+    {
+      "pair": "MNQ",
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.82,
+      "highestR": 1.82,
+      "winRate": 1,
+      "expectancy": 1.82
+    }
+  ],
+  "bestPerAvwap": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.82,
+      "highestR": 1.82,
+      "winRate": 1,
+      "expectancy": 1.82
+    }
+  ],
+  "topWR": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.82,
+      "highestR": 1.82,
+      "winRate": 1,
+      "expectancy": 1.82
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail",
+      "combo": "Trend Swing Point × 10m HA Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.65,
+      "highestR": 1.65,
+      "winRate": 1,
+      "expectancy": 1.65
+    },
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail + 2R",
+      "combo": "Trend Swing Point × BoS Swing Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.25,
+      "highestR": 1.25,
+      "winRate": 1,
+      "expectancy": 1.25
+    }
+  ],
+  "bestPerSession": [
+    {
+      "session": "LON",
+      "avwap": "Trend Swing Point",
+      "method": "10m HA Trail + 2R",
+      "combo": "Trend Swing Point × 10m HA Trail + 2R",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 1.82,
+      "highestR": 1.82,
+      "winRate": 1,
+      "expectancy": 1.82
+    }
+  ],
+  "remaining": [
+    {
+      "avwap": "Trend Swing Point",
+      "method": "BoS Swing Trail",
+      "combo": "Trend Swing Point × BoS Swing Trail",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "totalR": 0.5,
+      "highestR": 0.5,
+      "winRate": 1,
+      "expectancy": 0.5
+    }
+  ]
 }
