@@ -106,9 +106,9 @@ function finalize(bucket) {
   const trades = await queryAll(MTL_DB);
   console.log(`Got ${trades.length} trades`);
 
-  const byCombo = {};        // avwap||method
-  const byPairCombo = {};    // pair||avwap||method
-  const bySessionCombo = {}; // session||avwap||method
+  const byCombo = {};
+  const byPairCombo = {};
+  const bySessionCombo = {};
 
   for (const t of trades) {
     const avwapList = getProp(t, 'AVWAP TYPE') || [];
@@ -119,7 +119,7 @@ function finalize(bucket) {
     for (const avwap of avwapList) {
       for (const m of METHODOLOGIES) {
         const exit = getProp(t, m.exitCol);
-        if (exit === null || exit === undefined) continue;   // methodology not used on this trade
+        if (exit === null || exit === undefined) continue;
         const r = getProp(t, m.rCol);
         const rNum = typeof r === 'number' ? r : parseFloat(r);
         if (r === null || r === undefined || isNaN(rNum)) continue;
@@ -146,19 +146,13 @@ function finalize(bucket) {
   const top3      = allCombos.slice(0, 3);
   const remaining = allCombos.slice(3);
 
-  // Best combo per Pair (highest Total R)
   const pairMap = {};
   for (const b of Object.values(byPairCombo)) {
     if (!pairMap[b.pair] || b.totalR > pairMap[b.pair].totalR) pairMap[b.pair] = b;
   }
-  // Preserve a stable Pair display order
   const PAIR_ORDER = ['MNQ', 'MES', 'SOL', 'MYM'];
-  const byPair = PAIR_ORDER
-    .map(p => pairMap[p])
-    .filter(Boolean)
-    .map(finalize);
+  const byPair = PAIR_ORDER.map(p => pairMap[p]).filter(Boolean).map(finalize);
 
-  // Best method per AVWAP (highest Total R)
   const avwapMap = {};
   for (const b of allCombos) {
     if (!avwapMap[b.avwap] || b.totalR > avwapMap[b.avwap].totalR) avwapMap[b.avwap] = b;
@@ -166,15 +160,12 @@ function finalize(bucket) {
   const AVWAP_ORDER = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L'];
   const bestPerAvwap = AVWAP_ORDER.map(a => avwapMap[a]).filter(Boolean);
 
-  // Top 3 by Win Rate (min trades gate keeps single lucky trades from topping)
-  const MIN_TRADES_WR = 1;
   const topWR = allCombos
-    .filter(c => c.trades >= MIN_TRADES_WR && c.winRate !== null)
+    .filter(c => c.trades >= 1 && c.winRate !== null)
     .slice()
     .sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0))
     .slice(0, 3);
 
-  // Best combo per Session (highest Total R)
   const sessionMap = {};
   for (const b of Object.values(bySessionCombo)) {
     if (!sessionMap[b.session] || b.totalR > sessionMap[b.session].totalR) sessionMap[b.session] = b;
@@ -195,7 +186,7 @@ function finalize(bucket) {
 
   const outPath = path.join(__dirname, 'data.json');
   fs.writeFileSync(outPath, JSON.stringify(data, null, 2));
-  console.log(`Wrote ${outPath}: ${allCombos.length} combos, top3=${top3.length}, byPair=${byPair.length}, byAvwap=${bestPerAvwap.length}, byWR=${topWR.length}, bySession=${bestPerSession.length}, remaining=${remaining.length}`);
+  console.log(`Wrote ${outPath}: ${allCombos.length} combos`);
 })().catch(err => {
   console.error(err);
   process.exit(1);
