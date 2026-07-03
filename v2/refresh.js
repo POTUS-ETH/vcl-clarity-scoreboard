@@ -15,6 +15,8 @@ if (!NOTION_TOKEN) {
 // Note: This is the DATABASE block ID (not the collection ID). The Notion
 // public API endpoint /v1/databases/{id}/query requires the database ID.
 const MTL_DB = '5057e541-46b5-82f2-be48-015ef5718571';
+// AVWAP Stats v3 — used to auto-link trades based on AVWAP TYPE + Pair
+const AVWAP_STATS_DB = 'fde7e541-46b5-8276-adef-01079d995d0d';
 
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
@@ -103,10 +105,118 @@ function finalize(bucket) {
   };
 }
 
+// --- Auto-link helpers -------------------------------------------------------
+// For each AVWAP row we need the raw relation array (list of {id} objects).
+function getRelationIds(page, name) {
+  const p = page.properties?.[name];
+  if (!p || p.type !== 'relation') return [];
+  return p.relation.map(r => r.id);
+}
+function getParentRelationIds(page) {
+  return getRelationIds(page, 'Parent item');
+}
+
+async function patchAvwapStatsRelation(tradeId, avwapStatsIds) {
+  const r = await fetch(`${NOTION_API}/pages/${tradeId}`, {
+    method: 'PATCH', headers,
+    body: JSON.stringify({
+      properties: { 'AVWAP Stats': { relation: avwapStatsIds.map(id => ({ id })) } },
+    }),
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`PATCH ${tradeId} failed: ${r.status} ${text}`);
+  }
+}
+
+function setsEqual(a, b) {
+  if (a.size !== b.size) return false;
+  for (const x of a) if (!b.has(x)) return false;
+  return true;
+}
+
+async function autoLinkTrades(trades) {
+  console.log('Auto-linking trades to AVWAP Stats rows...');
+  const statsRows = await queryAll(AVWAP_STATS_DB);
+  console.log(`Got ${statsRows.length} AVWAP Stats rows`);
+
+  // Classify rows into parents (ALL) and sub-rows (per pair)
+  // Parents have no "Parent item" relation; sub-rows do.
+  const parentByAvwap = {};       // "Trend Swing Point" -> pageId
+  const subByAvwapPair = {};       // "Trend Swing Point|MNQ" -> pageId
+  for (const row of statsRows) {
+    const title = getProp(row, 'AVWAP') || '';
+    const pair = getProp(row, 'Pair');
+    const parents = getParentRelationIds(row);
+    const isSubRow = parents.length > 0;
+    // Titles like "🔵 Trend Swing Point" (parent) or "MNQ" (sub-row, title is pair)
+    // Match the parent AVWAP by scanning known AVWAP names in the title.
+    const AVWAP_NAMES = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L'];
+    if (!isSubRow) {
+      for (const name of AVWAP_NAMES) {
+        if (title.includes(name)) parentByAvwap[name] = row.id;
+      }
+    } else {
+      // Sub-row: figure out parent's AVWAP name from its parent row (or fallback via pair + AVWAP)
+      const parentId = parents[0];
+      const parent = statsRows.find(r => r.id === parentId);
+      const parentTitle = parent ? (getProp(parent, 'AVWAP') || '') : '';
+      let parentAvwap = null;
+      for (const name of AVWAP_NAMES) if (parentTitle.includes(name)) parentAvwap = name;
+      if (parentAvwap && pair) subByAvwapPair[`${parentAvwap}|${pair}`] = row.id;
+    }
+  }
+  console.log('Parent rows found:', Object.keys(parentByAvwap).join(', '));
+  console.log('Sub-rows found:', Object.keys(subByAvwapPair).join(', '));
+
+  // For each trade, compute desired relation set = parent(s) + sub-row(s) per AVWAP TYPE
+  let updatedCount = 0;
+  const updates = [];
+  for (const t of trades) {
+    const avwapList = getProp(t, 'AVWAP TYPE') || [];
+    const pair = getProp(t, 'Pair');
+    const desired = new Set();
+    for (const avwap of avwapList) {
+      if (parentByAvwap[avwap]) desired.add(parentByAvwap[avwap]);
+      if (pair && subByAvwapPair[`${avwap}|${pair}`]) desired.add(subByAvwapPair[`${avwap}|${pair}`]);
+    }
+    const current = new Set(getRelationIds(t, 'AVWAP Stats'));
+    if (!setsEqual(current, desired)) {
+      updates.push({ id: t.id, ids: [...desired] });
+    }
+  }
+  console.log(`${updates.length} trades need relation updates`);
+
+  // Rate-limit friendly: batches of 3, with a brief pause
+  const BATCH = 3;
+  for (let i = 0; i < updates.length; i += BATCH) {
+    const batch = updates.slice(i, i + BATCH);
+    await Promise.all(batch.map(async u => {
+      try {
+        await patchAvwapStatsRelation(u.id, u.ids);
+        updatedCount += 1;
+      } catch (e) {
+        console.error(`  relation patch failed for ${u.id}: ${e.message}`);
+      }
+    }));
+    if (i + BATCH < updates.length) await new Promise(r => setTimeout(r, 350));
+  }
+  console.log(`Auto-linked ${updatedCount} trades`);
+  return updatedCount;
+}
+// -----------------------------------------------------------------------------
+
 (async () => {
   console.log('Fetching Trade Log v3...');
   const trades = await queryAll(MTL_DB);
   console.log(`Got ${trades.length} trades`);
+
+  // Auto-link every trade to the correct AVWAP Stats row(s) based on AVWAP TYPE + Pair
+  try {
+    await autoLinkTrades(trades);
+  } catch (e) {
+    console.error('Auto-link failed (continuing to compute scoreboard anyway):', e.message);
+  }
 
   const byCombo = {};
   const byPairCombo = {};
