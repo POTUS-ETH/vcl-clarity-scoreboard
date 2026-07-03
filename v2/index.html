@@ -163,6 +163,11 @@
     const cls = n > 0 ? 'pos' : (n < 0 ? 'neg' : '');
     return `<span class="num ${cls}">${sign}${n.toFixed(2)}R</span>`;
   }
+  function fmtTotalR(n) {
+    if (n === null || n === undefined || Number.isNaN(n)) return '<span class="num muted">—</span>';
+    const cls = n > 0 ? 'pos' : (n < 0 ? 'neg' : '');
+    return `<span class="num ${cls}">${n >= 0 ? '+' : ''}${n.toFixed(1)}R</span>`;
+  }
   function fmtWR(c) {
     if (c.trades === 0 || c.winRate === null || c.winRate === undefined) return '—';
     return `${Math.round(c.winRate * 100)}% [${c.wins}W/${c.losses}L]`;
@@ -191,7 +196,7 @@
         <div class="podium-rank">${medal} #${i + 1}</div>
         <div class="podium-avwap">${c.avwap}</div>
         <div class="podium-method">${c.method}</div>
-        <div class="podium-total ${c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}<span class="unit">R</span></div>
+        <div class="podium-total ${c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(1)}<span class="unit">R</span></div>
         <div class="podium-stats">
           <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-value">${fmtWR(c)}</div></div>
           <div class="stat"><div class="stat-label">Expectancy</div><div class="stat-value ${c.expectancy > 0 ? 'pos' : c.expectancy < 0 ? 'neg' : ''}">${c.expectancy != null ? (c.expectancy >= 0 ? '+' : '') + c.expectancy.toFixed(2) + 'R' : '—'}</div></div>
@@ -210,7 +215,7 @@
         <div class="pair-tag">${c.pair}</div>
         <div class="pair-avwap">${c.avwap}</div>
         <div class="pair-method">${c.method}</div>
-        <div class="pair-line"><span>Total R</span><span class="val ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</span></div>
+        <div class="pair-line"><span>Total R</span><span class="val ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(1)}R</span></div>
         <div class="pair-line"><span>WR · n=${c.trades}</span><span class="val">${fmtWR(c)}</span></div>
       </div>`;
     }).join('');
@@ -224,7 +229,7 @@
       return `<div class="mini-item ${avClass}">
         <div class="mini-body"><div class="mini-avwap">${c.avwap}</div><div class="mini-method">${c.method}</div></div>
         <div class="mini-metric">
-          <div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</div>
+          <div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(1)}R</div>
           <div class="secondary">n=${c.trades} · WR ${c.winRate != null ? Math.round(c.winRate * 100) + '%' : '—'}</div>
         </div>
       </div>`;
@@ -252,7 +257,7 @@
       return `<div class="mini-item ${avClass}">
         <div class="mini-tag">${c.session}</div>
         <div class="mini-body"><div class="mini-avwap">${c.avwap}</div><div class="mini-method">${c.method}</div></div>
-        <div class="mini-metric"><div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(2)}R</div><div class="secondary">n=${c.trades}</div></div>
+        <div class="mini-metric"><div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(1)}R</div><div class="secondary">n=${c.trades}</div></div>
       </div>`;
     }).join('');
   }
@@ -267,7 +272,7 @@
         <td class="l"><div><span class="rank-avwap">${c.avwap}</span></div><div class="rank-method">${c.method}</div></td>
         <td>${fmtWR(c)}</td>
         <td>${fmtR(c.expectancy)}</td>
-        <td>${fmtR(c.totalR)}</td>
+        <td>${fmtTotalR(c.totalR)}</td>
         <td>${fmtR(c.highestR)}</td>
         <td class="last"><span class="num muted">${c.trades}</span></td>
       </tr>`;
@@ -286,15 +291,32 @@
     renderRemaining(data?.remaining);
   }
 
-  fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
-    .then(render)
-    .catch(err => {
-      const msg = `<div class="empty">Couldn't load (${err})</div>`;
-      ['podium-1','podium-2','podium-3','best-avwap','top-wr','best-session'].forEach(id => { document.getElementById(id).innerHTML = msg; });
-      document.getElementById('pair-row').innerHTML = `<div class="pair-card">${msg}</div>`;
-      document.getElementById('remaining-body').innerHTML = `<tr><td colspan="7" class="empty">Couldn't load (${err})</td></tr>`;
-    });
+  let lastGeneratedAt = null;
+  function poll() {
+    fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+      .then(data => {
+        // Only re-render if data has actually changed (avoids flicker)
+        if (data?.generatedAt !== lastGeneratedAt) {
+          lastGeneratedAt = data?.generatedAt;
+          render(data);
+        } else {
+          // Still refresh the "updated Xs ago" text
+          document.getElementById('updated-at').textContent = timeAgo(data?.generatedAt) || '';
+        }
+      })
+      .catch(err => {
+        // Show error only on first failure — silent on subsequent poll failures
+        if (lastGeneratedAt === null) {
+          const msg = `<div class="empty">Couldn't load (${err})</div>`;
+          ['podium-1','podium-2','podium-3','best-avwap','top-wr','best-session'].forEach(id => { document.getElementById(id).innerHTML = msg; });
+          document.getElementById('pair-row').innerHTML = `<div class="pair-card">${msg}</div>`;
+          document.getElementById('remaining-body').innerHTML = `<tr><td colspan="7" class="empty">Couldn't load (${err})</td></tr>`;
+        }
+      });
+  }
+  poll();
+  setInterval(poll, 15000);   // 15s poll — catches new data.json commits fast
 </script>
 </body>
 </html>

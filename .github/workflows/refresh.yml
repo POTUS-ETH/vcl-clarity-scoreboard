@@ -29,7 +29,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Refresh loop (5 iterations × ~60s)
+      - name: Refresh loop (12 iterations × ~25s)
         shell: bash
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
@@ -38,8 +38,10 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          for iter in 1 2 3 4 5; do
-            echo "===== refresh iteration $iter/5 ====="
+          ITERATIONS=12
+          PACE_SECONDS=25
+          for iter in $(seq 1 $ITERATIONS); do
+            echo "===== refresh iteration $iter/$ITERATIONS ====="
             t0=$(date +%s)
 
             # V1 (VCL Clarity original tracker)
@@ -61,7 +63,7 @@ jobs:
               git fetch origin main
               git rebase origin/main || git rebase --abort
               git add data.json v2/data.json
-              git commit -m "chore: refresh scoreboard data ($iter/5)"
+              git commit -m "chore: refresh scoreboard data ($iter/$ITERATIONS)"
 
               for push_try in 1 2 3 4 5; do
                 git fetch origin main
@@ -78,11 +80,11 @@ jobs:
               echo "iteration $iter: no changes to data.json"
             fi
 
-            # Pace the loop to 60s per iteration (skip sleep on final iteration)
-            if [[ $iter -lt 5 ]]; then
+            # Pace the loop to PACE_SECONDS per iteration (skip sleep on final iteration)
+            if [[ $iter -lt $ITERATIONS ]]; then
               t1=$(date +%s)
               elapsed=$((t1 - t0))
-              sleep_for=$((60 - elapsed))
+              sleep_for=$((PACE_SECONDS - elapsed))
               if [[ $sleep_for -gt 0 ]]; then
                 echo "sleeping ${sleep_for}s before next iteration..."
                 sleep $sleep_for
