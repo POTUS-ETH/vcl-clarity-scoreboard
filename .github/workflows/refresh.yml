@@ -38,8 +38,8 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
 
-          ITERATIONS=12
-          PACE_SECONDS=25
+          ITERATIONS=20
+          PACE_SECONDS=15
           for iter in $(seq 1 $ITERATIONS); do
             echo "===== refresh iteration $iter/$ITERATIONS ====="
             t0=$(date +%s)
