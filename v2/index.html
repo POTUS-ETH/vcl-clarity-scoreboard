@@ -293,7 +293,7 @@
 
   let lastGeneratedAt = null;
   function poll() {
-    fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' })
+    fetch(`https://vcl-clarity-scoreboard.potus-eth.workers.dev/?t=${Date.now()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
       .then(data => {
         // Only re-render if data has actually changed (avoids flicker)
