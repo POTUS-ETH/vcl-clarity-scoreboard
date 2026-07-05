@@ -177,6 +177,13 @@ async function computeScoreboard(token) {
   const AVWAP_ORDER = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L'];
   const bestPerAvwap = AVWAP_ORDER.map(a => avwapMap[a]).filter(Boolean);
 
+  // Worst 3 intraday drawdowns across all combos (the roughest days to sit through)
+  const worstDD = allCombos
+    .filter(c => c.worstDayDD > 0)
+    .slice()
+    .sort((a, b) => (b.worstDayDD ?? 0) - (a.worstDayDD ?? 0))
+    .slice(0, 3);
+
   const topWR = allCombos
     .filter(c => c.trades >= 1 && c.winRate !== null)
     .slice()
@@ -193,7 +200,7 @@ async function computeScoreboard(token) {
   return {
     generatedAt: new Date().toISOString(),
     tradeCount: trades.length,
-    top3, byPair, bestPerAvwap, topWR, bestPerSession, remaining,
+    top3, byPair, bestPerAvwap, worstDD, topWR, bestPerSession, remaining,
   };
 }
 

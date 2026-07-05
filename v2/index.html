@@ -128,7 +128,7 @@
   </div>
 
   <div class="row3">
-    <div class="panel"><div class="panel-title">🎯 Best Method per AVWAP</div><div class="mini-list" id="best-avwap"><div class="empty">loading…</div></div></div>
+    <div class="panel"><div class="panel-title">🩸 Worst 3 Intraday Drawdowns</div><div class="mini-list" id="worst-dd"><div class="empty">loading…</div></div></div>
     <div class="panel"><div class="panel-title">📈 Top 3 by Win Rate</div><div class="mini-list" id="top-wr"><div class="empty">loading…</div></div></div>
     <div class="panel"><div class="panel-title">🕐 Best Combo per Session</div><div class="mini-list" id="best-session"><div class="empty">loading…</div></div></div>
   </div>
@@ -237,16 +237,17 @@
     }).join('');
   }
 
-  function renderBestAvwap(rows) {
-    const el = document.getElementById('best-avwap');
-    if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No data yet</div>'; return; }
-    el.innerHTML = rows.map(c => {
+  function renderWorstDD(rows) {
+    const el = document.getElementById('worst-dd');
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty">No drawdowns yet</div>'; return; }
+    el.innerHTML = rows.map((c, i) => {
       const avClass = AV_CLASS[c.avwap] || '';
       return `<div class="mini-item ${avClass}">
+        <div class="mini-tag">${['🩸','🥈','🥉'][i] || '#' + (i+1)}</div>
         <div class="mini-body"><div class="mini-avwap">${c.avwap}</div><div class="mini-method">${c.method}</div></div>
         <div class="mini-metric">
-          <div class="primary ${c.totalR > 0 ? 'pos' : c.totalR < 0 ? 'neg' : ''}">${c.totalR >= 0 ? '+' : ''}${c.totalR.toFixed(1)}R</div>
-          <div class="secondary">n=${c.trades} · WR ${c.winRate != null ? Math.round(c.winRate * 100) + '%' : '—'} · DD ${fmtDD(c.worstDayDD)}</div>
+          <div class="primary neg">−${c.worstDayDD.toFixed(2)}R</div>
+          <div class="secondary">${fmtDDDate(c.worstDayDate)} · n=${c.trades}</div>
         </div>
       </div>`;
     }).join('');
@@ -302,7 +303,7 @@
     document.getElementById('footer').textContent = data?.generatedAt ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}` : '';
     renderPodium(data?.top3);
     renderPairRow(data?.byPair);
-    renderBestAvwap(data?.bestPerAvwap);
+    renderWorstDD(data?.worstDD);
     renderTopWR(data?.topWR);
     renderBestSession(data?.bestPerSession);
     renderRemaining(data?.remaining);
@@ -326,7 +327,7 @@
         // Show error only on first failure — silent on subsequent poll failures
         if (lastGeneratedAt === null) {
           const msg = `<div class="empty">Couldn't load (${err})</div>`;
-          ['podium-1','podium-2','podium-3','best-avwap','top-wr','best-session'].forEach(id => { document.getElementById(id).innerHTML = msg; });
+          ['podium-1','podium-2','podium-3','worst-dd','top-wr','best-session'].forEach(id => { document.getElementById(id).innerHTML = msg; });
           document.getElementById('pair-row').innerHTML = `<div class="pair-card">${msg}</div>`;
           document.getElementById('remaining-body').innerHTML = `<tr><td colspan="8" class="empty">Couldn't load (${err})</td></tr>`;
         }
