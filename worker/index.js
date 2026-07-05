@@ -12,10 +12,12 @@ const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
 
 const METHODOLOGIES = [
-  { label: '10m HA Trail',         rCol: '10m HA Trail: R Outcome',         exitCol: '10m HA Trail: Exit Price' },
-  { label: '10m HA Trail + 2R',    rCol: '10m HA Trail + 2R: R Outcome',    exitCol: '10m HA Trail: Exit Price' },
-  { label: 'BoS Swing Trail',      rCol: 'BoS Swing Trail: R Outcome',      exitCol: 'BoS Swing Trail: Exit Price' },
-  { label: 'BoS Swing Trail + 2R', rCol: 'BoS Swing Trail + 2R: R Outcome', exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: '10m HA Trail',                rCol: '10m HA Trail: R Outcome',                exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail + 2R',           rCol: '10m HA Trail + 2R: R Outcome',           exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail +1R Scaling',    rCol: '10m HA Trail +1R Scaling: R Outcome',    exitCol: '10m HA Trail: Exit Price' },
+  { label: 'BoS Swing Trail',             rCol: 'BoS Swing Trail: R Outcome',             exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail + 2R',        rCol: 'BoS Swing Trail + 2R: R Outcome',        exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail +1R Scaling', rCol: 'BoS Swing Trail +1R Scaling: R Outcome', exitCol: 'BoS Swing Trail: Exit Price' },
 ];
 
 async function queryAll(dbId, token) {
@@ -63,15 +65,55 @@ function getProp(page, name) {
 }
 
 function newBucket(avwap, method) {
-  return { avwap, method, combo: `${avwap} × ${method}`, trades: 0, wins: 0, losses: 0, totalR: 0, highestR: null };
+  return {
+    avwap, method,
+    combo: `${avwap} × ${method}`,
+    trades: 0, wins: 0, losses: 0,
+    totalR: 0, highestR: null,
+    tradeLog: [], // { date, ct, r } for per-day drawdown calc
+  };
 }
-function pushTrade(b, r) {
+function pushTrade(b, r, date, ct) {
   b.trades += 1; b.totalR += r;
   if (r > 0) b.wins += 1; else if (r < 0) b.losses += 1;
   if (b.highestR === null || r > b.highestR) b.highestR = r;
+  if (date) b.tradeLog.push({ date, ct: ct || '', r });
 }
+
+// Worst intraday R drawdown = max peak-to-trough decline in cumulative R within a single day.
+// Trades are ordered by createdTime within each day.
+function computeWorstDayDD(tradeLog) {
+  if (!tradeLog || !tradeLog.length) return { worstDayDD: 0, worstDayDate: null };
+  const byDate = {};
+  for (const t of tradeLog) {
+    if (!byDate[t.date]) byDate[t.date] = [];
+    byDate[t.date].push(t);
+  }
+  let worstDD = 0, worstDate = null;
+  for (const [date, ts] of Object.entries(byDate)) {
+    ts.sort((a, b) => (a.ct || '').localeCompare(b.ct || ''));
+    let cum = 0, peak = 0, dayDD = 0;
+    for (const t of ts) {
+      cum += t.r;
+      if (cum > peak) peak = cum;
+      const dd = peak - cum;
+      if (dd > dayDD) dayDD = dd;
+    }
+    if (dayDD > worstDD) { worstDD = dayDD; worstDate = date; }
+  }
+  return { worstDayDD: worstDD, worstDayDate: worstDate };
+}
+
 function finalize(b) {
-  return { ...b, winRate: b.trades > 0 ? b.wins / b.trades : null, expectancy: b.trades > 0 ? b.totalR / b.trades : null };
+  const dd = computeWorstDayDD(b.tradeLog);
+  const { tradeLog, ...rest } = b;
+  return {
+    ...rest,
+    winRate: b.trades > 0 ? b.wins / b.trades : null,
+    expectancy: b.trades > 0 ? b.totalR / b.trades : null,
+    worstDayDD: dd.worstDayDD,
+    worstDayDate: dd.worstDayDate,
+  };
 }
 
 async function computeScoreboard(token) {
@@ -83,6 +125,8 @@ async function computeScoreboard(token) {
     const avwapList = getProp(t, 'AVWAP TYPE') || [];
     const pair = getProp(t, 'Pair');
     const session = getProp(t, 'Session');
+    const date = getProp(t, 'Date'); // ISO date string
+    const ct = t.created_time || '';  // ISO createdTime string — used to order trades within a day
     if (!avwapList.length) continue;
 
     for (const avwap of avwapList) {
@@ -95,25 +139,33 @@ async function computeScoreboard(token) {
 
         const cKey = `${avwap}||${m.label}`;
         if (!byCombo[cKey]) byCombo[cKey] = newBucket(avwap, m.label);
-        pushTrade(byCombo[cKey], rNum);
+        pushTrade(byCombo[cKey], rNum, date, ct);
 
         if (pair) {
           const pKey = `${pair}||${cKey}`;
           if (!byPairCombo[pKey]) byPairCombo[pKey] = { pair, ...newBucket(avwap, m.label) };
-          pushTrade(byPairCombo[pKey], rNum);
+          pushTrade(byPairCombo[pKey], rNum, date, ct);
         }
         if (session) {
           const sKey = `${session}||${cKey}`;
           if (!bySessionCombo[sKey]) bySessionCombo[sKey] = { session, ...newBucket(avwap, m.label) };
-          pushTrade(bySessionCombo[sKey], rNum);
+          pushTrade(bySessionCombo[sKey], rNum, date, ct);
         }
       }
     }
   }
 
   const allCombos = Object.values(byCombo).map(finalize).sort((a, b) => b.totalR - a.totalR);
-  const top3 = allCombos.slice(0, 3);
-  const remaining = allCombos.slice(3);
+
+  // Top 3 = best combo per AVWAP type, ranked by that type's winning combo's totalR.
+  // No duplicate AVWAP types in the podium.
+  const avwapMap = {};
+  for (const b of allCombos) {
+    if (!avwapMap[b.avwap] || b.totalR > avwapMap[b.avwap].totalR) avwapMap[b.avwap] = b;
+  }
+  const top3 = Object.values(avwapMap).sort((a, b) => b.totalR - a.totalR).slice(0, 3);
+  const top3Keys = new Set(top3.map(c => c.combo));
+  const remaining = allCombos.filter(c => !top3Keys.has(c.combo));
 
   const pairMap = {};
   for (const b of Object.values(byPairCombo)) {
@@ -122,10 +174,6 @@ async function computeScoreboard(token) {
   const PAIR_ORDER = ['MNQ', 'MES', 'SOL', 'MYM'];
   const byPair = PAIR_ORDER.map(p => pairMap[p]).filter(Boolean).map(finalize);
 
-  const avwapMap = {};
-  for (const b of allCombos) {
-    if (!avwapMap[b.avwap] || b.totalR > avwapMap[b.avwap].totalR) avwapMap[b.avwap] = b;
-  }
   const AVWAP_ORDER = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L'];
   const bestPerAvwap = AVWAP_ORDER.map(a => avwapMap[a]).filter(Boolean);
 
