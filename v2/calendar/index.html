@@ -133,6 +133,28 @@
   .chip.yellow { background: rgba(234, 179, 8, 0.18); color: var(--yellow); }
   .chip.white { background: rgba(255,255,255,0.14); color: var(--text); }
 
+  /* Month winners by pair */
+  .pair-winners { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .pw-card {
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+    border-left: 3px solid var(--accent, var(--border-strong));
+    font-variant-numeric: tabular-nums;
+  }
+  .pw-card.av-trend        { --accent: var(--blue);   }
+  .pw-card.av-sweep        { --accent: var(--green);  }
+  .pw-card.av-session      { --accent: var(--yellow); }
+  .pw-card.av-session-open { --accent: var(--white);  }
+  .pw-pair { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .pw-avwap { font-size: 13px; font-weight: 700; color: var(--accent, var(--text)); line-height: 1.2; }
+  .pw-method { font-size: 10.5px; color: var(--muted); }
+  .pw-line { display: flex; justify-content: space-between; align-items: baseline; margin-top: 3px; padding-top: 5px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+  .pw-line .val { color: var(--value); font-weight: 700; }
+  .pw-line .val.pos { color: var(--green); }
+  .pw-line .val.neg { color: var(--red); }
+  .pw-empty { color: var(--muted); font-style: italic; font-size: 11px; padding: 8px 4px; text-align: center; }
+  .pw-header { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 4px 0 8px 4px; }
+
   .empty { text-align: center; color: var(--muted); font-style: italic; padding: 14px; background: var(--surface-strong); border-radius: 8px; }
   .footer { margin-top: 12px; text-align: center; color: var(--muted); font-size: 10.5px; }
 
@@ -142,6 +164,7 @@
     .calendar .week-cell, .calendar .cal-head.week-head { display: none; }
     .cell-r { font-size: 12px; }
     .cell-date { font-size: 10px; }
+    .pair-winners { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -180,6 +203,9 @@
     </div>
   </div>
 
+  <div class="pw-header">🏆 Winner by Pair — <span id="pw-month">this month</span> (highest Total R across all AVWAP × Method combos)</div>
+  <div class="pair-winners" id="pair-winners"><div class="pw-empty" style="grid-column: 1 / -1;">loading…</div></div>
+
   <div class="calendar" id="calendar"><div class="empty" style="grid-column: 1 / -1;">loading…</div></div>
 
   <div class="detail-panel">
@@ -197,6 +223,8 @@
     'BoS Swing Trail', 'BoS Swing Trail + 2R', 'BoS Swing Trail +1R Scaling',
   ];
   const AV_CHIP = { 'Trend Swing Point': 'blue', 'Sweep + BoS': 'green', 'Session H/L': 'yellow', 'Session Open': 'white' };
+  const AV_CLASS = { 'Trend Swing Point': 'av-trend', 'Sweep + BoS': 'av-sweep', 'Session H/L': 'av-session', 'Session Open': 'av-session-open' };
+  const PAIR_ORDER = ['MNQ', 'MES', 'SOL', 'MYM'];
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
@@ -420,6 +448,74 @@
     document.getElementById('calendar').innerHTML = cells.join('');
   }
 
+  // ---- Rendering: month winners by pair ----
+
+  // Winners are computed on trades in the currently-viewed month.
+  // We IGNORE the AVWAP + Method filters (those define the winner space) but respect
+  // Pair, Session, Trader, Direction filters.
+  function computeMonthWinnersByPair() {
+    const { year, month } = state.view;
+    const f = state.filters;
+    // Group all trades in the current month by (pair, avwap, method)
+    const buckets = {}; // key: `${pair}||${avwap}||${method}` → { pair, avwap, method, totalR, n, w, l }
+    for (const t of state.trades) {
+      const p = parseISO(t.date);
+      if (!p || p.y !== year || p.m !== month) continue;
+      if (f.pair !== 'ALL' && t.pair !== f.pair) continue;
+      if (f.session !== 'ALL' && t.session !== f.session) continue;
+      if (f.trader !== 'ALL' && t.trader !== f.trader) continue;
+      if (f.direction !== 'ALL' && t.direction !== f.direction) continue;
+      if (!t.pair) continue;
+      for (const avwap of t.avwap) {
+        for (const method of METHODOLOGIES) {
+          const r = t.r[method];
+          if (r === undefined) continue;
+          const k = `${t.pair}||${avwap}||${method}`;
+          if (!buckets[k]) buckets[k] = { pair: t.pair, avwap, method, totalR: 0, n: 0, w: 0, l: 0 };
+          const b = buckets[k];
+          b.totalR += r; b.n += 1;
+          if (r > 0) b.w += 1; else if (r < 0) b.l += 1;
+        }
+      }
+    }
+    // Pick winner per pair (highest totalR)
+    const bestPerPair = {};
+    for (const b of Object.values(buckets)) {
+      if (!bestPerPair[b.pair] || b.totalR > bestPerPair[b.pair].totalR) bestPerPair[b.pair] = b;
+    }
+    return bestPerPair;
+  }
+
+  function renderMonthWinners() {
+    const { month, year } = state.view;
+    document.getElementById('pw-month').textContent = `${MONTHS[month]} ${year}`;
+    const winners = computeMonthWinnersByPair();
+    const el = document.getElementById('pair-winners');
+    const anyData = PAIR_ORDER.some(p => winners[p]);
+    if (!anyData) {
+      el.innerHTML = '<div class="pw-empty" style="grid-column: 1 / -1;">No trades this month with current filters</div>';
+      return;
+    }
+    el.innerHTML = PAIR_ORDER.map(pair => {
+      const w = winners[pair];
+      if (!w) {
+        return `<div class="pw-card">
+          <div class="pw-pair">${pair}</div>
+          <div class="pw-empty">No trades</div>
+        </div>`;
+      }
+      const wrPct = (w.w + w.l) ? Math.round(100 * w.w / (w.w + w.l)) : 0;
+      const cls = AV_CLASS[w.avwap] || '';
+      return `<div class="pw-card ${cls}">
+        <div class="pw-pair">${pair}</div>
+        <div class="pw-avwap">${w.avwap}</div>
+        <div class="pw-method">${w.method}</div>
+        <div class="pw-line"><span>Total R</span><span class="val ${w.totalR > 0 ? 'pos' : w.totalR < 0 ? 'neg' : ''}">${fmtR(w.totalR, 1)}</span></div>
+        <div class="pw-line"><span>WR · n=${w.n}</span><span class="val">${wrPct}% [${w.w}W/${w.l}L]</span></div>
+      </div>`;
+    }).join('');
+  }
+
   // ---- Rendering: day detail ----
 
   function renderDayDetail(trades) {
@@ -483,6 +579,7 @@
   function rerender() {
     const trades = filteredTrades();
     renderSummary(trades);
+    renderMonthWinners();
     renderCalendar(trades);
     renderDayDetail(trades);
     // Wire up cell clicks
