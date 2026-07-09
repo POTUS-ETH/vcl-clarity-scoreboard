@@ -174,7 +174,7 @@ async function computeScoreboard(token) {
   const PAIR_ORDER = ['MNQ', 'MES', 'SOL', 'MYM'];
   const byPair = PAIR_ORDER.map(p => pairMap[p]).filter(Boolean).map(finalize);
 
-  const AVWAP_ORDER = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L'];
+  const AVWAP_ORDER = ['Trend Swing Point', 'Sweep + BoS', 'Session H/L', 'Session Open'];
   const bestPerAvwap = AVWAP_ORDER.map(a => avwapMap[a]).filter(Boolean);
 
   // Worst 3 intraday drawdowns across all combos (the roughest days to sit through)
@@ -204,6 +204,38 @@ async function computeScoreboard(token) {
   };
 }
 
+// Slim per-trade payload for the calendar view.
+// Client filters/aggregates locally, so we send one row per trade with all R outcomes.
+async function computeCalendarData(token) {
+  const trades = await queryAll(MTL_DB, token);
+  const rows = [];
+  for (const t of trades) {
+    const date = getProp(t, 'Date');
+    if (!date) continue;
+    const avwapList = getProp(t, 'AVWAP TYPE') || [];
+    if (!avwapList.length) continue;
+    const r = {};
+    for (const m of METHODOLOGIES) {
+      const val = getProp(t, m.rCol);
+      const n = typeof val === 'number' ? val : parseFloat(val);
+      if (val !== null && val !== undefined && !isNaN(n)) r[m.label] = n;
+    }
+    if (!Object.keys(r).length) continue;
+    rows.push({
+      id: t.id,
+      date,
+      ct: t.created_time || '',
+      avwap: avwapList,
+      pair: getProp(t, 'Pair') || null,
+      session: getProp(t, 'Session') || null,
+      trader: getProp(t, 'Trader') || null,
+      direction: getProp(t, 'Direction') || null,
+      r,
+    });
+  }
+  return { generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -220,7 +252,11 @@ export default {
       });
     }
     try {
-      const data = await computeScoreboard(env.NOTION_TOKEN);
+      const url = new URL(request.url);
+      const view = url.searchParams.get('view');
+      const data = view === 'calendar'
+        ? await computeCalendarData(env.NOTION_TOKEN)
+        : await computeScoreboard(env.NOTION_TOKEN);
       return new Response(JSON.stringify(data), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });

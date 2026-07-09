@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>VCL Clarity V2 · Calendar</title>
+<style>
+  :root {
+    --text: rgba(255, 255, 255, 0.92);
+    --muted: rgba(255, 255, 255, 0.45);
+    --surface: rgba(255, 255, 255, 0.04);
+    --surface-strong: rgba(255, 255, 255, 0.07);
+    --surface-hover: rgba(255, 255, 255, 0.11);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --value: rgba(255, 255, 255, 0.96);
+    --green: #22c55e;
+    --green-dim: #14532d;
+    --green-mid: #166534;
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --red-mid: #991b1b;
+    --neutral: #374151;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+    --yellow: #eab308;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; background: transparent; color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px; line-height: 1.4; color-scheme: dark;
+  }
+  .root { padding: 12px; max-width: 1280px; margin: 0 auto; }
+  .header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; gap: 12px; flex-wrap: wrap; }
+  .title { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .meta { color: var(--muted); font-size: 11px; }
+
+  /* Filter bar */
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .filter { display: flex; flex-direction: column; gap: 3px; min-width: 130px; flex: 1; }
+  .filter-label { font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .filter select {
+    appearance: none; -webkit-appearance: none;
+    background: var(--surface-strong); color: var(--text); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 6px 24px 6px 8px; font-size: 12px; font-family: inherit;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23ffffff88' d='M0 0l5 6 5-6z'/></svg>");
+    background-repeat: no-repeat; background-position: right 8px center;
+    cursor: pointer;
+  }
+  .filter select:hover { background-color: var(--surface-hover); }
+  .filter-reset { align-self: end; }
+  .btn {
+    background: var(--surface-strong); color: var(--text); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: inherit; transition: background 0.1s;
+  }
+  .btn:hover { background: var(--surface-hover); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: white; }
+
+  /* Summary */
+  .summary { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 12px; }
+  .kpi { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 10px 12px; }
+  .kpi-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .kpi-value { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .kpi-value.pos { color: var(--green); }
+  .kpi-value.neg { color: var(--red); }
+  .kpi-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  /* Month navigation */
+  .nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+  .nav-title { font-size: 18px; font-weight: 700; color: var(--text); }
+  .nav-buttons { display: flex; gap: 6px; }
+
+  /* Calendar grid */
+  .calendar { display: grid; grid-template-columns: repeat(7, 1fr) 100px; gap: 4px; margin-bottom: 12px; }
+  .cal-head { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 6px 2px; }
+  .cal-head.week-head { text-align: right; padding-right: 8px; }
+  .cell {
+    aspect-ratio: 1 / 0.85;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 8px; display: flex; flex-direction: column;
+    font-variant-numeric: tabular-nums; cursor: pointer;
+    transition: transform 0.05s, border-color 0.1s;
+  }
+  .cell:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+  .cell.blank { background: transparent; border-color: transparent; cursor: default; }
+  .cell.blank:hover { transform: none; }
+  .cell.empty { opacity: 0.5; }
+  .cell.selected { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+  .cell-date { font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: auto; }
+  .cell-r { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+  .cell-r.pos { color: var(--green); }
+  .cell-r.neg { color: var(--red); }
+  .cell-trades { font-size: 9.5px; color: rgba(255,255,255,0.7); font-weight: 500; }
+  .cell.tier-win-3 { background: rgba(34, 197, 94, 0.30); border-color: rgba(34, 197, 94, 0.55); }
+  .cell.tier-win-2 { background: rgba(34, 197, 94, 0.18); border-color: rgba(34, 197, 94, 0.35); }
+  .cell.tier-win-1 { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.22); }
+  .cell.tier-loss-1 { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.22); }
+  .cell.tier-loss-2 { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.35); }
+  .cell.tier-loss-3 { background: rgba(239, 68, 68, 0.30); border-color: rgba(239, 68, 68, 0.55); }
+  .cell.tier-flat  { background: var(--surface-strong); }
+
+  .week-cell {
+    background: var(--surface-strong); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;
+    font-variant-numeric: tabular-nums;
+  }
+  .week-label { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .week-r { font-size: 14px; font-weight: 800; letter-spacing: -0.02em; }
+  .week-r.pos { color: var(--green); }
+  .week-r.neg { color: var(--red); }
+  .week-trades { font-size: 9.5px; color: var(--muted); }
+
+  /* Detail panel */
+  .detail-panel { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 14px; margin-top: 12px; }
+  .detail-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .detail-empty { color: var(--muted); font-style: italic; text-align: center; padding: 20px; }
+  .trade-table { width: 100%; border-collapse: separate; border-spacing: 0 3px; font-variant-numeric: tabular-nums; font-size: 11.5px; }
+  .trade-table thead th { font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); text-align: right; padding: 3px 6px; white-space: nowrap; }
+  .trade-table thead th.l { text-align: left; }
+  .trade-table tbody td { padding: 6px; background: var(--surface-strong); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  .trade-table tbody td.l { text-align: left; }
+  .trade-table tbody td.first { border-left: 3px solid var(--border-strong); border-radius: 6px 0 0 6px; }
+  .trade-table tbody td.last { border-radius: 0 6px 6px 0; }
+  .r-pos { color: var(--green); font-weight: 700; }
+  .r-neg { color: var(--red); font-weight: 700; }
+  .r-flat { color: var(--muted); }
+  .chip { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; background: var(--surface-strong); color: var(--muted); margin-right: 4px; }
+  .chip.blue { background: rgba(59, 130, 246, 0.18); color: var(--blue); }
+  .chip.green { background: rgba(34, 197, 94, 0.18); color: var(--green); }
+  .chip.yellow { background: rgba(234, 179, 8, 0.18); color: var(--yellow); }
+  .chip.white { background: rgba(255,255,255,0.14); color: var(--text); }
+
+  .empty { text-align: center; color: var(--muted); font-style: italic; padding: 14px; background: var(--surface-strong); border-radius: 8px; }
+  .footer { margin-top: 12px; text-align: center; color: var(--muted); font-size: 10.5px; }
+
+  @media (max-width: 900px) {
+    .summary { grid-template-columns: repeat(3, 1fr); }
+    .calendar { grid-template-columns: repeat(7, 1fr); }
+    .calendar .week-cell, .calendar .cal-head.week-head { display: none; }
+    .cell-r { font-size: 12px; }
+    .cell-date { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="root">
+  <div class="header">
+    <div class="title">📅 VCL Clarity V2 · Calendar <span class="meta" id="trade-count" style="margin-left:8px"></span></div>
+    <div class="meta" id="updated-at">loading…</div>
+  </div>
+
+  <div class="filters">
+    <div class="filter"><div class="filter-label">Methodology</div><select id="f-method"></select></div>
+    <div class="filter"><div class="filter-label">AVWAP Type</div><select id="f-avwap"></select></div>
+    <div class="filter"><div class="filter-label">Pair</div><select id="f-pair"></select></div>
+    <div class="filter"><div class="filter-label">Session</div><select id="f-session"></select></div>
+    <div class="filter"><div class="filter-label">Trader</div><select id="f-trader"></select></div>
+    <div class="filter"><div class="filter-label">Direction</div><select id="f-direction"></select></div>
+    <div class="filter-reset"><button class="btn" id="reset-filters">Reset</button></div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="kpi"><div class="kpi-label">Total R</div><div class="kpi-value" id="kpi-r">—</div><div class="kpi-sub" id="kpi-r-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Trades</div><div class="kpi-value" id="kpi-n">—</div><div class="kpi-sub" id="kpi-n-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Win Rate</div><div class="kpi-value" id="kpi-wr">—</div><div class="kpi-sub" id="kpi-wr-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Expectancy</div><div class="kpi-value" id="kpi-exp">—</div><div class="kpi-sub">Avg R/trade</div></div>
+    <div class="kpi"><div class="kpi-label">Best Day</div><div class="kpi-value" id="kpi-best">—</div><div class="kpi-sub" id="kpi-best-sub"></div></div>
+    <div class="kpi"><div class="kpi-label">Worst Day</div><div class="kpi-value" id="kpi-worst">—</div><div class="kpi-sub" id="kpi-worst-sub"></div></div>
+  </div>
+
+  <div class="nav-row">
+    <div class="nav-title" id="nav-title">—</div>
+    <div class="nav-buttons">
+      <button class="btn" id="btn-prev">‹ Prev</button>
+      <button class="btn" id="btn-today">Today</button>
+      <button class="btn" id="btn-next">Next ›</button>
+    </div>
+  </div>
+
+  <div class="calendar" id="calendar"><div class="empty" style="grid-column: 1 / -1;">loading…</div></div>
+
+  <div class="detail-panel">
+    <div class="detail-title" id="detail-title">📋 Click a day to see its trades</div>
+    <div id="detail-body"><div class="detail-empty">No day selected</div></div>
+  </div>
+
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+  const WORKER_URL = 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=calendar';
+  const METHODOLOGIES = [
+    '10m HA Trail', '10m HA Trail + 2R', '10m HA Trail +1R Scaling',
+    'BoS Swing Trail', 'BoS Swing Trail + 2R', 'BoS Swing Trail +1R Scaling',
+  ];
+  const AV_CHIP = { 'Trend Swing Point': 'blue', 'Sweep + BoS': 'green', 'Session H/L': 'yellow', 'Session Open': 'white' };
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const state = {
+    trades: [],
+    filters: { method: '10m HA Trail', avwap: 'ALL', pair: 'ALL', session: 'ALL', trader: 'ALL', direction: 'ALL' },
+    view: { year: new Date().getFullYear(), month: new Date().getMonth() },
+    selectedDate: null,
+    generatedAt: null,
+  };
+
+  // ---- Utilities ----
+
+  function fmtR(n, digits = 2) {
+    if (n === null || n === undefined || Number.isNaN(n)) return '—';
+    const sign = n >= 0 ? '+' : '';
+    return `${sign}${n.toFixed(digits)}R`;
+  }
+  function rClass(n) {
+    if (n === null || n === undefined) return '';
+    if (n > 0) return 'pos';
+    if (n < 0) return 'neg';
+    return '';
+  }
+  function dateKey(y, m, d) {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  function parseISO(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split('-').map(Number);
+    return { y, m: m - 1, d };
+  }
+  function fmtISODisplay(iso) {
+    const p = parseISO(iso); if (!p) return iso;
+    return new Date(p.y, p.m, p.d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  }
+
+  // ---- Filtering ----
+
+  function getR(trade) { return trade.r[state.filters.method]; }
+
+  function tradeMatchesFilters(t) {
+    const f = state.filters;
+    if (getR(t) === undefined) return false;
+    if (f.avwap !== 'ALL' && !t.avwap.includes(f.avwap)) return false;
+    if (f.pair !== 'ALL' && t.pair !== f.pair) return false;
+    if (f.session !== 'ALL' && t.session !== f.session) return false;
+    if (f.trader !== 'ALL' && t.trader !== f.trader) return false;
+    if (f.direction !== 'ALL' && t.direction !== f.direction) return false;
+    return true;
+  }
+
+  function filteredTrades() { return state.trades.filter(tradeMatchesFilters); }
+
+  // ---- Aggregation ----
+
+  function aggregateByDate(trades) {
+    const byDate = {};
+    for (const t of trades) {
+      if (!byDate[t.date]) byDate[t.date] = { r: 0, n: 0, w: 0, l: 0, trades: [] };
+      const r = getR(t);
+      byDate[t.date].r += r;
+      byDate[t.date].n += 1;
+      if (r > 0) byDate[t.date].w += 1; else if (r < 0) byDate[t.date].l += 1;
+      byDate[t.date].trades.push(t);
+    }
+    return byDate;
+  }
+
+  function computeSummary(trades) {
+    const byDate = aggregateByDate(trades);
+    let totalR = 0, best = { date: null, r: -Infinity }, worst = { date: null, r: Infinity };
+    let wins = 0, losses = 0;
+    for (const t of trades) {
+      const r = getR(t);
+      totalR += r;
+      if (r > 0) wins += 1; else if (r < 0) losses += 1;
+    }
+    for (const [date, d] of Object.entries(byDate)) {
+      if (d.r > best.r) best = { date, r: d.r };
+      if (d.r < worst.r) worst = { date, r: d.r };
+    }
+    return {
+      totalR, trades: trades.length, wins, losses,
+      winRate: (wins + losses) ? wins / (wins + losses) : null,
+      expectancy: trades.length ? totalR / trades.length : null,
+      tradingDays: Object.keys(byDate).length,
+      best, worst,
+    };
+  }
+
+  // ---- Rendering: filters ----
+
+  function populateFilters() {
+    const opts = { method: [], avwap: new Set(), pair: new Set(), session: new Set(), trader: new Set(), direction: new Set() };
+    for (const m of METHODOLOGIES) opts.method.push(m);
+    for (const t of state.trades) {
+      for (const a of t.avwap) opts.avwap.add(a);
+      if (t.pair) opts.pair.add(t.pair);
+      if (t.session) opts.session.add(t.session);
+      if (t.trader) opts.trader.add(t.trader);
+      if (t.direction) opts.direction.add(t.direction);
+    }
+    function fill(id, list, keepAll, current) {
+      const el = document.getElementById(id);
+      const items = Array.from(list).sort();
+      el.innerHTML = (keepAll ? '<option value="ALL">All</option>' : '') + items.map(v => `<option value="${v}">${v}</option>`).join('');
+      el.value = current;
+    }
+    fill('f-method', opts.method, false, state.filters.method);
+    fill('f-avwap', opts.avwap, true, state.filters.avwap);
+    fill('f-pair', opts.pair, true, state.filters.pair);
+    fill('f-session', opts.session, true, state.filters.session);
+    fill('f-trader', opts.trader, true, state.filters.trader);
+    fill('f-direction', opts.direction, true, state.filters.direction);
+  }
+
+  // ---- Rendering: summary ----
+
+  function renderSummary(trades) {
+    const s = computeSummary(trades);
+    document.getElementById('kpi-r').innerHTML = `<span class="${rClass(s.totalR)}">${fmtR(s.totalR, 1)}</span>`;
+    document.getElementById('kpi-r').className = `kpi-value ${rClass(s.totalR)}`;
+    document.getElementById('kpi-r-sub').textContent = `${s.tradingDays} trading day${s.tradingDays === 1 ? '' : 's'}`;
+    document.getElementById('kpi-n').textContent = s.trades;
+    document.getElementById('kpi-n-sub').textContent = `${s.wins}W / ${s.losses}L`;
+    document.getElementById('kpi-wr').textContent = s.winRate != null ? `${Math.round(s.winRate * 100)}%` : '—';
+    document.getElementById('kpi-wr-sub').textContent = `${s.wins}W / ${s.losses}L`;
+    document.getElementById('kpi-exp').innerHTML = s.expectancy != null ? `<span class="${rClass(s.expectancy)}">${fmtR(s.expectancy)}</span>` : '—';
+    document.getElementById('kpi-exp').className = `kpi-value ${rClass(s.expectancy ?? 0)}`;
+    if (s.best.date && isFinite(s.best.r)) {
+      document.getElementById('kpi-best').innerHTML = `<span class="${rClass(s.best.r)}">${fmtR(s.best.r, 1)}</span>`;
+      document.getElementById('kpi-best').className = `kpi-value ${rClass(s.best.r)}`;
+      document.getElementById('kpi-best-sub').textContent = fmtISODisplay(s.best.date);
+    } else {
+      document.getElementById('kpi-best').textContent = '—'; document.getElementById('kpi-best-sub').textContent = '';
+    }
+    if (s.worst.date && isFinite(s.worst.r)) {
+      document.getElementById('kpi-worst').innerHTML = `<span class="${rClass(s.worst.r)}">${fmtR(s.worst.r, 1)}</span>`;
+      document.getElementById('kpi-worst').className = `kpi-value ${rClass(s.worst.r)}`;
+      document.getElementById('kpi-worst-sub').textContent = fmtISODisplay(s.worst.date);
+    } else {
+      document.getElementById('kpi-worst').textContent = '—'; document.getElementById('kpi-worst-sub').textContent = '';
+    }
+  }
+
+  // ---- Rendering: calendar ----
+
+  function tierClass(r) {
+    if (r === 0) return 'tier-flat';
+    const abs = Math.abs(r);
+    const side = r > 0 ? 'win' : 'loss';
+    if (abs >= 3) return `tier-${side}-3`;
+    if (abs >= 1) return `tier-${side}-2`;
+    return `tier-${side}-1`;
+  }
+
+  function renderCalendar(trades) {
+    const { year, month } = state.view;
+    document.getElementById('nav-title').textContent = `${MONTHS[month]} ${year}`;
+
+    const byDate = aggregateByDate(trades);
+    const first = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // JS getDay: 0=Sun..6=Sat; we want Monday-first: convert to 0=Mon..6=Sun
+    const firstWeekday = (first.getDay() + 6) % 7;
+
+    const cells = [];
+    // Header row
+    for (const d of DAYS) cells.push(`<div class="cal-head">${d}</div>`);
+    cells.push(`<div class="cal-head week-head">Week</div>`);
+
+    let curCol = 0;
+    let weekR = 0, weekN = 0, weekW = 0, weekL = 0;
+
+    // Leading blanks
+    for (let i = 0; i < firstWeekday; i++) { cells.push(`<div class="cell blank"></div>`); curCol++; }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = dateKey(year, month, day);
+      const d = byDate[key];
+      const isSelected = state.selectedDate === key;
+      if (d) {
+        const tier = tierClass(d.r);
+        cells.push(`
+          <div class="cell ${tier} ${isSelected ? 'selected' : ''}" data-date="${key}">
+            <div class="cell-date">${day}</div>
+            <div class="cell-r ${rClass(d.r)}">${fmtR(d.r, 2)}</div>
+            <div class="cell-trades">${d.n} trade${d.n === 1 ? '' : 's'} · ${d.w}W/${d.l}L</div>
+          </div>`);
+        weekR += d.r; weekN += d.n; weekW += d.w; weekL += d.l;
+      } else {
+        cells.push(`
+          <div class="cell empty ${isSelected ? 'selected' : ''}" data-date="${key}">
+            <div class="cell-date">${day}</div>
+          </div>`);
+      }
+      curCol++;
+      if (curCol === 7) {
+        // Week total cell
+        cells.push(`
+          <div class="week-cell">
+            <div class="week-label">Total</div>
+            <div class="week-r ${rClass(weekR)}">${weekN ? fmtR(weekR, 1) : '—'}</div>
+            <div class="week-trades">${weekN} trades</div>
+          </div>`);
+        curCol = 0; weekR = 0; weekN = 0; weekW = 0; weekL = 0;
+      }
+    }
+    // Trailing blanks + final week
+    if (curCol > 0) {
+      while (curCol < 7) { cells.push(`<div class="cell blank"></div>`); curCol++; }
+      cells.push(`
+        <div class="week-cell">
+          <div class="week-label">Total</div>
+          <div class="week-r ${rClass(weekR)}">${weekN ? fmtR(weekR, 1) : '—'}</div>
+          <div class="week-trades">${weekN} trades</div>
+        </div>`);
+    }
+
+    document.getElementById('calendar').innerHTML = cells.join('');
+  }
+
+  // ---- Rendering: day detail ----
+
+  function renderDayDetail(trades) {
+    const title = document.getElementById('detail-title');
+    const body = document.getElementById('detail-body');
+    if (!state.selectedDate) {
+      title.textContent = '📋 Click a day to see its trades';
+      body.innerHTML = '<div class="detail-empty">No day selected</div>';
+      return;
+    }
+    const day = state.selectedDate;
+    const byDate = aggregateByDate(trades);
+    const d = byDate[day];
+    title.innerHTML = `📋 ${fmtISODisplay(day)}`;
+    if (!d) {
+      body.innerHTML = '<div class="detail-empty">No trades on this day with current filters</div>';
+      return;
+    }
+    // Sort trades chronologically
+    const rows = d.trades.slice().sort((a, b) => (a.ct || '').localeCompare(b.ct || ''));
+    let running = 0;
+    body.innerHTML = `
+      <div style="margin-bottom: 10px; font-size: 12.5px; display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap;">
+        <span><strong style="color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;">Day Total</strong> <span class="${rClass(d.r) === 'pos' ? 'r-pos' : rClass(d.r) === 'neg' ? 'r-neg' : ''}" style="font-size: 16px; font-weight: 800; margin-left: 4px;">${fmtR(d.r, 2)}</span></span>
+        <span><strong style="color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;">Trades</strong> ${d.n}</span>
+        <span><strong style="color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px;">Win Rate</strong> ${d.w + d.l ? Math.round(100 * d.w / (d.w + d.l)) + '%' : '—'} <span style="color: var(--muted); font-size: 11px;">(${d.w}W/${d.l}L)</span></span>
+      </div>
+      <table class="trade-table">
+        <thead>
+          <tr>
+            <th class="l" style="width: 30px">#</th>
+            <th class="l">AVWAP</th>
+            <th class="l">Pair · Sess · Dir</th>
+            <th class="l">Trader</th>
+            <th>R (${state.filters.method})</th>
+            <th>Cumulative</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((t, i) => {
+            const r = getR(t);
+            running += r;
+            const avwapChips = t.avwap.map(a => `<span class="chip ${AV_CHIP[a] || ''}">${a}</span>`).join('');
+            return `
+              <tr>
+                <td class="l first">${i + 1}</td>
+                <td class="l">${avwapChips}</td>
+                <td class="l">${t.pair || '—'} · ${t.session || '—'} · ${t.direction || '—'}</td>
+                <td class="l">${t.trader || '—'}</td>
+                <td class="${r > 0 ? 'r-pos' : r < 0 ? 'r-neg' : 'r-flat'}">${fmtR(r, 2)}</td>
+                <td class="last ${running > 0 ? 'r-pos' : running < 0 ? 'r-neg' : 'r-flat'}">${fmtR(running, 2)}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ---- Full re-render ----
+
+  function rerender() {
+    const trades = filteredTrades();
+    renderSummary(trades);
+    renderCalendar(trades);
+    renderDayDetail(trades);
+    // Wire up cell clicks
+    document.querySelectorAll('.cell[data-date]').forEach(el => {
+      el.addEventListener('click', () => {
+        state.selectedDate = el.getAttribute('data-date');
+        rerender();
+      });
+    });
+  }
+
+  // ---- Event handlers ----
+
+  function bindFilter(id, key) {
+    document.getElementById(id).addEventListener('change', (e) => {
+      state.filters[key] = e.target.value;
+      rerender();
+    });
+  }
+  bindFilter('f-method', 'method');
+  bindFilter('f-avwap', 'avwap');
+  bindFilter('f-pair', 'pair');
+  bindFilter('f-session', 'session');
+  bindFilter('f-trader', 'trader');
+  bindFilter('f-direction', 'direction');
+
+  document.getElementById('reset-filters').addEventListener('click', () => {
+    state.filters = { method: '10m HA Trail', avwap: 'ALL', pair: 'ALL', session: 'ALL', trader: 'ALL', direction: 'ALL' };
+    populateFilters();
+    rerender();
+  });
+
+  document.getElementById('btn-prev').addEventListener('click', () => {
+    const v = state.view; v.month -= 1;
+    if (v.month < 0) { v.month = 11; v.year -= 1; }
+    rerender();
+  });
+  document.getElementById('btn-next').addEventListener('click', () => {
+    const v = state.view; v.month += 1;
+    if (v.month > 11) { v.month = 0; v.year += 1; }
+    rerender();
+  });
+  document.getElementById('btn-today').addEventListener('click', () => {
+    const now = new Date();
+    state.view = { year: now.getFullYear(), month: now.getMonth() };
+    rerender();
+  });
+
+  // ---- Fetch + boot ----
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const d = new Date(iso); if (isNaN(d)) return '';
+    const sec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (sec < 60) return `updated ${sec}s ago`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `updated ${min}m ago`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `updated ${hr}h ago`;
+    return `updated ${d.toLocaleDateString()}`;
+  }
+
+  function load() {
+    fetch(`${WORKER_URL}&t=${Date.now()}`, { cache: 'no-store' })
+      .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+      .then(data => {
+        state.trades = data.trades || [];
+        state.generatedAt = data.generatedAt;
+        document.getElementById('updated-at').textContent = timeAgo(data.generatedAt);
+        document.getElementById('trade-count').textContent = `· ${state.trades.length} trades logged`;
+        document.getElementById('footer').textContent = data.generatedAt ? `Last sync: ${new Date(data.generatedAt).toLocaleString()}` : '';
+        populateFilters();
+        rerender();
+      })
+      .catch(err => {
+        document.getElementById('calendar').innerHTML = `<div class="empty" style="grid-column: 1 / -1;">Couldn't load (${err})</div>`;
+      });
+  }
+
+  load();
+  setInterval(() => {
+    document.getElementById('updated-at').textContent = timeAgo(state.generatedAt);
+  }, 5000);
+  // Reload data every 30s (calendar view — less time-sensitive than scoreboard)
+  setInterval(load, 30000);
+</script>
+</body>
+</html>
