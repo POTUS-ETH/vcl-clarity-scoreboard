@@ -12,12 +12,16 @@ const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
 
 const METHODOLOGIES = [
-  { label: '10m HA Trail',                rCol: '10m HA Trail: R Outcome',                exitCol: '10m HA Trail: Exit Price' },
-  { label: '10m HA Trail + 2R',           rCol: '10m HA Trail + 2R: R Outcome',           exitCol: '10m HA Trail: Exit Price' },
-  { label: '10m HA Trail +1R Scaling',    rCol: '10m HA Trail +1R Scaling: R Outcome',    exitCol: '10m HA Trail: Exit Price' },
-  { label: 'BoS Swing Trail',             rCol: 'BoS Swing Trail: R Outcome',             exitCol: 'BoS Swing Trail: Exit Price' },
-  { label: 'BoS Swing Trail + 2R',        rCol: 'BoS Swing Trail + 2R: R Outcome',        exitCol: 'BoS Swing Trail: Exit Price' },
-  { label: 'BoS Swing Trail +1R Scaling', rCol: 'BoS Swing Trail +1R Scaling: R Outcome', exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: '10m HA Trail',                 rCol: '10m HA Trail: R Outcome',                 exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail + 2R',            rCol: '10m HA Trail + 2R: R Outcome',            exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail +1R Scaling',     rCol: '10m HA Trail +1R Scaling: R Outcome',     exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail + 1R Full TP',    rCol: '10m HA Trail + 1R Full TP: R Outcome',    exitCol: '10m HA Trail: Exit Price' },
+  { label: '10m HA Trail + 2R Full TP',    rCol: '10m HA Trail + 2R Full TP: R Outcome',    exitCol: '10m HA Trail: Exit Price' },
+  { label: 'BoS Swing Trail',              rCol: 'BoS Swing Trail: R Outcome',              exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail + 2R',         rCol: 'BoS Swing Trail + 2R: R Outcome',         exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail +1R Scaling',  rCol: 'BoS Swing Trail +1R Scaling: R Outcome',  exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail + 1R Full TP', rCol: 'BoS Swing Trail + 1R Full TP: R Outcome', exitCol: 'BoS Swing Trail: Exit Price' },
+  { label: 'BoS Swing Trail + 2R Full TP', rCol: 'BoS Swing Trail + 2R Full TP: R Outcome', exitCol: 'BoS Swing Trail: Exit Price' },
 ];
 
 async function queryAll(dbId, token) {
