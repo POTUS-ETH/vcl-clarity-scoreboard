@@ -58,11 +58,18 @@ jobs:
               echo "v2/refresh.js exit $rc2 on iteration $iter; will retry next iteration"
             fi
 
-            # Commit + push if either data.json changed
-            if [[ -n "$(git status --porcelain data.json v2/data.json)" ]]; then
+            # V3 (VCL Trade Log v3 — Sweep+BoS)
+            node refresh-v3.js
+            rc3=$?
+            if [[ $rc3 -ne 0 ]]; then
+              echo "refresh-v3.js exit $rc3 on iteration $iter; will retry next iteration"
+            fi
+
+            # Commit + push if any data.json changed
+            if [[ -n "$(git status --porcelain data.json v2/data.json v3-data.json)" ]]; then
               git fetch origin main
               git rebase origin/main || git rebase --abort
-              git add data.json v2/data.json
+              git add data.json v2/data.json v3-data.json
               git commit -m "chore: refresh scoreboard data ($iter/$ITERATIONS)"
 
               for push_try in 1 2 3 4 5; do

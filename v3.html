@@ -1,0 +1,159 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VCL v3 Scoreboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#000;color:#e5e7eb;padding:16px;font-size:13px}
+.wrap{max-width:940px;margin:0 auto}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:11px;color:#8a8a9a}
+.toolbar{display:flex;gap:6px;align-items:center;font-size:11px;color:#8a8a9a;margin-bottom:14px;flex-wrap:wrap}
+.tg{display:inline-flex;border:1px solid #333;border-radius:6px;overflow:hidden}
+.tg button{border:0;background:#111;padding:5px 12px;font:inherit;font-size:11px;cursor:pointer;color:#b4b2a9}
+.tg button.on{background:#185fa5;color:#fff}
+.card{background:#0d0d0d;border:1px solid #222;border-radius:12px;padding:16px}
+.top{border:2px solid #185fa5;margin-bottom:12px}
+.top .crown{font-size:11px;letter-spacing:1.5px;color:#b8860b;text-transform:uppercase;margin-bottom:6px}
+.top .combo{font-size:26px;font-weight:700;color:#fff}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8a8a9a;margin-bottom:6px}
+.combo-md{font-size:17px;font-weight:700;margin-bottom:8px;color:#fff}
+.stats{display:flex;flex-wrap:wrap;gap:12px 18px}
+.stat .k{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6b7280}
+.stat .v{font-size:16px;font-weight:700}
+.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
+.rowline{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #1a1a1a;font-size:12px}
+.rowline:first-of-type{border-top:0}
+.pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#12233a;color:#7fb8f0;font-weight:600}
+.mini{font-size:11px;color:#6b7280}
+.cal .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal .calhd button{border:1px solid #333;background:#111;color:#e5e7eb;border-radius:6px;padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
+.cal .month{font-size:13px;font-weight:700}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.dow div{font-size:9px;color:#6b7280;text-align:center;letter-spacing:.5px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day{aspect-ratio:1/.82;border:1px solid #1a1a1a;border-radius:7px;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;background:#0a0a0a}
+.day.empty{background:transparent;border:0}
+.day .dn{font-size:9px;color:#6b7280}
+.day .dr{font-size:12px;font-weight:700}
+.day .dc{font-size:8px;color:#6b7280}
+.day.win{background:#0f2417;border-color:#1f5233}
+.day.loss{background:#2a1213;border-color:#5a1f1f}
+.empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.err{color:#f87171;font-size:12px}
+</style></head>
+<body><div class="wrap">
+  <div class="hd">
+    <div><h1>VCL v3 SCOREBOARD</h1><div class="sub">Sweep+BoS · combo = timeframe × management</div></div>
+    <div class="mini" id="status">loading…</div>
+  </div>
+  <div class="toolbar">
+    <span>Calendar shows:</span>
+    <span class="tg" id="mgmtToggle">
+      <button data-m="full">Full @1R</button>
+      <button data-m="trail" class="on">50% + Trail</button>
+    </span>
+  </div>
+  <div id="board"></div>
+</div>
+<script>
+const COMBOS=[
+  {key:'15s·Full',tf:'15s',mgmt:'full',label:'15s · Full @1R'},
+  {key:'15s·Trail',tf:'15s',mgmt:'trail',label:'15s · 50%+Trail'},
+  {key:'1m·Full',tf:'1m',mgmt:'full',label:'1m · Full @1R'},
+  {key:'1m·Trail',tf:'1m',mgmt:'trail',label:'1m · 50%+Trail'},
+];
+let CAL_MGMT='trail', TRADES=[], CAL_MONTH=null, GEN=null;
+function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
+function computeR(row){
+  const dir=row.Direction, oc=row.Outcome, tf=row.Timeframe;
+  const E=num(row['Entry Price']),L1=num(row['L1 Price']),SL=num(row['SL Price']),RE=num(row['Runner Exit']);
+  const dirM=dir==='Long'?1:(dir==='Short'?-1:null);
+  const planned=(E!=null&&L1!=null)?(E+L1)/2:E;
+  const iniR=(planned!=null&&SL!=null)?Math.abs(planned-SL):null;
+  const avgE=oc==='L1'?((E+L1)/2):E;
+  const posM=oc==='L1'?1:0.5;
+  let rFull=null,rPartial=null;
+  if(oc==='Stop'){rFull=-1;rPartial=-1;}
+  else if(oc==='L1'||oc==='Entry'){ rFull=oc==='L1'?1:0.5; if(RE!=null&&iniR&&dirM!=null){rPartial=0.5*posM*(1+(RE-avgE)*dirM/iniR);} }
+  return {tf,session:row.Session||null,rangePct:num(row['Range %']),date:row.date||null,dir,oc,rFull,rPartial};
+}
+function seriesFor(tf,mgmt,pool){ return pool.filter(t=>t.tf===tf).map(t=>mgmt==='full'?t.rFull:t.rPartial).filter(r=>r!=null); }
+function stats(series){ const n=series.length; if(!n) return {n:0}; const wins=series.filter(r=>r>0).length; const total=series.reduce((a,b)=>a+b,0); return {n,wins,wr:wins/n,exp:total/n,total}; }
+function maxLossStreak(series){ let run=0,len=0,worst=0,worstLen=0; for(const r of series){ if(r<0){run+=r;len++;if(run<worst){worst=run;worstLen=len;}} else {run=0;len=0;} } return {dd:Math.abs(worst),len:worstLen}; }
+function comboStat(c,pool){ const s=stats(seriesFor(c.tf,c.mgmt,pool)); s.combo=c; s.mls=maxLossStreak(seriesFor(c.tf,c.mgmt,pool)); return s; }
+function bestOf(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.exp-a.exp)[0]; }
+function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
+function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
+function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades yet.</div>';
+  return `<div class="stats">
+    <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(s.exp)}">${fR(s.exp)}</div></div>
+    <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.wr*100)}%</div></div>
+    <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+    <div class="stat"><div class="k">Trades</div><div class="v">${s.n}</div></div></div>`; }
+function render(){
+  const pool=TRADES, board=document.getElementById('board');
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades logged yet — the board fills in as you add rows to Trade Log v3.</div></div>'; renderCalendar(); return; }
+  const all=COMBOS.map(c=>comboStat(c,pool));
+  const overall=bestOf(all), best1m=bestOf(all.filter(s=>s.combo.tf==='1m')), best15=bestOf(all.filter(s=>s.combo.tf==='15s'));
+  const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
+  let sessRows = !sessions.length ? '<div class="empty-note">No Session tagged yet.</div>' : '';
+  sessions.forEach(se=>{ const sub=pool.filter(t=>t.session===se); const b=bestOf(COMBOS.map(c=>comboStat(c,sub)));
+    sessRows+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?b.combo.label:'—'}</span><span class="${b?cls(b.exp):'mut'}">${b?fR(b.exp):'—'}</span></div>`; });
+  let rangeRows=''; const rp=pool.filter(t=>t.rangePct!=null);
+  if(!rp.length){ rangeRows='<div class="empty-note">No Range % logged yet.</div>'; }
+  else { const groups={}; rp.forEach(t=>{ const k=(t.session||'—')+' · '+t.tf; (groups[k]=groups[k]||[]).push(t); });
+    Object.keys(groups).sort().forEach(k=>{ const g=groups[k]; const wins=g.filter(t=>(CAL_MGMT==='full'?t.rFull:t.rPartial)>0); const src=wins.length?wins:g;
+      const avg=src.reduce((a,t)=>a+t.rangePct,0)/src.length;
+      rangeRows+=`<div class="rowline"><span>${k}</span><span><b>${avg.toFixed(1)}%</b> <span class="mini">${wins.length?'on wins':'all'} · n${src.length}</span></span></div>`; }); }
+  const ranked=all.filter(s=>s.n>0).sort((a,b)=>a.mls.dd-b.mls.dd);
+  let ddRows = !ranked.length ? '<div class="empty-note">No data.</div>' : '';
+  ranked.forEach((s,i)=>{ ddRows+=`<div class="rowline"><span>${i===0?'🛡️ ':''}${s.combo.label}</span><span class="neg">-${s.mls.dd.toFixed(2)}R <span class="mini">${s.mls.len} in a row</span></span></div>`; });
+  board.innerHTML=`
+    <div class="card top"><div class="crown">👑 Overall winning combo</div><div class="combo">${overall?overall.combo.label:'—'}</div><div style="margin-top:10px">${statBlock(overall)}</div></div>
+    <div class="grid2">
+      <div class="card"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>
+      <div class="card"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div></div>
+    <div class="grid3">
+      <div class="card"><div class="lbl">Best combo by session</div>${sessRows}</div>
+      <div class="card"><div class="lbl">Optimal Range % · session × TF</div>${rangeRows}</div>
+      <div class="card"><div class="lbl">Losses in succession — max DD (R)</div>${ddRows}<div class="mini" style="margin-top:8px">most resilient → least</div></div></div>
+    <div class="card cal" id="calCard"></div>`;
+  renderCalendar();
+}
+function ym(d){ return d? d.slice(0,7):null; }
+function renderCalendar(){
+  const card=document.getElementById('calCard'); if(!card) return;
+  const dated=TRADES.filter(t=>t.date), months=[...new Set(dated.map(t=>ym(t.date)))].sort();
+  if(!months.length){ card.innerHTML='<div class="lbl">Calendar</div><div class="empty-note">No dated trades yet.</div>'; return; }
+  if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
+  const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate(), byDay={};
+  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{ const d=Number(t.date.slice(8,10)); const r=CAL_MGMT==='full'?t.rFull:t.rPartial; if(r==null) return; (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
+  let cells=''; for(let i=0;i<start;i++) cells+='<div class="day empty"></div>';
+  for(let d=1;d<=dim;d++){ const x=byDay[d]; let c='day',body=''; if(x){ c+=x.sum>0?' win':(x.sum<0?' loss':''); body=`<div class="dr ${cls(x.sum)}">${fR(x.sum)}</div><div class="dc">${x.n} trade${x.n>1?'s':''}</div>`; } cells+=`<div class="${c}"><div class="dn">${d}</div>${body}</div>`; }
+  card.innerHTML=`<div class="lbl">Calendar — net R (${CAL_MGMT==='full'?'Full @1R':'50%+Trail'})</div>
+    <div class="calhd"><button ${idx<=0?'disabled':''} id="pm">‹</button><div class="month">${first.toLocaleString('en-US',{month:'long',year:'numeric'})}</div><button ${idx>=months.length-1?'disabled':''} id="nm">›</button></div>
+    <div class="dow"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+    <div class="days">${cells}</div>`;
+  const pm=document.getElementById('pm'),nm=document.getElementById('nm');
+  if(pm) pm.onclick=()=>{ CAL_MONTH=months[idx-1]; renderCalendar(); };
+  if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
+}
+async function load(){
+  const st=document.getElementById('status');
+  try{
+    const res=await fetch('v3-data.json?b='+Date.now());
+    if(!res.ok) throw new Error('v3-data.json '+res.status);
+    const data=await res.json();
+    GEN=data.generatedAt;
+    TRADES=(data.trades||[]).map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    st.textContent=`${TRADES.length} trade${TRADES.length===1?'':'s'} · updated ${GEN?new Date(GEN).toLocaleString():'—'}`;
+    render();
+  }catch(e){ st.innerHTML='<span class="err">'+(e.message||'load failed')+'</span>'; document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on first data.json from the refresh job.</div></div>'; renderCalendar(); }
+}
+document.querySelectorAll('#mgmtToggle button').forEach(b=>{ b.onclick=()=>{ document.querySelectorAll('#mgmtToggle button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CAL_MGMT=b.dataset.m; render(); }; });
+load();
+</script></body></html>
