@@ -197,26 +197,44 @@ function renderCalendar(){
   if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
 }
 
-async function load(){
+// Live Cloudflare Worker (queries Notion in real time, ~500ms) — same Worker as v2.
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3';
+let firstLoad=true;
+async function fetchTrades(){
+  // Prefer the live Worker (near-instant); fall back to the static Actions file if it's unreachable.
+  try{
+    const res=await fetch(WORKER+'&t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('worker '+res.status);
+    const j=await res.json();
+    if(j.error) throw new Error(j.error);
+    return {j, src:'live'};
+  }catch(e){
+    const res=await fetch('v3-data.json?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('data '+res.status);
+    return {j:await res.json(), src:'cached'};
+  }
+}
+async function poll(){
   const st=document.getElementById('status');
   try{
-    const res=await fetch('v3-data.json?t='+Date.now());
-    if(!res.ok) throw new Error('data '+res.status);
-    const j=await res.json();
+    const {j,src}=await fetchTrades();
     const rows=(j&&j.trades)||[];
     TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    const upd=j.updated?new Date(j.updated).toLocaleString():'';
-    st.textContent=`${TRADES.length} trade${TRADES.length===1?'':'s'}${upd?' · '+upd:''}`;
+    st.textContent=`${TRADES.length} trade${TRADES.length===1?'':'s'} · ${src} · ${new Date().toLocaleTimeString()}`;
     render();
+    firstLoad=false;
   }catch(e){
-    st.innerHTML='<span class="err">Failed to load v3-data.json. '+(e.message||'')+'</span>';
-    document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting for first data refresh (GitHub Action writes v3-data.json).</div></div>';
-    renderCalendar();
+    if(firstLoad){
+      st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker (or first Action refresh).</div></div>';
+      renderCalendar();
+    }
   }
 }
 document.querySelectorAll('#mgmtToggle button').forEach(b=>{
   b.onclick=()=>{ document.querySelectorAll('#mgmtToggle button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CAL_MGMT=b.dataset.m; render(); };
 });
-load();
+poll();
+setInterval(poll,5000);   // 5s poll — near-real-time, identical to v2
 </script>
 </body></html>

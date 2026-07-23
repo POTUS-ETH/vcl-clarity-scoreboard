@@ -247,6 +247,35 @@ const CORS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate',
 };
 
+// ── VCL v3 (Sweep+BoS) ──────────────────────────────────────────────
+// Returns RAW inputs only; the v3 widget recomputes R client-side using the
+// corrected full-ladder model (single source of truth in v3.html).
+const V3_DB = '1c62f731085940f095b489598b0f55c0';
+async function computeV3Raw(token) {
+  const trades = await queryAll(V3_DB, token);
+  const rows = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (title.toUpperCase().startsWith('TEST')) continue; // ignore scaffolding rows
+    rows.push({
+      Trade:      title,
+      Direction:  getProp(t, 'Direction'),
+      Timeframe:  getProp(t, 'Timeframe'),
+      Session:    getProp(t, 'Session'),
+      Pair:       getProp(t, 'Pair'),
+      EntryPrice: getProp(t, 'Entry Price'),
+      L1Price:    getProp(t, 'L1 Price'),
+      SLPrice:    getProp(t, 'SL Price'),
+      MaxRun:     getProp(t, 'Max Run'),
+      BoSExit:    getProp(t, 'BoS Exit'),
+      L1Filled:   getProp(t, 'L1 Filled'),
+      RangePct:   getProp(t, 'Range %'),
+      date:       getProp(t, 'Date'),
+    });
+  }
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
@@ -260,6 +289,8 @@ export default {
       const view = url.searchParams.get('view');
       const data = view === 'calendar'
         ? await computeCalendarData(env.NOTION_TOKEN)
+        : view === 'v3'
+        ? await computeV3Raw(env.NOTION_TOKEN)
         : await computeScoreboard(env.NOTION_TOKEN);
       return new Response(JSON.stringify(data), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
