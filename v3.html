@@ -151,7 +151,6 @@ function render(){
   let ddRows = ranked.length ? '' : '<div class="empty-note">No data.</div>';
   ranked.slice(0,8).forEach((s,i)=>{ ddRows+=`<div class="rowline"><span>${i===0?'🛡️ ':''}${s.combo.label}</span><span class="neg">-${s.mls.dd.toFixed(2)}R <span class="mini">${s.mls.len} in a row</span></span></div>`; });
   board.innerHTML=`
-    <div class="card top"><div class="crown">👑 Overall winning combo</div><div class="combo">${overall?overall.combo.label:'—'}</div><div style="margin-top:10px">${statBlock(overall)}</div></div>
     <div class="grid2">
       <div class="card"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>
       <div class="card"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>
