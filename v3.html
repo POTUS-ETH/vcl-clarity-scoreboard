@@ -10,7 +10,6 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
 .hd .sub{font-size:11px;color:#8b93a1}
-.toolbar{display:flex;gap:6px;align-items:center;font-size:11px;color:#8b93a1;margin-bottom:14px;flex-wrap:wrap}
 .tg{display:inline-flex;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
 .tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
 .tg button:first-child{border-left:0}
@@ -37,6 +36,9 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
 .mini{font-size:11px;color:#8b93a1}
 .cal{margin-top:4px}
+.calfilters{display:flex;flex-direction:column;gap:7px;margin:8px 0 14px}
+.cf{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cflbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8b93a1;width:74px;flex:none}
 .cal .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .cal .calhd button{border:1px solid #2a3140;background:#161b24;color:#e6e8ec;border-radius:6px;padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
 .cal .month{font-size:13px;font-weight:700}
@@ -59,15 +61,6 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
     <div><h1>VCL v3 SCOREBOARD</h1><div class="sub">Sweep+BoS · BoS trail · combo = timeframe × methodology</div></div>
     <div class="mini" id="status">loading…</div>
   </div>
-  <div class="toolbar">
-    <span>Methodology (calendar · range %):</span>
-    <span class="tg" id="mgmtToggle">
-      <button data-m="f1" class="on">Full @1R</button>
-      <button data-m="f2">Full @2R</button>
-      <button data-m="p1">50% @1R</button>
-      <button data-m="p2">50% @2R</button>
-    </span>
-  </div>
   <div id="board"></div>
   <div class="foot">
     R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R/2R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @NR closes the whole position at NR; 50% @NR banks half at NR and trails the rest on BoS.
@@ -78,7 +71,8 @@ const MGMTS=[{k:'f1',label:'Full @1R'},{k:'f2',label:'Full @2R'},{k:'p1',label:'
 const TFS=['15s','1m'];
 const COMBOS=[];
 TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
-let CAL_MGMT='f1', TRADES=[], CAL_MONTH=null;
+const RANGE_REF='f1'; // methodology used to flag "winning" trades in the Range% panel
+let CAL_MGMT='f1', CAL_TF='all', CAL_SESS='all', TRADES=[], CAL_MONTH=null;
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
@@ -87,19 +81,20 @@ function computeR(row){
   const dir=row.Direction, tf=row.Timeframe;
   const E=num(row.EntryPrice), L1=num(row.L1Price), SL=num(row.SLPrice),
         MR=num(row.MaxRun), BX=num(row.BoSExit);
-  const l1=!!row.L1Filled;
+  const b=!!row.L1before, a=!!row.L1after, l1=b||a;   // b: peak at full · a: peak at half then L1
   const dirM = dir==='Long'?1:(dir==='Short'?-1:null);
   const iniR = (E!=null&&L1!=null&&SL!=null)?Math.abs((E+L1)/2-SL):null;
-  const avgE = l1?((E+L1)/2):E;
-  const posM = l1?1:0.5;
+  const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
+  const basisPeak = b?avg:E, posMpeak = b?1:0.5;      // size/basis AT the peak
+  const basisExit = l1?avg:E, posMexit = l1?1:0.5;    // size/basis AT the exit
   let r={f1:null,f2:null,p1:null,p2:null};
-  if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avgE!=null){
-    const posRun  = posM*(MR-avgE)*dirM/iniR;
-    const posExit = posM*(BX-avgE)*dirM/iniR;
-    r.f1 = posRun>=1 ? 1 : posExit;
-    r.f2 = posRun>=2 ? 2 : posExit;
-    r.p1 = posRun>=1 ? 0.5 + 0.5*posExit : posExit;
-    r.p2 = posRun>=2 ? 1   + 0.5*posExit : posExit;
+  if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avg!=null){
+    const peakR   = posMpeak*(MR-basisPeak)*dirM/iniR;
+    const posExit = posMexit*(BX-basisExit)*dirM/iniR;
+    r.f1 = peakR>=1 ? 1 : posExit;
+    r.f2 = peakR>=2 ? 2 : posExit;
+    r.p1 = peakR>=1 ? 0.5 + 0.5*posExit : posExit;
+    r.p2 = peakR>=2 ? 1   + 0.5*posExit : posExit;
   }
   return {tf, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
 }
@@ -149,7 +144,7 @@ function render(){
   let rangeRows=''; const rp=pool.filter(t=>t.rangePct!=null);
   if(!rp.length){ rangeRows='<div class="empty-note">No Range % logged yet.</div>'; }
   else { const groups={}; rp.forEach(t=>{ const k=(t.session||'—')+' · '+t.tf; (groups[k]=groups[k]||[]).push(t); });
-    Object.keys(groups).sort().forEach(k=>{ const g=groups[k]; const wins=g.filter(t=>t.r[CAL_MGMT]>0); const src=wins.length?wins:g;
+    Object.keys(groups).sort().forEach(k=>{ const g=groups[k]; const wins=g.filter(t=>t.r[RANGE_REF]>0); const src=wins.length?wins:g;
       const avg=src.reduce((a,t)=>a+t.rangePct,0)/src.length;
       rangeRows+=`<div class="rowline"><span>${k}</span><span><b>${avg.toFixed(1)}%</b> <span class="mini">${wins.length?'on wins':'all'} · n${src.length}</span></span></div>`; }); }
   const ranked=all.filter(s=>s.n>0).sort((a,b)=>a.mls.dd-b.mls.dd);
@@ -172,11 +167,41 @@ function render(){
 }
 
 function ym(d){ return d? d.slice(0,7):null; }
+function calControls(){
+  const mgmtBtns=MGMTS.map(m=>`<button data-f="mgmt" data-v="${m.k}" class="${CAL_MGMT===m.k?'on':''}">${m.label}</button>`).join('');
+  const tfBtns=['all',...TFS].map(tf=>`<button data-f="tf" data-v="${tf}" class="${CAL_TF===tf?'on':''}">${tf==='all'?'All':tf}</button>`).join('');
+  const sessions=[...new Set(TRADES.map(t=>t.session).filter(Boolean))];
+  const sessBtns=['all',...sessions].map(s=>`<button data-f="sess" data-v="${s}" class="${CAL_SESS===s?'on':''}">${s==='all'?'All':s}</button>`).join('');
+  return `<div class="calfilters">
+    <div class="cf"><span class="cflbl">Method</span><span class="tg">${mgmtBtns}</span></div>
+    <div class="cf"><span class="cflbl">Timeframe</span><span class="tg">${tfBtns}</span></div>
+    <div class="cf"><span class="cflbl">Session</span><span class="tg">${sessBtns}</span></div>
+  </div>`;
+}
+function wireCalControls(){
+  document.querySelectorAll('#calCard .calfilters button').forEach(b=>{
+    b.onclick=()=>{ const f=b.dataset.f, v=b.dataset.v;
+      if(f==='mgmt') CAL_MGMT=v; else if(f==='tf') CAL_TF=v; else if(f==='sess') CAL_SESS=v;
+      renderCalendar(); };
+  });
+}
+function calTitle(){
+  const parts=[mgmtLabel(CAL_MGMT)];
+  if(CAL_TF!=='all') parts.push(CAL_TF);
+  if(CAL_SESS!=='all') parts.push(CAL_SESS);
+  return parts.join(' · ');
+}
 function renderCalendar(){
   const card=document.getElementById('calCard'); if(!card) return;
-  const dated=TRADES.filter(t=>t.date);
+  const controls=calControls();
+  // apply timeframe + session filters to the calendar only
+  const filtered=TRADES.filter(t=>(CAL_TF==='all'||t.tf===CAL_TF) && (CAL_SESS==='all'||t.session===CAL_SESS));
+  const dated=filtered.filter(t=>t.date);
   const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
-  if(!months.length){ card.innerHTML='<div class="lbl">Calendar</div><div class="empty-note">No dated trades yet.</div>'; return; }
+  if(!months.length){
+    card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>${controls}<div class="empty-note">No trades match this filter yet.</div>`;
+    wireCalControls(); return;
+  }
   if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
   const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
   const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
@@ -188,10 +213,12 @@ function renderCalendar(){
   for(let d=1;d<=dim;d++){ const x=byDay[d]; let c='day', body='';
     if(x){ c+= x.sum>0?' win':(x.sum<0?' loss':''); body=`<div class="dr ${cls(x.sum)}">${fR(x.sum)}</div><div class="dc">${x.n} trade${x.n>1?'s':''}</div>`; }
     cells+=`<div class="${c}"><div class="dn">${d}</div>${body}</div>`; }
-  card.innerHTML=`<div class="lbl">Calendar — net R (${mgmtLabel(CAL_MGMT)})</div>
+  card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>
+    ${controls}
     <div class="calhd"><button ${idx<=0?'disabled':''} id="pm">‹</button><div class="month">${monthName}</div><button ${idx>=months.length-1?'disabled':''} id="nm">›</button></div>
     <div class="dow"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
     <div class="days">${cells}</div>`;
+  wireCalControls();
   const pm=document.getElementById('pm'), nm=document.getElementById('nm');
   if(pm) pm.onclick=()=>{ CAL_MONTH=months[idx-1]; renderCalendar(); };
   if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
@@ -201,7 +228,6 @@ function renderCalendar(){
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3';
 let firstLoad=true;
 async function fetchTrades(){
-  // Prefer the live Worker (near-instant); fall back to the static Actions file if it's unreachable.
   try{
     const res=await fetch(WORKER+'&t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('worker '+res.status);
@@ -231,9 +257,6 @@ async function poll(){
     }
   }
 }
-document.querySelectorAll('#mgmtToggle button').forEach(b=>{
-  b.onclick=()=>{ document.querySelectorAll('#mgmtToggle button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); CAL_MGMT=b.dataset.m; render(); };
-});
 poll();
 setInterval(poll,5000);   // 5s poll — near-real-time, identical to v2
 </script>

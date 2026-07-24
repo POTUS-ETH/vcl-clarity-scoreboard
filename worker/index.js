@@ -268,7 +268,8 @@ async function computeV3Raw(token) {
       SLPrice:    getProp(t, 'SL Price'),
       MaxRun:     getProp(t, 'Max Run'),
       BoSExit:    getProp(t, 'BoS Exit'),
-      L1Filled:   getProp(t, 'L1 Filled'),
+      L1before:   getProp(t, 'L1 before Max Run'),
+      L1after:    getProp(t, 'L1 after Max Run'),
       RangePct:   getProp(t, 'Range %'),
       date:       getProp(t, 'Date'),
     });

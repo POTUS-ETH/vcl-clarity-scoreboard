@@ -53,7 +53,8 @@ async function queryAll() {
         SLPrice:    NUM(p['SL Price']),
         MaxRun:     NUM(p['Max Run']),
         BoSExit:    NUM(p['BoS Exit']),
-        L1Filled:   CHK(p['L1 Filled']),
+        L1before:   CHK(p['L1 before Max Run']),
+        L1after:    CHK(p['L1 after Max Run']),
         RangePct:   NUM(p['Range %']),
         date:       DATE(p['Date']),
       };
