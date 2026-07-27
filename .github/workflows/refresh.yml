@@ -65,25 +65,18 @@ jobs:
               echo "refresh-v3.js exit $rc3 on iteration $iter; will retry next iteration"
             fi
 
-            # V3 ETH (VCL Clarity V3 — ETH)
-            node refresh-v3-eth.js
+            # V3 CRYPTO (VCL Clarity V3 — CRYPTO, ETH+SOL Pair-tagged in one tracker)
+            node refresh-v3-crypto.js
             rc4=$?
             if [[ $rc4 -ne 0 ]]; then
-              echo "refresh-v3-eth.js exit $rc4 on iteration $iter; will retry next iteration"
-            fi
-
-            # V3 SOL (VCL Clarity V3 — SOL)
-            node refresh-v3-sol.js
-            rc5=$?
-            if [[ $rc5 -ne 0 ]]; then
-              echo "refresh-v3-sol.js exit $rc5 on iteration $iter; will retry next iteration"
+              echo "refresh-v3-crypto.js exit $rc4 on iteration $iter; will retry next iteration"
             fi
 
             # Commit + push if any data.json changed
-            if [[ -n "$(git status --porcelain data.json v2/data.json v3-data.json v3-eth-data.json v3-sol-data.json)" ]]; then
+            if [[ -n "$(git status --porcelain data.json v2/data.json v3-data.json v3-crypto-data.json)" ]]; then
               git fetch origin main
               git rebase origin/main || git rebase --abort
-              git add data.json v2/data.json v3-data.json v3-eth-data.json v3-sol-data.json
+              git add data.json v2/data.json v3-data.json v3-crypto-data.json
               git commit -m "chore: refresh scoreboard data ($iter/$ITERATIONS)"
 
               for push_try in 1 2 3 4 5; do

@@ -76,7 +76,7 @@ const TFS=['15s','1m'];
 const COMBOS=[];
 TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
 const RANGE_REF='f1'; // methodology used to flag "winning" trades in the Range% panel
-let CAL_MGMT='f1', CAL_TF='all', CAL_SESS='all', TRADES=[], CAL_MONTH=null, calDefaulted=false;
+let CAL_MGMT='f1', CAL_TF='all', CAL_SESS='all', TRADES=[], ALL_TRADES=[], CAL_MONTH=null, calDefaulted=false;
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
@@ -101,7 +101,7 @@ function computeR(row){
     r.p2 = peakR>=2 ? 1   + 0.5*posExit : posExit;
     r.hy = l1 ? r.p1 : r.f1;   // entry-only -> Full @1R ; L1 filled -> 50% @1R + trail
   }
-  return {tf, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
+  return {tf, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r, pair:row.Pair||null};
 }
 
 function seriesFor(tf,mgmt,pool){ return pool.filter(t=>t.tf===tf).map(t=>t.r[mgmt]).filter(r=>r!=null); }
@@ -303,31 +303,35 @@ function renderCalendar(){
 }
 
 // Live Cloudflare Worker (queries Notion in real time, ~500ms) — same Worker as v2.
-// ASSET toggles which Notion tracker feeds this exact same analysis engine — no data mixing,
-// each asset's stats are computed from its own fetch only.
+// Single tracker, single fetch — ETH and SOL trades share one Trade Log tagged by Pair.
+// ASSET only filters the already-fetched pool client-side; no re-fetch, no data mixing
+// (each pair's stats are computed strictly from its own rows).
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-crypto';
 let ASSET='eth';
-function workerUrl(){ return 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-'+ASSET; }
-function fallbackUrl(){ return 'v3-'+ASSET+'-data.json'; }
 let firstLoad=true;
 async function fetchTrades(){
   try{
-    const res=await fetch(workerUrl()+'&t='+Date.now(),{cache:'no-store'});
+    const res=await fetch(WORKER+'&t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('worker '+res.status);
     const j=await res.json();
     if(j.error) throw new Error(j.error);
     return {j, src:'live'};
   }catch(e){
-    const res=await fetch(fallbackUrl()+'?t='+Date.now(),{cache:'no-store'});
+    const res=await fetch('v3-crypto-data.json?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('data '+res.status);
     return {j:await res.json(), src:'cached'};
   }
+}
+function applyAssetFilter(){
+  TRADES=ALL_TRADES.filter(t=>(t.pair||'').toLowerCase()===ASSET);
 }
 async function poll(){
   const st=document.getElementById('status');
   try{
     const {j,src}=await fetchTrades();
     const rows=(j&&j.trades)||[];
-    TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    ALL_TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    applyAssetFilter();
     st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${src} · ${new Date().toLocaleTimeString()}`;
     render();
     firstLoad=false;
@@ -345,9 +349,11 @@ function wireAssetToggle(){
       if(btn.dataset.a===ASSET) return;
       ASSET=btn.dataset.a;
       document.querySelectorAll('#assetTg button').forEach(b=>b.classList.toggle('on', b===btn));
-      TRADES=[]; firstLoad=true; CAL_MONTH=null; calDefaulted=false;
-      document.getElementById('status').textContent='loading…';
-      poll();
+      CAL_MONTH=null; calDefaulted=false;
+      applyAssetFilter();
+      const st=document.getElementById('status');
+      st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · switched · ${new Date().toLocaleTimeString()}`;
+      render();
     };
   });
 }

@@ -1,14 +1,16 @@
-// refresh-v3-sol.js — pulls VCL Clarity V3 — SOL (Sweep+BoS) from Notion and writes v3-sol-data.json
-// Extracts RAW inputs only; the scoreboard (v3-sol.html) recomputes R client-side using the
-// corrected full-ladder model. Requires env NOTION_TOKEN. Run by the Actions cron loop.
+// refresh-v3-crypto.js — pulls VCL Clarity V3 — CRYPTO (Sweep+BoS, ETH+SOL) from Notion
+// and writes v3-crypto-data.json. Extracts RAW inputs only; the scoreboard (v3-crypto.html)
+// recomputes R client-side using the corrected full-ladder model, then filters by Pair
+// for the ETH/SOL toggle — one fetch, no cross-pair mixing. Requires env NOTION_TOKEN.
+// Run by the Actions cron loop.
 const fs = require('fs');
 const path = require('path');
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
-const V3_DB = 'ddc80dc38863421494e2a1f397aaf5ca'; // VCL Clarity V3 — SOL Trade Log
-const OUT = path.join(__dirname, 'v3-sol-data.json');
+const V3_DB = '17736d193e324254b76cbf9054b89184'; // VCL Clarity V3 — CRYPTO Trade Log
+const OUT = path.join(__dirname, 'v3-crypto-data.json');
 
-if (!NOTION_TOKEN) { console.error('refresh-v3-sol: NOTION_TOKEN missing'); process.exit(1); }
+if (!NOTION_TOKEN) { console.error('refresh-v3-crypto: NOTION_TOKEN missing'); process.exit(1); }
 
 const NUM  = p => (p && p.type === 'number') ? p.number : null;
 const SEL  = p => (p && p.type === 'select' && p.select) ? p.select.name : null;
@@ -47,6 +49,7 @@ async function queryAll() {
         Direction:  SEL(p['Direction']),
         Timeframe:  SEL(p['Timeframe']),
         Session:    SEL(p['Session']),
+        Pair:       SEL(p['Pair']),
         EntryPrice: NUM(p['Entry Price']),
         L1Price:    NUM(p['L1 Price']),
         SLPrice:    NUM(p['SL Price']),
@@ -62,9 +65,9 @@ async function queryAll() {
     .filter(r => !(r.Trade || '').toUpperCase().startsWith('TEST'));
 
     fs.writeFileSync(OUT, JSON.stringify({ updated: new Date().toISOString(), trades: data }, null, 2));
-    console.log(`refresh-v3-sol: wrote ${data.length} trades to v3-sol-data.json`);
+    console.log(`refresh-v3-crypto: wrote ${data.length} trades to v3-crypto-data.json`);
   } catch (e) {
-    console.error('refresh-v3-sol failed:', e.message);
+    console.error('refresh-v3-crypto failed:', e.message);
     process.exit(1);
   }
 })();
