@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VCL v3 Crypto Scoreboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
+.wrap{max-width:980px;margin:0 auto}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:11px;color:#8b93a1}
+.tg{display:inline-flex;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
+.tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
+.tg button:first-child{border-left:0}
+.tg button.on{background:#3b82f6;color:#fff}
+.card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:16px}
+.top{border:2px solid #3b82f6;margin-bottom:12px}
+.top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
+.top .combo{font-size:26px;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
+.matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix tr.best td{background:#182335}
+.lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:6px}
+.combo-md{font-size:16px;font-weight:700;margin-bottom:8px}
+.stats{display:flex;flex-wrap:wrap;gap:12px 18px}
+.stat .k{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6b7280}
+.stat .v{font-size:16px;font-weight:700}
+.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
+.rowline{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #232a36;font-size:12px}
+.rowline:first-of-type{border-top:0}
+.pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
+.mini{font-size:11px;color:#8b93a1}
+.cal{margin-top:4px}
+.calfilters{display:flex;flex-direction:column;gap:7px;margin:8px 0 14px}
+.cf{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cflbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8b93a1;width:74px;flex:none}
+.calsel{background:#161b24;color:#e6e8ec;border:1px solid #2a3140;border-radius:6px;padding:4px 9px;font:inherit;font-size:11px;cursor:pointer}
+.cal .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal .calhd button{border:1px solid #2a3140;background:#161b24;color:#e6e8ec;border-radius:6px;padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
+.cal .month{font-size:13px;font-weight:700}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.dow div{font-size:9px;color:#6b7280;text-align:center;letter-spacing:.5px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day{aspect-ratio:1/.82;border:1px solid #202634;border-radius:7px;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;background:#12161e}
+.day.empty{background:transparent;border:0}
+.day .dn{font-size:9px;color:#6b7280}
+.day .dr{font-size:12px;font-weight:700}
+.day .dc{font-size:8px;color:#6b7280}
+.day.win{background:#122019;border-color:#1f4d33}
+.day.loss{background:#221414;border-color:#5a2626}
+.empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.err{color:#f87171;font-size:12px}
+.foot{font-size:10px;color:#6b7280;margin-top:14px;line-height:1.6}
+</style></head><body>
+<div class="wrap">
+  <div class="hd">
+    <div><h1>VCL v3 CRYPTO SCOREBOARD</h1><div class="sub">Sweep+BoS · BoS trail · combo = timeframe × methodology</div></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="tg" id="assetTg"><button data-a="eth" class="on">ETH</button><button data-a="sol">SOL</button></div>
+      <div class="mini" id="status">loading…</div>
+    </div>
+  </div>
+  <div id="board"></div>
+  <div class="foot">
+    R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R/2R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @NR closes the whole position at NR; 50% @NR banks half at NR and trails the rest on BoS.
+  </div>
+</div>
+<script>
+const MGMTS=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hy',label:'Hybrid @1R'}];
+const TFS=['15s','1m'];
+const COMBOS=[];
+TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
+const RANGE_REF='f1'; // methodology used to flag "winning" trades in the Range% panel
+let CAL_MGMT='f1', CAL_TF='all', CAL_SESS='all', TRADES=[], CAL_MONTH=null, calDefaulted=false;
+
+function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
+
+// Corrected full-ladder R for all four methodologies (raw inputs from v3-data.json).
+function computeR(row){
+  const dir=row.Direction, tf=row.Timeframe;
+  const E=num(row.EntryPrice), L1=num(row.L1Price), SL=num(row.SLPrice),
+        MR=num(row.MaxRun), BX=num(row.BoSExit);
+  const b=!!row.L1before, a=!!row.L1after, l1=b||a;   // b: peak at full · a: peak at half then L1
+  const dirM = dir==='Long'?1:(dir==='Short'?-1:null);
+  const iniR = (E!=null&&L1!=null&&SL!=null)?Math.abs((E+L1)/2-SL):null;
+  const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
+  const basisPeak = b?avg:E, posMpeak = b?1:0.5;      // size/basis AT the peak
+  const basisExit = l1?avg:E, posMexit = l1?1:0.5;    // size/basis AT the exit
+  let r={f1:null,f2:null,p1:null,p2:null,hy:null};
+  if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avg!=null){
+    const peakR   = posMpeak*(MR-basisPeak)*dirM/iniR;
+    const posExit = posMexit*(BX-basisExit)*dirM/iniR;
+    r.f1 = peakR>=1 ? 1 : posExit;
+    r.f2 = peakR>=2 ? 2 : posExit;
+    r.p1 = peakR>=1 ? 0.5 + 0.5*posExit : posExit;
+    r.p2 = peakR>=2 ? 1   + 0.5*posExit : posExit;
+    r.hy = l1 ? r.p1 : r.f1;   // entry-only -> Full @1R ; L1 filled -> 50% @1R + trail
+  }
+  return {tf, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
+}
+
+function seriesFor(tf,mgmt,pool){ return pool.filter(t=>t.tf===tf).map(t=>t.r[mgmt]).filter(r=>r!=null); }
+function stats(series){ const n=series.length; if(!n) return {n:0};
+  const wins=series.filter(r=>r>0).length, total=series.reduce((a,b)=>a+b,0);
+  return {n, wins, wr:wins/n, exp:total/n, total}; }
+function maxLossStreak(series){ let run=0,len=0,worst=0,worstLen=0;
+  for(const r of series){ if(r<0){run+=r;len++;if(run<worst){worst=run;worstLen=len;}} else {run=0;len=0;} }
+  return {dd:Math.abs(worst), len:worstLen}; }
+function comboStat(c,pool){ const s=stats(seriesFor(c.tf,c.mgmt,pool)); s.combo=c; s.mls=maxLossStreak(seriesFor(c.tf,c.mgmt,pool)); return s; }
+function bestOf(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.exp-a.exp)[0]; }
+function bestByTotal(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.total-a.total)[0]; }
+function mStat(rows,mk){ return stats(rows.map(t=>t.r[mk]).filter(x=>x!=null)); }
+function bestMethod(rows){ let best=null; MGMTS.forEach(m=>{ const s=mStat(rows,m.k); if(s.n>0 && (!best||s.exp>best.exp)) best={mk:m.k,label:m.label,n:s.n,exp:s.exp,tot:s.total,wr:s.wr}; }); return best; }
+const SESS_ORDER=['Asia','Frankfurt','London','NY AM','NY','NY PM','Late'];
+function sessRank(s){ const i=SESS_ORDER.indexOf(s); return i<0?99:i; }
+function bestCombo(rows){ let best=null;
+  TFS.forEach(tf=>{ MGMTS.forEach(m=>{ const ser=rows.filter(t=>t.tf===tf).map(t=>t.r[m.k]).filter(x=>x!=null); const s=stats(ser);
+    if(s.n>0 && (!best || s.exp>best.exp)) best={tf, mk:m.k, label:m.label, exp:s.exp, wr:s.wr, tot:s.total, n:s.n}; }); });
+  return best; }
+function bestExitTF(rows, tf){ let best=null;
+  MGMTS.forEach(m=>{ const ser=rows.filter(t=>t.tf===tf).map(t=>t.r[m.k]).filter(x=>x!=null); const s=stats(ser);
+    if(s.n>0 && (!best || s.exp>best.exp)) best={tf, mk:m.k, label:m.label, exp:s.exp, wr:s.wr, tot:s.total, n:s.n}; });
+  return best; }
+function recoMap(pool, tf){ const map={};
+  [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{ const rows=pool.filter(t=>t.session===se);
+    const b=(tf&&tf!=='all')?bestExitTF(rows,tf):bestCombo(rows); if(b) map[se]={tf:b.tf, mk:b.mk}; });
+  return map; }
+function recoSeries(pool, tf){ const m=recoMap(pool, tf); return pool.map(t=>{ const p=m[t.session]; return (p && t.tf===p.tf)?t.r[p.mk]:null; }).filter(x=>x!=null); }
+function recoCardTF(tf, pool){
+  const sessions=[...new Set(pool.filter(t=>t.tf===tf).map(t=>t.session).filter(Boolean))];
+  const rx=sessions.map(se=>({se,b:bestExitTF(pool.filter(t=>t.session===se), tf)})).filter(x=>x.b).sort((a,b)=>sessRank(a.se)-sessRank(b.se));
+  const rser=recoSeries(pool, tf), rs=stats(rser), rdd=maxDrawdown(rser), rmls=maxLossStreak(rser);
+  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 ${tf} prescription</div><div class="empty-note">No ${tf} trades yet.</div></div>`;
+  let sess='';
+  rx.forEach(x=>{ const weak=x.b.exp<0.2, thin=x.b.n<5;
+    sess+=`<div class="rowline"><span><span class="pill">${x.se}</span> → <b>${x.b.label}</b>${weak?' <span class="mini" style="color:#e0b341">· weak</span>':''}${thin?' <span class="mini">· thin</span>':''}</span><span class="${cls(x.b.exp)}">${fR(x.b.exp)} <span class="mini">${Math.round(x.b.wr*100)}% · n${x.b.n}</span></span></div>`; });
+  const L=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Long'),'hy'), S=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Short'),'hy');
+  let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="lbl" style="margin:14px 0 6px">Tilt</div><div class="rowline"><span>Direction</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
+  const recoStats=`<div class="stats" style="margin:6px 0 2px">
+    <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(rs.exp)}">${fR(rs.exp)}</div></div>
+    <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(rs.wr*100)}%</div></div>
+    <div class="stat"><div class="k">Total R</div><div class="v ${cls(rs.total)}">${fR(rs.total)}</div></div>
+    <div class="stat"><div class="k">Risk of ruin</div><div class="v neg">-${rdd.toFixed(1)}R <span class="mini">${rmls.len}× streak</span></div></div>
+  </div><div class="mini" style="margin-bottom:4px">If you traded only ${tf} — each session its prescribed exit, exclusively · n${rs.n}</div>`;
+  return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 ${tf} prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 6px">By session, in order</div>${sess}${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
+}
+function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
+function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
+function mgmtLabel(k){ if(k==='reco') return 'Strategic Rec'; return (MGMTS.find(m=>m.k===k)||{}).label||k; }
+
+function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades yet.</div>';
+  return `<div class="stats">
+    <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(s.exp)}">${fR(s.exp)}</div></div>
+    <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.wr*100)}%</div></div>
+    <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+    <div class="stat"><div class="k">Trades</div><div class="v">${s.n}</div></div>
+  </div>`; }
+
+function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
+function matrixTableTF(tf,pool){
+  const rows=MGMTS.map(m=>({label:m.label, s:stats(seriesFor(tf,m.k,pool))}));
+  rows.sort((a,b)=> ((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
+  let html='';
+  rows.forEach((row,i)=>{ const s=row.s; const isBest=i===0&&s.n>0;
+    html+=`<tr class="${isBest?'best':''}"><td>${row.label}</td>`+
+          `<td class="${s.n?cls(s.exp):'mut'}">${s.n?fR(s.exp):'—'}</td>`+
+          `<td>${s.n?Math.round(s.wr*100)+'%':'—'}</td>`+
+          `<td class="${s.n?cls(s.total):'mut'}">${s.n?fR(s.total):'—'}</td>`+
+          `<td class="mut">${s.n||'—'}</td></tr>`; });
+  return `<div class="lbl" style="margin-bottom:6px">${tf}</div><table class="matrix"><thead><tr><th>Method</th><th>Exp</th><th>Win%</th><th>Tot</th><th>n</th></tr></thead><tbody>${html}</tbody></table>`;
+}
+function riskListTF(tf,pool){
+  const rows=MGMTS.map(m=>{ const ser=seriesFor(tf,m.k,pool); return {label:m.label, dd:maxDrawdown(ser), mls:maxLossStreak(ser), n:ser.length}; });
+  rows.sort((a,b)=> ((a.n?0:1)-(b.n?0:1)) || (a.dd-b.dd));
+  let html=`<div class="lbl" style="margin-bottom:6px">${tf}</div>`;
+  rows.forEach(r=>{ html+=`<div class="rowline"><span>${r.label}</span><span>${r.n?'<span class="neg">-'+r.dd.toFixed(2)+'R</span>':'<span class="mut">—</span>'} <span class="mini">${r.n?'DD · '+r.mls.len+'× in a row':''}</span></span></div>`; });
+  return html;
+}
+
+function graveCard(pool){
+  let rows='';
+  [['f2','Full @2R'],['p2','50% @2R']].forEach(([k,lbl])=>{
+    const ser=pool.map(t=>t.r[k]).filter(x=>x!=null); const s=stats(ser); if(!s.n) return;
+    const dd=maxDrawdown(ser), mls=maxLossStreak(ser);
+    rows+=`<div class="rowline"><span>${lbl} <span class="mini">n${s.n}</span></span><span><span class="${cls(s.exp)}">${fR(s.exp)}</span> <span class="mini">${Math.round(s.wr*100)}% · tot ${fR(s.total)} · DD <span class="neg">-${dd.toFixed(1)}R</span> · ${mls.len}× streak</span></span></div>`;
+  });
+  if(!rows) return '';
+  return `<div class="card" style="margin-bottom:12px;opacity:.72"><div class="lbl">⚰️ Graveyard — retired methods</div><div class="mini" style="margin:4px 0 8px">Cut: <b>2R targets</b>. Held to 2R the L1 book turns net-negative and half-size runners rarely travel the ~4× risk distance needed to reach it — the longer hold roughly doubled drawdown for lower expectancy than the 1R exits. Excluded from the calendar, matrix, and recommendations; kept here for the record.</div>${rows}</div>`;
+}
+function render(){
+  const pool=TRADES, board=document.getElementById('board');
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades logged yet — the board fills in as you add rows to Trade Log v3.</div></div>'; renderCalendar(); return; }
+  const all=COMBOS.map(c=>comboStat(c,pool));
+  const overall=bestOf(all), best1m=bestOf(all.filter(s=>s.combo.tf==='1m')), best15=bestOf(all.filter(s=>s.combo.tf==='15s'));
+  const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
+  let sessRows = sessions.length ? '' : '<div class="empty-note">No Session tagged yet.</div>';
+  sessions.forEach(se=>{ const sub=pool.filter(t=>t.session===se); const b=bestByTotal(COMBOS.map(c=>comboStat(c,sub)));
+    sessRows+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?b.combo.label:'—'}</span><span class="${b?cls(b.total):'mut'}">${b?fR(b.total):'—'}</span></div>`; });
+  let rangeRows=''; const rp=pool.filter(t=>t.rangePct!=null);
+  if(!rp.length){ rangeRows='<div class="empty-note">No Range % logged yet.</div>'; }
+  else { const groups={}; rp.forEach(t=>{ const k=(t.session||'—'); (groups[k]=groups[k]||[]).push(t); });
+    Object.keys(groups).sort().forEach(k=>{ const g=groups[k]; const wins=g.filter(t=>t.r[RANGE_REF]>0); const src=wins.length?wins:g;
+      const vals=src.map(t=>t.rangePct); const mn=Math.min(...vals), mx=Math.max(...vals);
+      const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+      const band = mn===mx ? mn+'%' : mn+'–'+mx+'%';
+      rangeRows+=`<div class="rowline"><span><span class="pill">${k}</span></span><span><b>${band}</b> <span class="mini">avg ${avg.toFixed(2)}% · ${wins.length?'wins':'all'} n${src.length}</span></span></div>`; }); }
+  const ranked=all.filter(s=>s.n>0).sort((a,b)=>a.mls.dd-b.mls.dd);
+  let ddRows = ranked.length ? '' : '<div class="empty-note">No data.</div>';
+  ranked.slice(0,8).forEach((s,i)=>{ ddRows+=`<div class="rowline"><span>${i===0?'🛡️ ':''}${s.combo.label}</span><span class="neg">-${s.mls.dd.toFixed(2)}R <span class="mini">${s.mls.len} in a row</span></span></div>`; });
+  const tdays=ss=>new Set(ss.filter(t=>t.date).map(t=>t.date)).size;
+  let freqTf=''; TFS.forEach(tf=>{ const sub=pool.filter(t=>t.tf===tf); const d=tdays(sub); freqTf+=`<div class="rowline"><span>${tf}</span><span><b>${sub.length}</b> <span class="mini">${d?(sub.length/d).toFixed(1):'0'}/day · ${d}d</span></span></div>`; });
+  let freqSess=''; [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{
+    freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span class="mini">${pool.filter(t=>t.session===se).length} total</span></div>`;
+    TFS.forEach(tf=>{ const sub=pool.filter(t=>t.session===se&&t.tf===tf); if(!sub.length) return; const d=tdays(sub); freqSess+=`<div class="rowline" style="border-top:0;padding:2px 0 2px 14px"><span class="mini">${tf}</span><span><b>${sub.length}</b> <span class="mini">· ${d?(sub.length/d).toFixed(1):'0'}/day</span></span></div>`; });
+  });
+  board.innerHTML=`
+    <div class="grid2">
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>${recoCardTF('1m',pool)}</div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>${recoCardTF('15s',pool)}</div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked per timeframe</div>
+      <div class="grid2" style="margin:8px 0 0"><div>${matrixTableTF('15s',pool)}</div><div>${matrixTableTF('1m',pool)}</div></div>
+    </div>
+    ${graveCard(pool)}
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per timeframe</div>
+      <div class="grid2" style="margin:8px 0 0"><div>${riskListTF('15s',pool)}</div><div>${riskListTF('1m',pool)}</div></div>
+      <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R (high-water) · streak = losing trades in a row · safest → riskiest</div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="lbl">Best combo by session</div>${sessRows}</div>
+      <div class="card"><div class="lbl">Optimal Range % · by session</div>${rangeRows}</div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="lbl">Trades by timeframe · avg/day</div>${freqTf}</div>
+      <div class="card"><div class="lbl">Trades by session · avg/day</div>${freqSess}</div>
+    </div>
+    <div class="card cal" id="calCard"></div>`;
+  renderCalendar();
+}
+
+function ym(d){ return d? d.slice(0,7):null; }
+function calControls(){
+  const mgmtOpts=`<option value="reco" ${CAL_MGMT==='reco'?'selected':''}>★ Strategic Rec</option>`+MGMTS.map(m=>`<option value="${m.k}" ${CAL_MGMT===m.k?'selected':''}>${m.label}</option>`).join('');
+  const tfOpts=['all',...TFS].map(tf=>`<option value="${tf}" ${CAL_TF===tf?'selected':''}>${tf==='all'?'All timeframes':tf}</option>`).join('');
+  const sessions=[...new Set(TRADES.map(t=>t.session).filter(Boolean))];
+  const sessOpts=['all',...sessions].map(s=>`<option value="${s}" ${CAL_SESS===s?'selected':''}>${s==='all'?'All sessions':s}</option>`).join('');
+  return `<div class="calfilters">
+    <div class="cf"><span class="cflbl">Method</span><select class="calsel" data-f="mgmt">${mgmtOpts}</select></div>
+    <div class="cf"><span class="cflbl">Timeframe</span><select class="calsel" data-f="tf">${tfOpts}</select></div>
+    <div class="cf"><span class="cflbl">Session</span><select class="calsel" data-f="sess">${sessOpts}</select></div>
+  </div>`;
+}
+function wireCalControls(){
+  document.querySelectorAll('#calCard .calsel').forEach(sel=>{
+    sel.onchange=()=>{ const f=sel.dataset.f, v=sel.value;
+      if(f==='mgmt') CAL_MGMT=v; else if(f==='tf') CAL_TF=v; else if(f==='sess') CAL_SESS=v;
+      renderCalendar(); };
+  });
+}
+function calTitle(){
+  const parts=[mgmtLabel(CAL_MGMT)];
+  if(CAL_TF!=='all') parts.push(CAL_TF);
+  if(CAL_SESS!=='all') parts.push(CAL_SESS);
+  return parts.join(' · ');
+}
+function renderCalendar(){
+  const card=document.getElementById('calCard'); if(!card) return;
+  if(!calDefaulted && TRADES.length){ CAL_MGMT='reco'; CAL_SESS='all'; CAL_TF='all'; calDefaulted=true; }
+  const controls=calControls();
+  // apply timeframe + session filters to the calendar only
+  const filtered=TRADES.filter(t=>(CAL_TF==='all'||t.tf===CAL_TF) && (CAL_SESS==='all'||t.session===CAL_SESS));
+  const dated=filtered.filter(t=>t.date);
+  const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
+  if(!months.length){
+    card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>${controls}<div class="empty-note">No trades match this filter yet.</div>`;
+    wireCalControls(); return;
+  }
+  if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
+  const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
+  const byDay={}; const rmap=CAL_MGMT==='reco'?recoMap(TRADES, CAL_TF):null;
+  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{ const d=Number(t.date.slice(8,10)); const rp=rmap?rmap[t.session]:null; const r=rmap?((rp && t.tf===rp.tf)?t.r[rp.mk]:null):t.r[CAL_MGMT];
+    if(r==null) return; (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
+  const monthName=first.toLocaleString('en-US',{month:'long',year:'numeric'});
+  let cells=''; for(let i=0;i<start;i++) cells+='<div class="day empty"></div>';
+  for(let d=1;d<=dim;d++){ const x=byDay[d]; let c='day', body='';
+    if(x){ c+= x.sum>0?' win':(x.sum<0?' loss':''); body=`<div class="dr ${cls(x.sum)}">${fR(x.sum)}</div><div class="dc">${x.n} trade${x.n>1?'s':''}</div>`; }
+    cells+=`<div class="${c}"><div class="dn">${d}</div>${body}</div>`; }
+  card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>
+    ${controls}
+    <div class="calhd"><button ${idx<=0?'disabled':''} id="pm">‹</button><div class="month">${monthName}</div><button ${idx>=months.length-1?'disabled':''} id="nm">›</button></div>
+    <div class="dow"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+    <div class="days">${cells}</div>`;
+  wireCalControls();
+  const pm=document.getElementById('pm'), nm=document.getElementById('nm');
+  if(pm) pm.onclick=()=>{ CAL_MONTH=months[idx-1]; renderCalendar(); };
+  if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
+}
+
+// Live Cloudflare Worker (queries Notion in real time, ~500ms) — same Worker as v2.
+// ASSET toggles which Notion tracker feeds this exact same analysis engine — no data mixing,
+// each asset's stats are computed from its own fetch only.
+let ASSET='eth';
+function workerUrl(){ return 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-'+ASSET; }
+function fallbackUrl(){ return 'v3-'+ASSET+'-data.json'; }
+let firstLoad=true;
+async function fetchTrades(){
+  try{
+    const res=await fetch(workerUrl()+'&t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('worker '+res.status);
+    const j=await res.json();
+    if(j.error) throw new Error(j.error);
+    return {j, src:'live'};
+  }catch(e){
+    const res=await fetch(fallbackUrl()+'?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('data '+res.status);
+    return {j:await res.json(), src:'cached'};
+  }
+}
+async function poll(){
+  const st=document.getElementById('status');
+  try{
+    const {j,src}=await fetchTrades();
+    const rows=(j&&j.trades)||[];
+    TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${src} · ${new Date().toLocaleTimeString()}`;
+    render();
+    firstLoad=false;
+  }catch(e){
+    if(firstLoad){
+      st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker (or first Action refresh).</div></div>';
+      renderCalendar();
+    }
+  }
+}
+function wireAssetToggle(){
+  document.querySelectorAll('#assetTg button').forEach(btn=>{
+    btn.onclick=()=>{
+      if(btn.dataset.a===ASSET) return;
+      ASSET=btn.dataset.a;
+      document.querySelectorAll('#assetTg button').forEach(b=>b.classList.toggle('on', b===btn));
+      TRADES=[]; firstLoad=true; CAL_MONTH=null; calDefaulted=false;
+      document.getElementById('status').textContent='loading…';
+      poll();
+    };
+  });
+}
+wireAssetToggle();
+poll();
+setInterval(poll,5000);   // 5s poll — near-real-time, identical to v2
+</script>
+</body></html>

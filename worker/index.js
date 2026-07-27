@@ -250,9 +250,12 @@ const CORS = {
 // ── VCL v3 (Sweep+BoS) ──────────────────────────────────────────────
 // Returns RAW inputs only; the v3 widget recomputes R client-side using the
 // corrected full-ladder model (single source of truth in v3.html).
-const V3_DB = '1c62f731085940f095b489598b0f55c0';
-async function computeV3Raw(token) {
-  const trades = await queryAll(V3_DB, token);
+const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
+const V3_ETH_DB = '17736d193e324254b76cbf9054b89184';        // VCL Clarity V3 — ETH
+const V3_SOL_DB = 'ddc80dc38863421494e2a1f397aaf5ca';        // VCL Clarity V3 — SOL
+
+async function computeV3Raw(token, dbId) {
+  const trades = await queryAll(dbId, token);
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -291,7 +294,11 @@ export default {
       const data = view === 'calendar'
         ? await computeCalendarData(env.NOTION_TOKEN)
         : view === 'v3'
-        ? await computeV3Raw(env.NOTION_TOKEN)
+        ? await computeV3Raw(env.NOTION_TOKEN, V3_DB)
+        : view === 'v3-eth'
+        ? await computeV3Raw(env.NOTION_TOKEN, V3_ETH_DB)
+        : view === 'v3-sol'
+        ? await computeV3Raw(env.NOTION_TOKEN, V3_SOL_DB)
         : await computeScoreboard(env.NOTION_TOKEN);
       return new Response(JSON.stringify(data), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
