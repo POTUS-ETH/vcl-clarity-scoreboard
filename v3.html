@@ -221,11 +221,11 @@ function render(){
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>${recoCardTF('15s',pool)}</div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked per timeframe</div>
-      <div class="grid2" style="margin:8px 0 0"><div>${matrixTableTF('15s',pool)}</div><div>${matrixTableTF('1m',pool)}</div></div>
+      <div class="grid2" style="margin:8px 0 0"><div>${matrixTableTF('1m',pool)}</div><div>${matrixTableTF('15s',pool)}</div></div>
     </div>
     ${graveCard(pool)}
     <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per timeframe</div>
-      <div class="grid2" style="margin:8px 0 0"><div>${riskListTF('15s',pool)}</div><div>${riskListTF('1m',pool)}</div></div>
+      <div class="grid2" style="margin:8px 0 0"><div>${riskListTF('1m',pool)}</div><div>${riskListTF('15s',pool)}</div></div>
       <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R (high-water) · streak = losing trades in a row · safest → riskiest</div>
     </div>
     <div class="grid2">
