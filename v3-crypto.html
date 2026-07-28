@@ -61,7 +61,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
   <div class="hd">
     <div><h1>VCL v3 CRYPTO SCOREBOARD</h1><div class="sub">Sweep+BoS · BoS trail · combo = timeframe × methodology</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="tg" id="assetTg"><button data-a="eth" class="on">ETH</button><button data-a="sol">SOL</button></div>
+      <div class="tg" id="assetTg"><button data-a="eth" class="on">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -292,7 +292,7 @@ function renderCalendar(){
 }
 
 // Live Cloudflare Worker (queries Notion in real time, ~500ms) — same Worker as v2.
-// Single tracker, single fetch — ETH and SOL trades share one Trade Log tagged by Pair.
+// Single tracker, single fetch — ETH, SOL, and BTC trades share one Trade Log tagged by Pair.
 // ASSET only filters the already-fetched pool client-side; no re-fetch, no data mixing
 // (each pair's stats are computed strictly from its own rows).
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-crypto';
