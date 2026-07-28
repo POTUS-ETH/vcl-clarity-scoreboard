@@ -71,7 +71,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
   </div>
 </div>
 <script>
-const MGMTS=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hy',label:'Hybrid @1R'}];
+const MGMTS=[{k:'f1',label:'Full @1R'},{k:'f2',label:'Full @2R'},{k:'p1',label:'50% @1R'},{k:'p2',label:'50% @2R'},{k:'hy',label:'Hybrid @1R'}];
 const TFS=['15s','1m'];
 const COMBOS=[];
 TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
@@ -182,16 +182,6 @@ function riskListTF(tf,pool){
   return html;
 }
 
-function graveCard(pool){
-  let rows='';
-  [['f2','Full @2R'],['p2','50% @2R']].forEach(([k,lbl])=>{
-    const ser=pool.map(t=>t.r[k]).filter(x=>x!=null); const s=stats(ser); if(!s.n) return;
-    const dd=maxDrawdown(ser), mls=maxLossStreak(ser);
-    rows+=`<div class="rowline"><span>${lbl} <span class="mini">n${s.n}</span></span><span><span class="${cls(s.exp)}">${fR(s.exp)}</span> <span class="mini">${Math.round(s.wr*100)}% · tot ${fR(s.total)} · DD <span class="neg">-${dd.toFixed(1)}R</span> · ${mls.len}× streak</span></span></div>`;
-  });
-  if(!rows) return '';
-  return `<div class="card" style="margin-bottom:12px;opacity:.72"><div class="lbl">⚰️ Graveyard — retired methods</div><div class="mini" style="margin:4px 0 8px">Cut: <b>2R targets</b>. Held to 2R the L1 book turns net-negative and half-size runners rarely travel the ~4× risk distance needed to reach it — the longer hold roughly doubled drawdown for lower expectancy than the 1R exits. Excluded from the calendar, matrix, and recommendations; kept here for the record.</div>${rows}</div>`;
-}
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades logged yet — the board fills in as you add rows to Trade Log v3.</div></div>'; renderCalendar(); return; }
@@ -226,7 +216,6 @@ function render(){
     <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked per timeframe</div>
       <div class="grid2" style="margin:8px 0 0"><div>${matrixTableTF('15s',pool)}</div><div>${matrixTableTF('1m',pool)}</div></div>
     </div>
-    ${graveCard(pool)}
     <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per timeframe</div>
       <div class="grid2" style="margin:8px 0 0"><div>${riskListTF('15s',pool)}</div><div>${riskListTF('1m',pool)}</div></div>
       <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R (high-water) · streak = losing trades in a row · safest → riskiest</div>
