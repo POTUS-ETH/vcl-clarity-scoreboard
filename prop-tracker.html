@@ -296,6 +296,21 @@ details.fold .fold-body{padding:14px}
   </div>
 </div>
 
+<div class="modal-backdrop" id="tokenModalBackdrop">
+  <div class="modal">
+    <h2>Write token required</h2>
+    <div class="mini">This dashboard is embedded in a sandboxed frame (Notion), so native browser prompts don't work — enter the write token here instead. It's kept in this browser's local storage only, never sent anywhere but this worker.</div>
+    <label>Token</label>
+    <input type="password" id="tokenInput" autocomplete="off">
+    <div class="err" id="tokenErr" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="tokenCancel">Cancel</button>
+      <button class="tcbtn" id="tokenSubmit">Save →</button>
+    </div>
+  </div>
+</div>
+<div id="toast" style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#221414;border:1px solid #7f1d1d;color:#f87171;padding:10px 16px;border-radius:8px;font-size:13px;display:none;z-index:60;max-width:90vw"></div>
+
 <script>
 // Live Notion-backed dashboard. Reads GET ?view=prop; every mutating button POSTs an
 // action to the same worker, which writes straight to Notion. Nothing here is local-only —
@@ -305,13 +320,46 @@ const WORKER_URL = 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/';
 // is never hardcoded here — it's entered once and kept in this browser's localStorage only.
 // Rotate via `wrangler secret put WRITE_TOKEN` if it ever needs to change.
 const WRITE_TOKEN_KEY = 'propTrackerWriteToken';
-function getWriteToken(){
-  let t = localStorage.getItem(WRITE_TOKEN_KEY);
-  if(!t){
-    t = (prompt('Enter the write token to enable Trade complete / Log trade / Log payout / Thaw actions (read-only otherwise):') || '').trim();
-    if(t) localStorage.setItem(WRITE_TOKEN_KEY, t);
-  }
-  return t;
+
+// Notion's <embed> block renders in a sandboxed iframe, which silently blocks native
+// window.prompt()/alert()/confirm() — they just do nothing, no error. So token entry and
+// error display both use in-page UI instead of browser dialogs.
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>{ el.style.display='none'; }, 6000);
+}
+
+const tokenBackdrop = document.getElementById('tokenModalBackdrop');
+let _tokenResolve = null;
+function promptForToken(){
+  return new Promise(resolve => {
+    _tokenResolve = resolve;
+    document.getElementById('tokenInput').value = '';
+    document.getElementById('tokenErr').style.display = 'none';
+    tokenBackdrop.classList.add('open');
+    document.getElementById('tokenInput').focus();
+  });
+}
+document.getElementById('tokenSubmit').onclick = () => {
+  const v = document.getElementById('tokenInput').value.trim();
+  if(!v){ document.getElementById('tokenErr').textContent = 'Enter a token, or Cancel.'; document.getElementById('tokenErr').style.display='block'; return; }
+  localStorage.setItem(WRITE_TOKEN_KEY, v);
+  tokenBackdrop.classList.remove('open');
+  if(_tokenResolve) _tokenResolve(v);
+};
+document.getElementById('tokenCancel').onclick = () => {
+  tokenBackdrop.classList.remove('open');
+  if(_tokenResolve) _tokenResolve(null);
+};
+tokenBackdrop.onclick = (e) => { if(e.target===tokenBackdrop){ tokenBackdrop.classList.remove('open'); if(_tokenResolve) _tokenResolve(null); } };
+
+async function getWriteToken(){
+  const stored = localStorage.getItem(WRITE_TOKEN_KEY);
+  if(stored) return stored;
+  return promptForToken();
 }
 
 const FIRM_RULES = {
@@ -383,7 +431,7 @@ async function apiGet(){
   return res.json();
 }
 async function apiPost(action, body){
-  const token = getWriteToken();
+  const token = await getWriteToken();
   if(!token) throw new Error('No write token entered — action cancelled.');
   const res = await fetch(WORKER_URL, {
     method:'POST', headers:{'Content-Type':'application/json'},
@@ -523,7 +571,7 @@ function renderRoster(){
     btn.onclick = async () => {
       btn.disabled = true;
       try{ await apiPost('thaw', { accountId: btn.dataset.thaw }); await refresh(); }
-      catch(e){ alert('Thaw failed: '+e.message); btn.disabled=false; }
+      catch(e){ showToast('Thaw failed: '+e.message); btn.disabled=false; }
     };
   });
   document.querySelectorAll('[data-advance]').forEach(btn=>{
@@ -532,7 +580,7 @@ function renderRoster(){
       if(!a) return;
       btn.disabled = true;
       try{ await apiPost('set-status', { accountId:a.id, status: nextStatus(a.status) }); await refresh(); }
-      catch(e){ alert('Status update failed: '+e.message); btn.disabled=false; }
+      catch(e){ showToast('Status update failed: '+e.message); btn.disabled=false; }
     };
   });
 }
@@ -605,7 +653,7 @@ document.getElementById('tradeCompleteBtn').onclick = async (e) => {
     const allIds = cohortA.map(a=>a.id);
     await apiPost('set-rotation', { activeAccountIds: activeIds, allAccountIds: allIds });
     await refresh();
-  }catch(e){ alert('Rotation update failed: '+e.message); }
+  }catch(e){ showToast('Rotation update failed: '+e.message); }
   btn.disabled = false;
 };
 
