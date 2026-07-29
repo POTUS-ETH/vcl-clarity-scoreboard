@@ -72,11 +72,18 @@ jobs:
               echo "refresh-v3-crypto.js exit $rc4 on iteration $iter; will retry next iteration"
             fi
 
+            # PROP (Prop Firm Rotation Tracker — redundant snapshot; the Worker is primary)
+            node refresh-prop.js
+            rc5=$?
+            if [[ $rc5 -ne 0 ]]; then
+              echo "refresh-prop.js exit $rc5 on iteration $iter; will retry next iteration"
+            fi
+
             # Commit + push if any data.json changed
-            if [[ -n "$(git status --porcelain data.json v2/data.json v3-data.json v3-crypto-data.json)" ]]; then
+            if [[ -n "$(git status --porcelain data.json v2/data.json v3-data.json v3-crypto-data.json prop-data.json)" ]]; then
               git fetch origin main
               git rebase origin/main || git rebase --abort
-              git add data.json v2/data.json v3-data.json v3-crypto-data.json
+              git add data.json v2/data.json v3-data.json v3-crypto-data.json prop-data.json
               git commit -m "chore: refresh scoreboard data ($iter/$ITERATIONS)"
 
               for push_try in 1 2 3 4 5; do

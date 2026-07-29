@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prop Firm Rotation Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:20px;font-size:15px}
+.wrap{max-width:1140px;margin:0 auto}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.hd h1{font-size:22px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:13px;color:#8b93a1}
+.mini{font-size:13px;color:#8b93a1}
+.card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:18px}
+.lbl{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.stat .k{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6b7280;margin-bottom:5px}
+.stat .v{font-size:28px;font-weight:700}
+.stat .d{font-size:13px;color:#8b93a1;margin-top:3px}
+.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}.warn{color:#e0b341}
+.tip{border-bottom:1px dotted #4a5568;cursor:help}
+.pill{font-size:12px;padding:3px 10px;border-radius:999px;font-weight:600;display:inline-block}
+.pill-funded{background:#122019;color:#4ade80}
+.pill-challenge{background:#1e2938;color:#9dc0f6}
+.pill-verification{background:#2a2312;color:#e0b341}
+.pill-breached{background:#221414;color:#f87171}
+.pill-closed{background:#1a1a1a;color:#6b7280}
+.stepper{display:flex;align-items:center;gap:0;margin:10px 0 4px}
+.step{flex:1;text-align:center;padding:12px 8px;border-radius:8px;border:1px solid #232a36;background:#12161e}
+.step.done{background:#122019;border-color:#1f4d33}
+.step.active{background:#182335;border-color:#3b82f6}
+.step .sn{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#8b93a1}
+.step.done .sn{color:#4ade80}
+.step.active .sn{color:#9dc0f6}
+.step .sp{font-size:13px;color:#e6e8ec;margin-top:4px}
+.connector{width:18px;height:1px;background:#232a36;flex:none}
+.acct-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.hub{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"s1 s2" "ma ma" "s3 s4";gap:12px}
+.hub .acct{margin:0}
+.hub .acct[data-slot="s1"]{grid-area:s1}
+.hub .acct[data-slot="s2"]{grid-area:s2}
+.hub .acct[data-slot="s3"]{grid-area:s3}
+.hub .acct[data-slot="s4"]{grid-area:s4}
+.hub .acct[data-slot="ma"]{grid-area:ma;border:1px solid #3b5a8a;background:#141d2c;border-radius:14px;position:relative}
+.hub .acct[data-slot="ma"]::before{content:'MASTER · FEEDS ALL 4';position:absolute;top:-9px;left:14px;background:#0e1117;padding:0 8px;font-size:9px;letter-spacing:1px;color:#6f9ceb;font-weight:700}
+@media (max-width:640px){.hub{grid-template-columns:1fr;grid-template-areas:"s1" "s2" "ma" "s3" "s4"}}
+.acct{background:#12161e;border:1px solid #202634;border-radius:8px;padding:12px 13px}
+.acct.iced{border-color:#3a3320;background:#161410}
+.acct.active-trade{border-color:#1d9e75;background:#122019}
+.acct.active-trade .an{color:#4ade80}
+.acct .an{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.acct .af{font-size:12px;color:#8b93a1;margin-bottom:10px}
+.acct-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;margin-bottom:8px}
+.acct-stats .k{color:#6b7280;text-transform:uppercase;letter-spacing:.3px}
+.acct-stats .v{color:#c3c9d4;font-weight:700;display:block;font-size:13px}
+.range-bar{margin-bottom:6px}
+.range-track{height:8px;border-radius:4px;background:#232a36;margin-bottom:5px}
+.range-fill{height:100%;border-radius:4px;background:#4ade80}
+.range-fill.mid{background:#e0b341}
+.range-fill.high{background:#f87171}
+.range-labels{font-size:10px;color:#6b7280;display:flex;justify-content:space-between}
+.range-note{font-size:11px;color:#8b93a1;margin-bottom:2px}
+.meta-row{font-size:11px;color:#6b7280;display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.meta-row b{color:#c3c9d4}
+.acct-id{font-size:10px;color:#4a5568;letter-spacing:.3px;margin-bottom:8px;margin-top:-6px}
+.flags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.flag{font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+.flag-ice{background:#2a2312;color:#e0b341}
+.flag-live{background:#122019;color:#4ade80}
+.flag-thawed{background:#1e2938;color:#9dc0f6}
+.flag-trading{background:#122019;color:#4ade80}
+.thawbtn{font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:3px;background:transparent;border:1px solid #e0b341;color:#e0b341;font-family:inherit;font-weight:600;cursor:pointer}
+.thawbtn:hover{background:#2a2312}
+.pt-block{margin-top:8px;padding-top:8px;border-top:1px solid #202634}
+.pt-label{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:#6b7280;display:flex;justify-content:space-between;margin-bottom:4px}
+.pt-bar{height:6px;border-radius:3px;background:#232a36;overflow:hidden;margin-bottom:6px}
+.pt-fill{height:100%;background:#3b82f6}
+.pt-fill.hit{background:#4ade80}
+.pt-note{font-size:11px;color:#6b7280;font-style:italic}
+.advbtn{font-size:11px;font-weight:700;letter-spacing:.3px;padding:6px 12px;border-radius:6px;background:#1d9e75;color:#04342c;border:0;font-family:inherit;cursor:pointer;width:100%;margin-top:4px}
+.advbtn:hover{background:#26b98a}
+.funded-note{font-size:11px;color:#8b93a1;line-height:1.5}
+.funded-note b{color:#c3c9d4}
+.funded-note .ok{color:#4ade80;font-weight:700}
+.rowline{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #232a36;font-size:14px}
+.rowline:first-of-type{border-top:0}
+.foot{font-size:12px;color:#6b7280;margin-top:16px;line-height:1.6}
+.tcbtn{background:#1d9e75;color:#04342c;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-size:13px;font-weight:700;letter-spacing:.3px;cursor:pointer}
+.tcbtn:hover{background:#26b98a}
+.tcbtn:active{transform:scale(.98)}
+.tcbtn:disabled{opacity:.5;cursor:default}
+.btn-ghost{background:transparent;color:#c3c9d4;border:1px solid #2a3140;border-radius:8px;padding:9px 16px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.btn-ghost:hover{background:#161b24}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.ondeck{font-size:13px;color:#8b93a1;border-top:1px solid #232a36;padding-top:12px;margin-top:12px}
+.ondeck b{color:#c3c9d4;font-weight:700}
+.rot-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.rot-row .grp{font-size:14px;font-weight:700;color:#9dc0f6}
+.roster-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+details.fold{border:1px solid #202634;border-radius:10px;overflow:hidden}
+details.fold>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;font-size:14px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .name{font-weight:700;letter-spacing:.5px}
+details.fold>summary .chev{width:9px;height:9px;border-right:1.5px solid #6b7280;border-bottom:1.5px solid #6b7280;transform:rotate(45deg);transition:transform .15s;margin-left:10px}
+details.fold[open]>summary .chev{transform:rotate(-135deg)}
+details.fold[open]>summary{border-bottom:1px solid #202634}
+details.fold .fold-body{padding:14px}
+.guide{font-size:14px;line-height:1.7;color:#c3c9d4}
+.guide ol{margin:8px 0 8px 22px}
+.guide li{margin-bottom:8px}
+.guide b{color:#e6e8ec}
+.gloss{display:grid;grid-template-columns:150px 1fr;gap:8px 16px;font-size:13px;line-height:1.6}
+.gloss dt{color:#9dc0f6;font-weight:700}
+.gloss dd{color:#8b93a1}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;overflow:auto}
+.modal-backdrop.open{display:flex}
+.modal{background:#161b24;border:1px solid #2a3140;border-radius:12px;padding:24px;width:100%;max-width:420px;margin:auto}
+.modal h2{font-size:16px;font-weight:700;letter-spacing:.3px;margin-bottom:16px}
+.modal label{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8b93a1;display:block;margin-bottom:6px;margin-top:14px}
+.modal label:first-of-type{margin-top:0}
+.modal select,.modal input,.modal textarea{width:100%;background:#0e1117;border:1px solid #2a3140;border-radius:6px;padding:10px 11px;color:#e6e8ec;font:inherit;font-size:14px}
+.modal select:focus,.modal input:focus,.modal textarea:focus{outline:none;border-color:#3b82f6}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.trade-entry-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid #232a36}
+.trade-entry-row:first-of-type{border-top:0}
+.trade-entry-row label{margin:0;flex:none;width:auto;font-size:13px;letter-spacing:0;text-transform:none;color:#e6e8ec}
+.trade-entry-row input{width:120px}
+.err{color:#f87171;font-size:12px;margin-top:8px}
+@media (max-width:860px){.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.gloss{grid-template-columns:1fr}.gloss dt{margin-top:6px}}
+</style></head><body>
+<div class="wrap">
+  <div class="hd">
+    <div><h1>PROP FIRM ROTATION TRACKER</h1><div class="sub">3 → 25 account build · one trade, copied to every green account · $400 flat risk per trade</div></div>
+    <div class="mini" id="dataStamp">loading…</div>
+  </div>
+
+  <details class="fold" style="margin-bottom:16px">
+    <summary><span class="name">🧭 New here? How this works</span><span class="chev"></span></summary>
+    <div class="fold-body guide">
+      <b>The idea:</b> prop firms give you their money to trade once you pass their test. We run many of these accounts at once and place the <b>same trade on all of them simultaneously</b> (copy trading) — same risk, multiplied payouts. This page is a live mirror of the Notion Prop Firm Rotation Tracker — every button here writes straight back to Notion.
+      <ol>
+        <li><b>Take a trade →</b> the cards highlighted green are the accounts your next trade gets copied to. When the trade closes, hit <b>+ Log trade</b> to record each account's $ result, then <b>Trade complete</b> to rotate to the next cluster.</li>
+        <li><b>Each card is one account.</b> The colored bar shows where its balance sits between its floor (lose past this = account terminated) and its next target. Green = safe, amber/red = getting close to the target end.</li>
+        <li><b>Passing the test:</b> accounts in <i>Challenge/Verification</i> show a blue profit-target bar. When it fills, a button appears — click it once the firm confirms, and the card flips to <i>Funded</i>.</li>
+        <li><b>Getting paid:</b> hit <b>+ Log payout request</b> when you withdraw. The account freezes ("on ice") while the firm processes it — it skips its trading turns until the timer runs out or you hit <b>Thaw now</b> (if the money lands early).</li>
+      </ol>
+      Every unfamiliar word on this page is defined in the <b>Glossary</b> at the bottom.
+    </div>
+  </details>
+
+  <div class="grid4">
+    <div class="card stat"><div class="k"><span class="tip" title="How many prop accounts are currently open, out of the 25-account end goal">Accounts open</span></div><div class="v" id="kpiAccounts">—</div><div class="d" id="kpiAccountsSub"></div></div>
+    <div class="card stat"><div class="k"><span class="tip" title="Combined size of accounts that have passed their test — real buying power, out of the $1.5M end goal">Funded capital</span></div><div class="v" id="kpiFunded">—</div><div class="d" id="kpiFundedSub"></div></div>
+    <div class="card stat"><div class="k"><span class="tip" title="War chest built from the 50% payout split — pays for new and replacement accounts. Updated manually when payouts land.">MOAT balance</span></div><div class="v pos">$0</div><div class="d">manual — updates on payout</div></div>
+    <div class="card stat"><div class="k"><span class="tip" title="Funded accounts lost to a drawdown breach over the whole build — each one gets replaced from the MOAT">Funded breaches</span></div><div class="v mut">0</div><div class="d">build total</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="lbl">Build phase — where we are on the road to 25 accounts</div>
+    <div class="stepper">
+      <div class="step done"><div class="sn">Cohort A</div><div class="sp">Pair phase</div></div>
+      <div class="connector"></div>
+      <div class="step active"><div class="sn">Cohort A</div><div class="sp">Cluster</div></div>
+      <div class="connector"></div>
+      <div class="step"><div class="sn">Cohort B</div><div class="sp">Build</div></div>
+      <div class="connector"></div>
+      <div class="step"><div class="sn">Cohort C</div><div class="sp">Build</div></div>
+      <div class="connector"></div>
+      <div class="step"><div class="sn">Cohort D</div><div class="sp">Restructure</div></div>
+      <div class="connector"></div>
+      <div class="step"><div class="sn">Cohort E</div><div class="sp">25 complete</div></div>
+    </div>
+    <div class="mini" style="margin-top:6px" id="phaseNote"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="roster-hd">
+      <div class="lbl" style="margin-bottom:0">Accounts — grouped by cohort</div>
+      <div class="btnrow">
+        <button class="tcbtn" id="openTradeModal">+ Log trade</button>
+        <button class="tcbtn" id="openPayoutModal">+ Log payout request</button>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+
+    <details class="fold">
+      <summary><span class="name">MASTER COHORT</span><span style="display:flex;align-items:center"><span class="mini">0/5 open — built last</span><span class="chev"></span></span></summary>
+      <div class="fold-body">
+        <div class="mini">The final restructure folds the best accounts into this 5×100k group that fires on every single trade. Nothing to show yet.</div>
+      </div>
+    </details>
+
+    <details class="fold" open>
+      <summary><span class="name">COHORT A</span><span style="display:flex;align-items:center"><span class="mini" id="cohortACount">— open · Lucid</span><span class="chev"></span></span></summary>
+      <div class="fold-body">
+        <div class="rot-row">
+          <span class="grp"><span class="tip" title="These accounts have Now Trading checked in Notion right now">Next trade goes to:</span> <span id="upGroupLabel">—</span></span>
+          <button class="tcbtn" id="tradeCompleteBtn" title="Rotates Now Trading to the other cluster in Notion">Trade complete →</button>
+        </div>
+        <div class="hub" id="cohortA-grid"></div>
+        <div class="ondeck" id="onDeck"></div>
+      </div>
+    </details>
+
+    <details class="fold">
+      <summary><span class="name">COHORT B / C / D</span><span style="display:flex;align-items:center"><span class="mini">not yet built</span><span class="chev"></span></span></summary>
+      <div class="fold-body">
+        <div class="mini">Each is 5 Apex accounts (1×100k master + 4×50k subs), bought with MOAT money once Cohort A finishes its build. Cards will appear here automatically as they're added in Notion.</div>
+      </div>
+    </details>
+
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="lbl">Payout log — recent</div>
+      <div id="payoutLogRows"></div>
+      <div class="mini" style="margin-top:10px">Every withdrawal splits 30% tax reserve · 20% pay yourself · 50% MOAT</div>
+    </div>
+    <div class="card">
+      <div class="lbl">Rotation status</div>
+      <div class="rowline"><span><span class="tip" title="Accounts eligible to receive the next copied trade">Available to trade</span></span><span class="pos" id="statNowTrading">—</span></div>
+      <div class="rowline"><span><span class="tip" title="Frozen while a payout processes — they skip their trading turns">On ice</span></span><span class="warn" id="statOnIce">—</span></div>
+    </div>
+  </div>
+
+  <details class="fold" style="margin-bottom:16px">
+    <summary><span class="name">📖 Glossary — every term on this page, in plain English</span><span class="chev"></span></summary>
+    <div class="fold-body">
+      <dl class="gloss">
+        <dt>Prop firm</dt><dd>A company that lets you trade their money after you pass their test. You keep most of the profit; they eat the losses. You pay a monthly fee per test attempt.</dd>
+        <dt>Copy trading</dt><dd>You place one trade; software instantly mirrors it on every other selected account. One decision, many accounts.</dd>
+        <dt>Challenge / Eval</dt><dd>The test phase. Reach the profit target without ever breaking the drawdown rule and the account becomes funded.</dd>
+        <dt>Funded / Active</dt><dd>Passed the test. Now trading the firm's real capital and eligible to withdraw profits (payouts).</dd>
+        <dt>Profit target (PT)</dt><dd>The profit you must reach to pass the test — $3,000 on a 50k account, $6,000 on a 100k.</dd>
+        <dt>Drawdown (MDD)</dt><dd>The maximum you're allowed to lose, measured from your highest point. Cross it and the account is terminated. $2,000 on a 50k, $3,000 on a 100k.</dd>
+        <dt>Peak / HWM</dt><dd>High-water mark — the best balance the account ever hit. The drawdown limit trails behind it.</dd>
+        <dt>Floor</dt><dd>The balance you must stay above. Starts trailing your peak; once you build enough buffer (the safety net), it locks permanently just above your starting size — after that, profit is pure cushion.</dd>
+        <dt>On ice</dt><dd>Our term for the freeze after requesting a payout — the firm takes ~48h (Lucid) or ~5 days (Apex) to process, and the account sits out of the trade rotation until the money clears.</dd>
+        <dt>Consistency rule</dt><dd>A one-time gate checked at the moment you pass your eval — no single day can account for more than 50% of your total profit. Same 50% rule for both Apex and Lucid. Once you're funded it's behind you; it doesn't keep getting checked.</dd>
+        <dt>Cohort / MA / sA1</dt><dd>Naming for the 25-account build. Each cohort = 1 master (MA, MB…) + 4 subs (sA1–sA4…). The Master Cohort is the final elite group assembled at the end.</dd>
+        <dt>MOAT</dt><dd>The war chest. Half of every payout goes here; it buys new accounts, and instantly replaces any funded account lost to a breach.</dd>
+      </dl>
+    </div>
+  </details>
+
+  <div class="foot" id="footNote">Live mirror of the Notion Prop Firm Rotation Tracker — every action here writes straight back to Notion. No local-only state.</div>
+</div>
+
+<div class="modal-backdrop" id="payoutModalBackdrop">
+  <div class="modal">
+    <h2>Log payout request</h2>
+    <label>Account</label>
+    <select id="payoutAccount"></select>
+    <label>Date</label>
+    <input type="date" id="payoutDate">
+    <label>Max payout cap $ (firm's cap for this account size)</label>
+    <input type="number" id="payoutCap" placeholder="2000">
+    <label>Payout type</label>
+    <select id="payoutType">
+      <option value="Standard">Standard</option>
+      <option value="Bootstrap Trio (75% hurdle)">Bootstrap Trio (75% hurdle)</option>
+    </select>
+    <label>Edge state</label>
+    <select id="payoutEdge">
+      <option value="Conservative (0.4R) - 75%">Conservative (0.4R) - 75%</option>
+      <option value="Proven (0.6R) - 100%">Proven (0.6R) - 100%</option>
+    </select>
+    <label>Notes</label>
+    <textarea id="payoutNotes" rows="2"></textarea>
+    <div class="mini" id="payoutIceNote" style="margin-top:10px"></div>
+    <div class="err" id="payoutErr" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="payoutCancel">Cancel</button>
+      <button class="tcbtn" id="payoutSubmit">Log & start ice →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="tradeModalBackdrop">
+  <div class="modal">
+    <h2>Log trade</h2>
+    <div class="mini">One row per account. Leave an amount blank to skip that account for this trade.</div>
+    <label>Date</label>
+    <input type="date" id="tradeDate">
+    <div id="tradeEntries"></div>
+    <label>Notes</label>
+    <textarea id="tradeNotes" rows="2" placeholder="Setup, symbol, anything worth remembering"></textarea>
+    <div class="err" id="tradeErr" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="tradeCancel">Cancel</button>
+      <button class="tcbtn" id="tradeSubmit">Log trade →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Live Notion-backed dashboard. Reads GET ?view=prop; every mutating button POSTs an
+// action to the same worker, which writes straight to Notion. Nothing here is local-only —
+// on reload, everything comes back from Notion, which is the single source of truth.
+const WORKER_URL = 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/';
+// Write actions are gated by a shared secret. This file lives in a PUBLIC repo, so the token
+// is never hardcoded here — it's entered once and kept in this browser's localStorage only.
+// Rotate via `wrangler secret put WRITE_TOKEN` if it ever needs to change.
+const WRITE_TOKEN_KEY = 'propTrackerWriteToken';
+function getWriteToken(){
+  let t = localStorage.getItem(WRITE_TOKEN_KEY);
+  if(!t){
+    t = (prompt('Enter the write token to enable Trade complete / Log trade / Log payout / Thaw actions (read-only otherwise):') || '').trim();
+    if(t) localStorage.setItem(WRITE_TOKEN_KEY, t);
+  }
+  return t;
+}
+
+const FIRM_RULES = {
+  Apex: {
+    50000:  { eval:{pt:3000, mdd:2000, ddd:1000, consistency:0.5},
+              funded:{mdd:2000, safetyNet:52100, lockedFloor:50100, minPayoutBalance:52600, minPayoutDays:5, minDailyProfit:250} },
+    100000: { eval:{pt:6000, mdd:3000, ddd:1500, consistency:0.5},
+              funded:{mdd:3000, safetyNet:103100, lockedFloor:100100, minPayoutBalance:103600, minPayoutDays:5, minDailyProfit:300} },
+  },
+  Lucid: {
+    50000:  { eval:{pt:3000, mdd:2000, ddd:null, consistency:0.5},
+              funded:{mdd:2000, safetyNet:52100, lockedFloor:50100, minPayoutBalance:null, minPayoutDays:5, minDailyProfit:150} },
+    100000: { eval:{pt:6000, mdd:3000, ddd:null, consistency:0.5},
+              funded:{mdd:3000, safetyNet:103100, lockedFloor:100100, minPayoutBalance:null, minPayoutDays:5, minDailyProfit:200} },
+  },
+};
+const FIRM_ICE_HOURS = { Lucid: 48, Apex: 120 };
+const FIRM_KEY = f => (f && f.toLowerCase().includes('apex')) ? 'Apex' : 'Lucid';
+
+// Cluster definitions — matched against Notion's Now Trading checkbox to figure out which
+// cluster is currently active, and which one "Trade complete" should switch to.
+const ROTATION_GROUPS = [
+  {label:'Cluster 1 — MA + sA1 + sA3', slots:['MA','sA1','sA3']},
+  {label:'Cluster 2 — MA + sA2 + sA4', slots:['MA','sA2','sA4']},
+];
+
+let ACCOUNTS = [];
+let TRADES = [];
+let PAYOUTS = [];
+
+function firmSize(a){ return (FIRM_RULES[FIRM_KEY(a.firm)] && FIRM_RULES[FIRM_KEY(a.firm)][a.size]) || {eval:{}, funded:{}}; }
+function getEvalRules(a){ return firmSize(a).eval || {}; }
+function getFundedRules(a){ return firmSize(a).funded || {}; }
+function profitSoFar(a){ return a.balance - a.size; }
+function isPtHit(a){ const r=getEvalRules(a); return r.pt!=null && profitSoFar(a) >= r.pt; }
+function nextStatus(s){ return (s==='Challenge'||s==='Verification') ? 'Funded' : s; }
+function pillClass(s){ return {Challenge:'pill-challenge',Verification:'pill-verification',Funded:'pill-funded',Breached:'pill-breached',Closed:'pill-closed'}[s] || 'pill-challenge'; }
+function money(n){ return n==null ? '—' : '$'+Math.round(n).toLocaleString('en-US'); }
+function pct1(x){ return (x*100).toFixed(1)+'%'; }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+// Short slot code (MA/sA1..sA4) parsed from the account's short name prefix in its Notion
+// title, e.g. "sA1 (Cohort A Sub 1)" → "sA1". Used to match ROTATION_GROUPS + hub CSS areas.
+function slotCode(a){ const m = (a.name||'').match(/^(MA|sA[1-4])/); return m ? m[1] : a.name; }
+function hubArea(code){ return code==='MA' ? 'ma' : ('s'+code.slice(2)); }
+
+function formatCountdown(ms){
+  if(ms<=0) return 'clears any moment';
+  const h = Math.floor(ms/3600000), d = Math.floor(h/24), hh = h%24, mm = Math.floor((ms%3600000)/60000);
+  if(d>0) return `${d}d ${hh}h left`;
+  if(h>0) return `${h}h ${mm}m left`;
+  return `${mm}m left`;
+}
+
+// Qualifying-payout-day count, derived client-side from the full trade log (already fetched)
+// rather than a stored field — a day counts if that account's total P&L that day cleared the
+// firm's min-daily-profit threshold for its funded tier.
+function qualifyingDays(a){
+  const r = getFundedRules(a);
+  if(a.status!=='Funded' || r.minDailyProfit==null) return null;
+  const byDay = {};
+  TRADES.filter(t=>t.accountId===a.id).forEach(t=>{ byDay[t.date] = (byDay[t.date]||0) + (t.pnl||0); });
+  return Object.values(byDay).filter(v=>v>=r.minDailyProfit).length;
+}
+
+async function apiGet(){
+  const res = await fetch(`${WORKER_URL}?view=prop&t=${Date.now()}`, { cache:'no-store' });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+async function apiPost(action, body){
+  const token = getWriteToken();
+  if(!token) throw new Error('No write token entered — action cancelled.');
+  const res = await fetch(WORKER_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ token, action, ...body }),
+  });
+  const j = await res.json();
+  if(!res.ok || j.error){
+    if(res.status===401) localStorage.removeItem(WRITE_TOKEN_KEY); // bad token — clear so next action re-prompts
+    throw new Error(j.error || `HTTP ${res.status}`);
+  }
+  return j;
+}
+
+// The bar mirrors the firm's own dashboard: floor -> current balance -> target, in dollars.
+function rangeBarHTML(a){
+  const evalPhase = a.status==='Challenge' || a.status==='Verification';
+  let floor, floorLabel, target, targetLabel;
+  if(evalPhase){
+    const r = getEvalRules(a);
+    if(r.mdd!=null){ floor = a.peak - r.mdd; floorLabel = 'Floor (trailing)'; }
+    if(r.pt!=null){ target = a.size + r.pt; targetLabel = 'Pass target'; }
+  } else if(a.status==='Funded'){
+    const r = getFundedRules(a);
+    const evalPt = getEvalRules(a).pt;
+    if(r.mdd!=null){
+      const locked = r.safetyNet!=null && a.peak >= r.safetyNet;
+      floor = locked ? r.lockedFloor : (a.peak - r.mdd);
+      floorLabel = locked ? 'Floor (locked)' : 'Floor (trailing)';
+    }
+    if(evalPt!=null){ target = a.size + evalPt + 1; targetLabel = 'Target'; }
+  }
+  if(floor==null) return '';
+  if(target==null || target<=floor) return `<div class="range-note">Floor ${money(floor)} — target unconfirmed</div>`;
+  const fillPct = Math.max(0, Math.min(100, (a.balance-floor)/(target-floor)*100));
+  const fillClass = fillPct>=90?'high':(fillPct>=60?'mid':'');
+  return `<div class="range-bar">
+    <div class="range-track"><div class="range-fill ${fillClass}" style="width:${fillPct}%"></div></div>
+    <div class="range-labels"><span>${floorLabel} ${money(floor)}</span><span>${targetLabel} ${money(target)}</span></div>
+    <div class="range-labels"><span>+${money(Math.max(0,a.balance-floor))} above floor</span><span>${money(Math.max(0,target-a.balance))} to go</span></div>
+  </div>`;
+}
+
+function metaRowHTML(a){
+  const evalPhase = a.status==='Challenge' || a.status==='Verification';
+  const rules = evalPhase ? getEvalRules(a) : getFundedRules(a);
+  const limit = rules.consistency;
+  let consHTML = '<span class="mut">consistency —</span>';
+  if(limit==null && !evalPhase){
+    consHTML = a.consistency!=null
+      ? `<span class="mut" title="Biggest single day as % of total profit — informational only, the consistency gate only applies before funding">consistency ${pct1(a.consistency)} <span style="font-style:italic">(no rule applies)</span></span>`
+      : '<span class="mut" title="No consistency rule applies to this account once funded">no consistency rule</span>';
+  } else if(a.consistency!=null){
+    const negative = a.consistency < 0;
+    const cls = negative ? 'mut' : (limit!=null ? (a.consistency>limit?'neg':(a.consistency>limit-0.05?'warn':'pos')) : '');
+    const note = negative ? ' <span style="font-style:italic">(account currently net negative — ratio not meaningful)</span>' : '';
+    consHTML = `<span class="${cls}" title="Biggest single day as % of total profit — must stay under ${limit!=null?Math.round(limit*100)+'%':'the firm limit'} to pass eval→funded">consistency <b>${pct1(a.consistency)}</b>${limit!=null&&!negative?` / ${Math.round(limit*100)}%`:''}${note}</span>`;
+  }
+  const days = a.tradingDays!=null ? `<b>${a.tradingDays}</b> trading days` : '<span class="mut">days —</span>';
+  return `<div class="meta-row"><span>${days}</span>${consHTML}</div>`;
+}
+
+function ptBlockHTML(a){
+  const r = getEvalRules(a);
+  if(a.status!=='Challenge' && a.status!=='Verification') return '';
+  if(r.pt == null) return `<div class="pt-block"><div class="pt-note">Profit target unconfirmed for ${a.firm}</div></div>`;
+  const hit = isPtHit(a);
+  const pctv = Math.min(100, Math.max(0, Math.round(profitSoFar(a)/r.pt*100)));
+  const notes = [];
+  if(r.ddd!=null) notes.push(`daily loss limit ${money(r.ddd)}`);
+  return `<div class="pt-block">
+    <div class="pt-label"><span>Profit target — pass the test at</span><span>${money(profitSoFar(a))} of ${money(r.pt)}</span></div>
+    <div class="pt-bar"><div class="pt-fill${hit?' hit':''}" style="width:${pctv}%"></div></div>
+    ${notes.length?`<div class="pt-note">${notes.join(' · ')}</div>`:''}
+    ${hit?`<button class="advbtn" data-advance="${a.id}" title="Click once the firm confirms the pass">Target hit — mark as Funded →</button>`:''}
+  </div>`;
+}
+
+function fundedBlockHTML(a){
+  const r = getFundedRules(a);
+  if(a.status!=='Funded' || r.safetyNet==null) return '';
+  const netCleared = a.peak >= r.safetyNet;
+  const lines = [];
+  lines.push(`Safety net <b>${money(r.safetyNet)}</b> (peak)${netCleared?` <span class="ok">— cleared, floor locked at ${money(r.lockedFloor)}</span>`:` — your peak needs +${money(r.safetyNet-a.peak)} more to lock the floor at ${money(r.lockedFloor)}`}`);
+  if(r.minPayoutBalance!=null){
+    const ok = a.balance >= r.minPayoutBalance;
+    lines.push(`Payout unlocks at <b>${money(r.minPayoutBalance)}</b>${ok?' <span class="ok">— unlocked</span>':''}`);
+  }
+  if(r.minPayoutDays!=null && r.minDailyProfit!=null){
+    const met = qualifyingDays(a);
+    const dayNote = met!=null ? `<b>${met}/${r.minPayoutDays}</b> met` : `<span class="mut">no trades logged yet</span>`;
+    lines.push(`Plus ${r.minPayoutDays} trading days of ≥ ${money(r.minDailyProfit)} each — ${dayNote}`);
+  }
+  return `<div class="pt-block funded-note">${lines.join('<br>')}</div>`;
+}
+
+function accountCardHTML(a){
+  const iced = a.onIce;
+  return `<div class="acct${iced?' iced':''}" data-acct="${a.id}" data-slot="${hubArea(slotCode(a))}">
+    <div class="an">${slotCode(a)} <span class="pill ${pillClass(a.status)}">${a.status}</span></div>
+    <div class="af">${a.firm} · ${a.role} · ${money(a.size)} account</div>
+    ${a.platformId?`<div class="acct-id">${a.platformId}</div>`:''}
+    <div class="acct-stats">
+      <div><span class="k">Balance</span><span class="v">${money(a.balance)}</span></div>
+      <div><span class="k" title="High-water mark — best balance ever reached">Peak</span><span class="v">${money(a.peak)}</span></div>
+    </div>
+    ${rangeBarHTML(a)}
+    ${metaRowHTML(a)}
+    <div class="flags">
+      ${iced?`<span class="flag flag-ice" title="Payout processing — skips its trading turns until this clears">On ice · ${formatCountdown(new Date(a.pendingPayoutUntil).getTime()-Date.now())}</span><button class="thawbtn" data-thaw="${a.id}" title="Un-freeze early — use when the payout lands before the timer">Thaw now</button>`:''}
+      ${!iced?'<span class="flag flag-live">Live</span>':''}
+      ${a.nowTrading && !iced ? '<span class="flag flag-trading">Takes next trade</span>' : ''}
+    </div>
+    ${ptBlockHTML(a)}
+    ${fundedBlockHTML(a)}
+  </div>`;
+}
+
+function renderKPIs(){
+  const masters = ACCOUNTS.filter(a=>a.role==='Master').length;
+  const funded = ACCOUNTS.filter(a=>a.status==='Funded');
+  const fundedCap = funded.reduce((s,a)=>s+a.size,0);
+  document.getElementById('kpiAccounts').innerHTML = `${ACCOUNTS.length}<span class="mut" style="font-size:14px"> / 25</span>`;
+  document.getElementById('kpiAccountsSub').textContent = `${masters} master, ${ACCOUNTS.length-masters} sub`;
+  document.getElementById('kpiFunded').innerHTML = `${fundedCap>=1000?'$'+(fundedCap/1000)+'k':'$0'}<span class="mut" style="font-size:14px"> / $1.5M</span>`;
+  document.getElementById('kpiFundedSub').textContent = `${funded.length} account${funded.length===1?'':'s'} funded`;
+
+  document.getElementById('cohortACount').textContent = `${ACCOUNTS.length}/5 open · Lucid`;
+  document.getElementById('phaseNote').innerHTML = ACCOUNTS.length>=5
+    ? `Now: all 5 Cohort A slots open, cluster phase confirmed — MA fires with sA1+sA3 on one turn, then MA with sA2+sA4 on the next, alternating.`
+    : `Now: ${ACCOUNTS.length} accounts open. The master (MA) trades every turn; the sub(s) rotate in.`;
+}
+
+function renderRoster(){
+  const cohortA = ACCOUNTS.filter(a=>a.cohort==='Cohort A');
+  document.getElementById('cohortA-grid').innerHTML = cohortA.map(accountCardHTML).join('');
+  document.querySelectorAll('.thawbtn').forEach(btn=>{
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try{ await apiPost('thaw', { accountId: btn.dataset.thaw }); await refresh(); }
+      catch(e){ alert('Thaw failed: '+e.message); btn.disabled=false; }
+    };
+  });
+  document.querySelectorAll('[data-advance]').forEach(btn=>{
+    btn.onclick = async () => {
+      const a = ACCOUNTS.find(x=>x.id===btn.dataset.advance);
+      if(!a) return;
+      btn.disabled = true;
+      try{ await apiPost('set-status', { accountId:a.id, status: nextStatus(a.status) }); await refresh(); }
+      catch(e){ alert('Status update failed: '+e.message); btn.disabled=false; }
+    };
+  });
+}
+
+function activeClusterIndex(){
+  const cohortA = ACCOUNTS.filter(a=>a.cohort==='Cohort A');
+  for(let i=0;i<ROTATION_GROUPS.length;i++){
+    const g = ROTATION_GROUPS[i];
+    const active = cohortA.filter(a=>g.slots.includes(slotCode(a)));
+    if(active.length && active.every(a=>a.nowTrading)) return i;
+  }
+  return 0; // fall back to cluster 1 if Notion state doesn't cleanly match either cluster
+}
+
+function renderRotation(){
+  const idx = activeClusterIndex();
+  const cur = ROTATION_GROUPS[idx];
+  const next = ROTATION_GROUPS[(idx+1)%ROTATION_GROUPS.length];
+  document.getElementById('upGroupLabel').textContent = cur.label;
+  document.querySelectorAll('.acct[data-acct]').forEach(el=>{
+    const a = ACCOUNTS.find(x=>x.id===el.dataset.acct);
+    const isActive = a && cur.slots.includes(slotCode(a)) && !a.onIce;
+    el.classList.toggle('active-trade', isActive);
+  });
+  document.getElementById('onDeck').innerHTML = `After that: <b>${next.label}</b>`;
+}
+
+function renderIceStatus(){
+  const iced = ACCOUNTS.filter(a=>a.onIce).length;
+  const trading = ACCOUNTS.length - iced;
+  document.getElementById('statNowTrading').textContent = `${trading} account${trading===1?'':'s'}`;
+  document.getElementById('statOnIce').textContent = `${iced} account${iced===1?'':'s'}`;
+}
+
+function renderPayoutLog(){
+  const el = document.getElementById('payoutLogRows');
+  if(!PAYOUTS.length){ el.innerHTML = `<div class="rowline"><span class="mut">No payouts logged yet</span><span class="mut">—</span></div>`; return; }
+  el.innerHTML = PAYOUTS.slice(0,8).map(p=>`<div class="rowline"><span><span class="pill pill-funded">${p.accountName||p.accountId}</span></span><span>${money(p.amount)} · ${p.date}</span></div>`).join('');
+}
+
+function renderStamp(generatedAt){
+  document.getElementById('dataStamp').textContent = generatedAt ? `synced from Notion · ${new Date(generatedAt).toLocaleTimeString()}` : '';
+}
+
+function renderAll(generatedAt){
+  renderKPIs();
+  renderRoster();
+  renderRotation();
+  renderIceStatus();
+  renderPayoutLog();
+  renderStamp(generatedAt);
+}
+
+async function refresh(){
+  const data = await apiGet();
+  ACCOUNTS = data.accounts || [];
+  TRADES = data.trades || [];
+  PAYOUTS = data.payouts || [];
+  renderAll(data.generatedAt);
+}
+
+document.getElementById('tradeCompleteBtn').onclick = async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  try{
+    const idx = activeClusterIndex();
+    const next = ROTATION_GROUPS[(idx+1)%ROTATION_GROUPS.length];
+    const cohortA = ACCOUNTS.filter(a=>a.cohort==='Cohort A');
+    const activeIds = cohortA.filter(a=>next.slots.includes(slotCode(a))).map(a=>a.id);
+    const allIds = cohortA.map(a=>a.id);
+    await apiPost('set-rotation', { activeAccountIds: activeIds, allAccountIds: allIds });
+    await refresh();
+  }catch(e){ alert('Rotation update failed: '+e.message); }
+  btn.disabled = false;
+};
+
+// ── Payout modal ──────────────────────────────────────────────────────
+const payoutBackdrop = document.getElementById('payoutModalBackdrop');
+const payoutAcctSelect = document.getElementById('payoutAccount');
+function openPayoutModal(){
+  payoutAcctSelect.innerHTML = ACCOUNTS.map(a=>`<option value="${a.id}">${slotCode(a)} — ${a.firm} — ${a.status}</option>`).join('');
+  document.getElementById('payoutDate').value = todayISO();
+  document.getElementById('payoutCap').value = '';
+  document.getElementById('payoutNotes').value = '';
+  document.getElementById('payoutErr').style.display = 'none';
+  updatePayoutIceNote();
+  payoutBackdrop.classList.add('open');
+}
+function closePayoutModal(){ payoutBackdrop.classList.remove('open'); }
+function updatePayoutIceNote(){
+  const a = ACCOUNTS.find(x=>x.id===payoutAcctSelect.value);
+  const hrs = a ? (FIRM_ICE_HOURS[FIRM_KEY(a.firm)]||48) : 48;
+  document.getElementById('payoutIceNote').textContent = `Logging this freezes ${a?slotCode(a):'the account'} for ~${hrs}h (${a?a.firm:''}'s processing window). It skips its trading turns until then — or until you hit Thaw now.`;
+  const r = a ? getFundedRules(a) : {};
+  if(a && r.minPayoutBalance!=null) document.getElementById('payoutCap').placeholder = String(2000);
+}
+document.getElementById('openPayoutModal').onclick = openPayoutModal;
+document.getElementById('payoutCancel').onclick = closePayoutModal;
+payoutAcctSelect.onchange = updatePayoutIceNote;
+document.getElementById('payoutSubmit').onclick = async () => {
+  const a = ACCOUNTS.find(x=>x.id===payoutAcctSelect.value);
+  const cap = parseFloat(document.getElementById('payoutCap').value);
+  const errEl = document.getElementById('payoutErr');
+  if(!a || !cap || cap<=0){ errEl.textContent = 'Pick an account and enter a max payout cap.'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('payoutSubmit');
+  btn.disabled = true;
+  try{
+    await apiPost('log-payout', {
+      accountId: a.id, accountName: slotCode(a), firm: FIRM_KEY(a.firm),
+      date: document.getElementById('payoutDate').value || todayISO(),
+      maxPayoutCap: cap,
+      payoutType: document.getElementById('payoutType').value,
+      edgeState: document.getElementById('payoutEdge').value,
+      notes: document.getElementById('payoutNotes').value,
+    });
+    await refresh();
+    closePayoutModal();
+  }catch(e){ errEl.textContent = 'Failed: '+e.message; errEl.style.display='block'; }
+  btn.disabled = false;
+};
+payoutBackdrop.onclick = (e) => { if(e.target===payoutBackdrop) closePayoutModal(); };
+
+// ── Trade modal ───────────────────────────────────────────────────────
+const tradeBackdrop = document.getElementById('tradeModalBackdrop');
+function openTradeModal(){
+  document.getElementById('tradeDate').value = todayISO();
+  document.getElementById('tradeNotes').value = '';
+  document.getElementById('tradeErr').style.display = 'none';
+  const idx = activeClusterIndex();
+  const activeSlots = new Set(ROTATION_GROUPS[idx].slots);
+  const cohortA = ACCOUNTS.filter(a=>a.cohort==='Cohort A');
+  document.getElementById('tradeEntries').innerHTML = cohortA.map(a => `
+    <div class="trade-entry-row">
+      <label for="pnl-${a.id}">${slotCode(a)} ${activeSlots.has(slotCode(a))?'':'<span class="mut">(not in current cluster)</span>'}</label>
+      <input type="number" step="0.01" id="pnl-${a.id}" data-acct="${a.id}" placeholder="$ P&amp;L" ${activeSlots.has(slotCode(a))?'':'value=""'}>
+    </div>`).join('');
+  tradeBackdrop.classList.add('open');
+}
+function closeTradeModal(){ tradeBackdrop.classList.remove('open'); }
+document.getElementById('openTradeModal').onclick = openTradeModal;
+document.getElementById('tradeCancel').onclick = closeTradeModal;
+document.getElementById('tradeSubmit').onclick = async () => {
+  const errEl = document.getElementById('tradeErr');
+  const date = document.getElementById('tradeDate').value || todayISO();
+  const inputs = Array.from(document.querySelectorAll('#tradeEntries input[data-acct]'));
+  const entries = [];
+  const accountSizes = {};
+  for(const inp of inputs){
+    const v = inp.value.trim();
+    if(v==='') continue;
+    const pnl = parseFloat(v);
+    if(isNaN(pnl)){ errEl.textContent = 'One of the P&L amounts is not a number.'; errEl.style.display='block'; return; }
+    entries.push({ accountId: inp.dataset.acct, pnl });
+    const a = ACCOUNTS.find(x=>x.id===inp.dataset.acct);
+    if(a) accountSizes[a.id] = a.size;
+  }
+  if(!entries.length){ errEl.textContent = 'Enter at least one account\'s $ P&L.'; errEl.style.display='block'; return; }
+  const idx = activeClusterIndex();
+  const tradeGroup = `${date} · ${ROTATION_GROUPS[idx].label}`;
+  const btn = document.getElementById('tradeSubmit');
+  btn.disabled = true;
+  try{
+    await apiPost('log-trade', { date, tradeGroup, notes: document.getElementById('tradeNotes').value, entries, accountSizes });
+    await refresh();
+    closeTradeModal();
+  }catch(e){ errEl.textContent = 'Failed: '+e.message; errEl.style.display='block'; }
+  btn.disabled = false;
+};
+tradeBackdrop.onclick = (e) => { if(e.target===tradeBackdrop) closeTradeModal(); };
+
+refresh().catch(e => {
+  document.getElementById('dataStamp').textContent = 'Failed to load from Notion: '+e.message;
+});
+setInterval(() => refresh().catch(()=>{}), 30000);
+</script>
+</body></html>

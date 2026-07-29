@@ -279,6 +279,232 @@ async function computeV3Raw(token, dbId) {
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
 }
 
+// ── Prop Firm Rotation Tracker (live Notion-backed dashboard) ─────────
+// Read: GET ?view=prop returns accounts + trade log + payout log.
+// Write: POST { token, action, ...} — token must match env.WRITE_TOKEN.
+const PROP_ACCOUNTS_DB   = '62194cc58c014cbfbde3a0e5defd85d2';
+const PROP_TRADE_LOG_DB  = '1f754291902c4d3bb671b7d7e83e22d2';
+const PROP_PAYOUT_LOG_DB = 'ef64fac8910a4d4988970b7f5c28e1d5';
+const PROP_FIRMS_DB      = 'b0efbedeffb84410ad9c3a55e80a9ed7';
+
+async function notionCreatePage(dbId, properties, token) {
+  const r = await fetch(`${NOTION_API}/pages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': NOTION_VERSION, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parent: { database_id: dbId }, properties }),
+  });
+  if (!r.ok) throw new Error(`Create page failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
+async function notionPatchPage(pageId, properties, token) {
+  const r = await fetch(`${NOTION_API}/pages/${pageId}`, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': NOTION_VERSION, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ properties }),
+  });
+  if (!r.ok) throw new Error(`Patch page failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
+async function notionQueryFiltered(dbId, filter, token) {
+  const rows = [];
+  let cursor;
+  do {
+    const body = { page_size: 100, ...(filter ? { filter } : {}) };
+    if (cursor) body.start_cursor = cursor;
+    const r = await fetch(`${NOTION_API}/databases/${dbId}/query`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': NOTION_VERSION, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`Query ${dbId} failed: ${r.status} ${await r.text()}`);
+    const j = await r.json();
+    rows.push(...j.results);
+    cursor = j.has_more ? j.next_cursor : undefined;
+  } while (cursor);
+  return rows;
+}
+
+const relationIds = (page, name) => (page.properties?.[name]?.relation || []).map(r => r.id);
+
+// Recomputes Current Balance / Peak Balance / Trading Days / Consistency Rule % /
+// Completed Trades for one account from its full Prop Trade Log history, and writes
+// them back onto the Prop Firm Accounts row. Called after every trade log write so the
+// account row (and anything reading it, incl. the old rollup-table view in Notion) stays
+// in parity with the Trade Log without relying on Notion formulas for running totals.
+async function recomputeAccountStats(accountPageId, accountSize, token) {
+  const rows = await notionQueryFiltered(PROP_TRADE_LOG_DB, {
+    property: 'Account', relation: { contains: accountPageId },
+  }, token);
+  const trades = rows.map(r => ({
+    date: getProp(r, 'Date'),
+    pnl: getProp(r, 'P&L $') || 0,
+  })).filter(t => t.date).sort((a, b) => a.date.localeCompare(b.date));
+
+  let balance = accountSize, peak = accountSize;
+  const byDay = {};
+  for (const t of trades) {
+    balance += t.pnl;
+    if (balance > peak) peak = balance;
+    byDay[t.date] = (byDay[t.date] || 0) + t.pnl;
+  }
+  const totalPnl = balance - accountSize;
+  const dayTotals = Object.values(byDay);
+  const bestDay = dayTotals.length ? Math.max(...dayTotals) : 0;
+  const consistency = totalPnl !== 0 ? bestDay / totalPnl : null;
+
+  await notionPatchPage(accountPageId, {
+    'Current Balance': { number: balance },
+    'Peak Balance': { number: peak },
+    'Trading Days Completed': { number: Object.keys(byDay).length },
+    'Consistency Rule %': consistency === null ? { number: null } : { number: consistency },
+    'Completed Trades': { number: trades.length },
+  }, token);
+
+  return { balance, peak, tradingDays: Object.keys(byDay).length, consistency, completedTrades: trades.length };
+}
+
+async function computePropData(token) {
+  const [accountPages, tradePages, payoutPages, firmPages] = await Promise.all([
+    notionQueryFiltered(PROP_ACCOUNTS_DB, null, token),
+    notionQueryFiltered(PROP_TRADE_LOG_DB, null, token),
+    notionQueryFiltered(PROP_PAYOUT_LOG_DB, null, token),
+    notionQueryFiltered(PROP_FIRMS_DB, null, token),
+  ]);
+  const firmName = {};
+  for (const f of firmPages) firmName[f.id] = getProp(f, 'Name') || getProp(f, 'Firm') || TITLE_of(f);
+
+  function TITLE_of(page) {
+    const titleProp = Object.values(page.properties || {}).find(p => p.type === 'title');
+    return titleProp ? titleProp.title.map(t => t.plain_text).join('') : '';
+  }
+
+  const accounts = accountPages.map(pg => {
+    const firmIds = relationIds(pg, 'Firm');
+    const pendingUntil = getProp(pg, 'Pending Payout Until');
+    return {
+      id: pg.id,
+      name: TITLE_of(pg),
+      role: getProp(pg, 'Account Role'),
+      size: getProp(pg, 'Account Size'),
+      cohort: getProp(pg, 'Cohort'),
+      status: getProp(pg, 'Status'),
+      firm: firmIds.length ? (firmName[firmIds[0]] || null) : null,
+      balance: getProp(pg, 'Current Balance'),
+      peak: getProp(pg, 'Peak Balance'),
+      tradingDays: getProp(pg, 'Trading Days Completed'),
+      consistency: getProp(pg, 'Consistency Rule %'),
+      completedTrades: getProp(pg, 'Completed Trades'),
+      mdd: getProp(pg, 'MDD $'),
+      isLocked: getProp(pg, 'Is Locked'),
+      lockedFloor: getProp(pg, 'Locked Floor $'),
+      nowTrading: getProp(pg, 'Now Trading'),
+      platformId: getProp(pg, 'Platform Account ID'),
+      pendingPayoutUntil: pendingUntil,
+      onIce: !!(pendingUntil && new Date(pendingUntil).getTime() > Date.now()),
+      notes: getProp(pg, 'Notes'),
+    };
+  });
+  const accountName = {};
+  for (const a of accounts) accountName[a.id] = a.name;
+
+  const trades = tradePages.map(pg => {
+    const accId = relationIds(pg, 'Account')[0] || null;
+    return {
+      id: pg.id,
+      accountId: accId,
+      accountName: accId ? accountName[accId] : null,
+      date: getProp(pg, 'Date'),
+      pnl: getProp(pg, 'P&L $'),
+      tradeGroup: getProp(pg, 'Trade Group'),
+      notes: getProp(pg, 'Notes'),
+    };
+  }).filter(t => t.date).sort((a, b) => a.date.localeCompare(b.date));
+
+  const payouts = payoutPages.map(pg => {
+    const accId = relationIds(pg, 'Account')[0] || null;
+    return {
+      id: pg.id,
+      accountId: accId,
+      accountName: accId ? accountName[accId] : null,
+      date: getProp(pg, 'Date'),
+      amount: getProp(pg, 'Payout Amount $'),
+      maxCap: getProp(pg, 'Max Payout Cap $'),
+      payoutType: getProp(pg, 'Payout Type'),
+      edgeState: getProp(pg, 'Edge State'),
+    };
+  }).filter(p => p.date).sort((a, b) => b.date.localeCompare(a.date));
+
+  return { generatedAt: new Date().toISOString(), accounts, trades, payouts };
+}
+
+const FIRM_ICE_HOURS = { Lucid: 48, Apex: 120 };
+
+async function handlePropWrite(body, token) {
+  const { action } = body;
+
+  if (action === 'log-trade') {
+    // body.tradeGroup, body.date, body.notes, body.entries: [{accountId, pnl}]
+    const affected = [];
+    for (const entry of body.entries || []) {
+      const props = {
+        'Trade': { title: [{ text: { content: `${body.tradeGroup || body.date} · ${entry.accountId}` } }] },
+        'Account': { relation: [{ id: entry.accountId }] },
+        'Date': { date: { start: body.date } },
+        'P&L $': { number: entry.pnl },
+        'Trade Group': { rich_text: [{ text: { content: body.tradeGroup || '' } }] },
+        'Notes': { rich_text: [{ text: { content: body.notes || '' } }] },
+      };
+      await notionCreatePage(PROP_TRADE_LOG_DB, props, token);
+      if (!affected.includes(entry.accountId)) affected.push(entry.accountId);
+    }
+    const results = {};
+    for (const accountId of affected) {
+      const size = body.accountSizes && body.accountSizes[accountId];
+      if (size == null) continue; // client must send each affected account's starting size
+      results[accountId] = await recomputeAccountStats(accountId, size, token);
+    }
+    return { ok: true, updated: results };
+  }
+
+  if (action === 'set-rotation') {
+    // body.activeAccountIds: string[], body.allAccountIds: string[]
+    const active = new Set(body.activeAccountIds || []);
+    for (const id of body.allAccountIds || []) {
+      await notionPatchPage(id, { 'Now Trading': { checkbox: active.has(id) } }, token);
+    }
+    return { ok: true };
+  }
+
+  if (action === 'set-status') {
+    await notionPatchPage(body.accountId, { 'Status': { select: { name: body.status } } }, token);
+    return { ok: true };
+  }
+
+  if (action === 'thaw') {
+    await notionPatchPage(body.accountId, { 'Pending Payout Until': { date: null } }, token);
+    return { ok: true };
+  }
+
+  if (action === 'log-payout') {
+    // body.accountId, accountName, firm, date, amount, maxPayoutCap, payoutType, edgeState, notes
+    await notionCreatePage(PROP_PAYOUT_LOG_DB, {
+      'Payout': { title: [{ text: { content: `${body.accountName || body.accountId} · ${body.date}` } }] },
+      'Account': { relation: [{ id: body.accountId }] },
+      'Date': { date: { start: body.date } },
+      'Max Payout Cap $': { number: body.maxPayoutCap ?? body.amount ?? 0 },
+      'Payout Type': body.payoutType ? { select: { name: body.payoutType } } : undefined,
+      'Edge State': body.edgeState ? { select: { name: body.edgeState } } : undefined,
+      'Notes': { rich_text: [{ text: { content: body.notes || '' } }] },
+    }, token);
+    const hrs = FIRM_ICE_HOURS[body.firm] || 48;
+    const iceUntil = new Date(Date.now() + hrs * 3600 * 1000).toISOString();
+    await notionPatchPage(body.accountId, { 'Pending Payout Until': { date: { start: iceUntil } } }, token);
+    return { ok: true, iceUntil };
+  }
+
+  throw new Error(`Unknown action: ${action}`);
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
@@ -286,6 +512,24 @@ export default {
       return new Response(JSON.stringify({ error: 'Missing NOTION_TOKEN secret' }), {
         status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
       });
+    }
+    if (request.method === 'POST') {
+      try {
+        const body = await request.json();
+        if (!env.WRITE_TOKEN || body.token !== env.WRITE_TOKEN) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401, headers: { ...CORS, 'Content-Type': 'application/json' },
+          });
+        }
+        const result = await handlePropWrite(body, env.NOTION_TOKEN);
+        return new Response(JSON.stringify(result), {
+          status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 500, headers: { ...CORS, 'Content-Type': 'application/json' },
+        });
+      }
     }
     try {
       const url = new URL(request.url);
@@ -296,6 +540,8 @@ export default {
         ? await computeV3Raw(env.NOTION_TOKEN, V3_DB)
         : view === 'v3-crypto'
         ? await computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB)
+        : view === 'prop'
+        ? await computePropData(env.NOTION_TOKEN)
         : await computeScoreboard(env.NOTION_TOKEN);
       return new Response(JSON.stringify(data), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
