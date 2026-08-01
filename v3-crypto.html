@@ -20,6 +20,9 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .top .combo{font-size:26px;font-weight:700}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.daysbadge-row{display:flex;justify-content:center;margin-bottom:10px}
+.daysbadge{display:inline-flex;align-items:baseline;gap:8px;padding:6px 16px;border-color:#3b82f6}
+.daysbadge .midval{font-size:16px;font-weight:700}
 .matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
 .matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
@@ -67,11 +70,11 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
   </div>
   <div id="board"></div>
   <div class="foot">
-    R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R/2R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @NR closes the whole position at NR; 50% @NR banks half at NR and trails the rest on BoS.
+    R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R/2R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @NR closes the whole position at NR; 50% @NR banks half at NR and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled → 50% @1R + runner, entry-only → Full @1R. Hybrid B is the inverse: L1 filled → Full @1R, entry-only → 50% @1R + runner. Unlike the MNQ/futures board, 2R targets are kept active here — on ETH specifically, Full @2R currently outperforms Full @1R with no added drawdown, so it isn't retired for crypto.
   </div>
 </div>
 <script>
-const MGMTS=[{k:'f1',label:'Full @1R'},{k:'f2',label:'Full @2R'},{k:'p1',label:'50% @1R'},{k:'p2',label:'50% @2R'},{k:'hy',label:'Hybrid @1R'}];
+const MGMTS=[{k:'f1',label:'Full @1R'},{k:'f2',label:'Full @2R'},{k:'p1',label:'50% @1R'},{k:'p2',label:'50% @2R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'}];
 const TFS=['15s','1m'];
 const COMBOS=[];
 TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
@@ -91,7 +94,7 @@ function computeR(row){
   const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
   const basisPeak = b?avg:E, posMpeak = b?1:0.5;      // size/basis AT the peak
   const basisExit = l1?avg:E, posMexit = l1?1:0.5;    // size/basis AT the exit
-  let r={f1:null,f2:null,p1:null,p2:null,hy:null};
+  let r={f1:null,f2:null,p1:null,p2:null,hyA:null,hyB:null};
   if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avg!=null){
     const peakR   = posMpeak*(MR-basisPeak)*dirM/iniR;
     const posExit = posMexit*(BX-basisExit)*dirM/iniR;
@@ -99,7 +102,8 @@ function computeR(row){
     r.f2 = peakR>=2 ? 2 : posExit;
     r.p1 = peakR>=1 ? 0.5 + 0.5*posExit : posExit;
     r.p2 = peakR>=2 ? 1   + 0.5*posExit : posExit;
-    r.hy = l1 ? r.p1 : r.f1;   // entry-only -> Full @1R ; L1 filled -> 50% @1R + trail
+    r.hyA = l1 ? r.p1 : r.f1;   // L1 filled -> 50% @1R + runner ; entry-only -> Full @1R
+    r.hyB = l1 ? r.f1 : r.p1;   // inverse: L1 filled -> Full @1R ; entry-only -> 50% @1R + runner
   }
   return {tf, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r, pair:row.Pair||null};
 }
@@ -139,7 +143,7 @@ function recoCardTF(tf, pool){
   let sess='';
   rx.forEach(x=>{ const weak=x.b.exp<0.2, thin=x.b.n<5;
     sess+=`<div class="rowline"><span><span class="pill">${x.se}</span> → <b>${x.b.label}</b>${weak?' <span class="mini" style="color:#e0b341">· weak</span>':''}${thin?' <span class="mini">· thin</span>':''}</span><span class="${cls(x.b.exp)}">${fR(x.b.exp)} <span class="mini">${Math.round(x.b.wr*100)}% · n${x.b.n}</span></span></div>`; });
-  const L=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Long'),'hy'), S=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Short'),'hy');
+  const L=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Long'),'hyA'), S=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Short'),'hyA');
   let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="lbl" style="margin:14px 0 6px">Tilt</div><div class="rowline"><span>Direction</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
   const recoStats=`<div class="stats" style="margin:6px 0 2px">
     <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(rs.exp)}">${fR(rs.exp)}</div></div>
@@ -162,6 +166,13 @@ function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades ye
   </div>`; }
 
 function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
+// Days where BOTH 1m and 15s have at least one trade logged — not just either one alone.
+function sharedTradingDays(pool){
+  const days1m=new Set(pool.filter(t=>t.tf==='1m'&&t.date).map(t=>t.date));
+  const days15s=new Set(pool.filter(t=>t.tf==='15s'&&t.date).map(t=>t.date));
+  let n=0; days1m.forEach(d=>{ if(days15s.has(d)) n++; });
+  return n;
+}
 function matrixTableTF(tf,pool){
   const rows=MGMTS.map(m=>({label:m.label, s:stats(seriesFor(tf,m.k,pool))}));
   rows.sort((a,b)=> ((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
@@ -208,7 +219,9 @@ function render(){
     freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span class="mini">${pool.filter(t=>t.session===se).length} total</span></div>`;
     TFS.forEach(tf=>{ const sub=pool.filter(t=>t.session===se&&t.tf===tf); if(!sub.length) return; const d=tdays(sub); freqSess+=`<div class="rowline" style="border-top:0;padding:2px 0 2px 14px"><span class="mini">${tf}</span><span><b>${sub.length}</b> <span class="mini">· ${d?(sub.length/d).toFixed(1):'0'}/day</span></span></div>`; });
   });
+  const sharedDays=sharedTradingDays(pool);
   board.innerHTML=`
+    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${sharedDays}</div><div class="mini">trading day${sharedDays===1?'':'s'} with both 1m &amp; 15s logged</div></div></div>
     <div class="grid2">
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>${recoCardTF('1m',pool)}</div>
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>${recoCardTF('15s',pool)}</div>
