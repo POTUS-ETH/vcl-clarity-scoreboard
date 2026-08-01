@@ -20,6 +20,9 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .top .combo{font-size:26px;font-weight:700}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
+.grid3top{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;margin-bottom:12px;align-items:start}
+.midcard{text-align:center;min-width:150px}
+.midcard .midval{font-size:26px;font-weight:700;margin:6px 0}
 .matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
 .matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
@@ -160,6 +163,13 @@ function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades ye
   </div>`; }
 
 function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
+// Days where BOTH 1m and 15s have at least one trade logged — not just either one alone.
+function sharedTradingDays(pool){
+  const days1m=new Set(pool.filter(t=>t.tf==='1m'&&t.date).map(t=>t.date));
+  const days15s=new Set(pool.filter(t=>t.tf==='15s'&&t.date).map(t=>t.date));
+  let n=0; days1m.forEach(d=>{ if(days15s.has(d)) n++; });
+  return n;
+}
 function matrixTableTF(tf,pool){
   const rows=MGMTS.map(m=>({label:m.label, s:stats(seriesFor(tf,m.k,pool))}));
   rows.sort((a,b)=> ((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
@@ -216,9 +226,11 @@ function render(){
     freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span class="mini">${pool.filter(t=>t.session===se).length} total</span></div>`;
     TFS.forEach(tf=>{ const sub=pool.filter(t=>t.session===se&&t.tf===tf); if(!sub.length) return; const d=tdays(sub); freqSess+=`<div class="rowline" style="border-top:0;padding:2px 0 2px 14px"><span class="mini">${tf}</span><span><b>${sub.length}</b> <span class="mini">· ${d?(sub.length/d).toFixed(1):'0'}/day</span></span></div>`; });
   });
+  const sharedDays=sharedTradingDays(pool);
   board.innerHTML=`
-    <div class="grid2">
+    <div class="grid3top">
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>${recoCardTF('1m',pool)}</div>
+      <div class="card midcard"><div class="lbl">Days tested</div><div class="midval">${sharedDays}</div><div class="mini">trading day${sharedDays===1?'':'s'} with both 1m &amp; 15s logged</div></div>
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>${recoCardTF('15s',pool)}</div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked per timeframe</div>
