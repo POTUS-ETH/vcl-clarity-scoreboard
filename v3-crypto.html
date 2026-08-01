@@ -64,7 +64,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
   <div class="hd">
     <div><h1>VCL v3 CRYPTO SCOREBOARD</h1><div class="sub">Sweep+BoS · BoS trail · combo = timeframe × methodology</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="tg" id="assetTg"><button data-a="eth" class="on">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
+      <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -309,7 +309,7 @@ function renderCalendar(){
 // ASSET only filters the already-fetched pool client-side; no re-fetch, no data mixing
 // (each pair's stats are computed strictly from its own rows).
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-crypto';
-let ASSET='eth';
+let ASSET='all';
 let firstLoad=true;
 async function fetchTrades(){
   try{
@@ -325,7 +325,7 @@ async function fetchTrades(){
   }
 }
 function applyAssetFilter(){
-  TRADES=ALL_TRADES.filter(t=>(t.pair||'').toLowerCase()===ASSET);
+  TRADES = ASSET==='all' ? ALL_TRADES : ALL_TRADES.filter(t=>(t.pair||'').toLowerCase()===ASSET);
 }
 async function poll(){
   const st=document.getElementById('status');
