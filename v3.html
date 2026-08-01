@@ -146,7 +146,7 @@ function recoCardTF(tf, pool){
     <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(rs.exp)}">${fR(rs.exp)}</div></div>
     <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(rs.wr*100)}%</div></div>
     <div class="stat"><div class="k">Total R</div><div class="v ${cls(rs.total)}">${fR(rs.total)}</div></div>
-    <div class="stat"><div class="k">Risk of ruin</div><div class="v neg">-${rdd.toFixed(1)}R <span class="mini">${rmls.len}× streak</span></div></div>
+    <div class="stat"><div class="k">Risk of ruin</div><div class="v neg">-${rdd.toFixed(2)}R <span class="mini">${rmls.len}× streak</span></div></div>
   </div><div class="mini" style="margin-bottom:4px">If you traded only ${tf} — each session its prescribed exit, exclusively · n${rs.n}</div>`;
   return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 ${tf} prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 6px">By session, in order</div>${sess}${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
 }
@@ -195,7 +195,7 @@ function graveCard(pool){
   [['f2','Full @2R'],['p2','50% @2R']].forEach(([k,lbl])=>{
     const ser=pool.map(t=>t.r[k]).filter(x=>x!=null); const s=stats(ser); if(!s.n) return;
     const dd=maxDrawdown(ser), mls=maxLossStreak(ser);
-    rows+=`<div class="rowline"><span>${lbl} <span class="mini">n${s.n}</span></span><span><span class="${cls(s.exp)}">${fR(s.exp)}</span> <span class="mini">${Math.round(s.wr*100)}% · tot ${fR(s.total)} · DD <span class="neg">-${dd.toFixed(1)}R</span> · ${mls.len}× streak</span></span></div>`;
+    rows+=`<div class="rowline"><span>${lbl} <span class="mini">n${s.n}</span></span><span><span class="${cls(s.exp)}">${fR(s.exp)}</span> <span class="mini">${Math.round(s.wr*100)}% · tot ${fR(s.total)} · DD <span class="neg">-${dd.toFixed(2)}R</span> · ${mls.len}× streak</span></span></div>`;
   });
   if(!rows) return '';
   return `<div class="card" style="margin-bottom:12px;opacity:.72"><div class="lbl">⚰️ Graveyard — retired methods</div><div class="mini" style="margin:4px 0 8px">Cut: <b>2R targets</b>. Held to 2R the L1 book turns net-negative and half-size runners rarely travel the ~4× risk distance needed to reach it — the longer hold roughly doubled drawdown for lower expectancy than the 1R exits. Excluded from the calendar, matrix, and recommendations; kept here for the record.</div>${rows}</div>`;
