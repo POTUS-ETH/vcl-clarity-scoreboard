@@ -84,6 +84,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:95;
 .acct.iced{border-color:#4d3a14;background:#14110a}
 .acct.active-trade{border-color:var(--green);box-shadow:0 0 22px rgba(77,237,160,.09) inset}
 .acct.active-trade .an{color:var(--green)}
+.hub .acct:not(.iced):not(.active-trade){border-color:var(--red);box-shadow:0 0 22px rgba(255,116,104,.09) inset}
+.hub .acct:not(.iced):not(.active-trade) .an{color:var(--red)}
 .acct .an{font-family:var(--disp);font-size:15px;font-weight:700;letter-spacing:.08em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .acct .af{font-size:11.5px;color:var(--muted);margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase}
 .acct-id{font-size:10.5px;color:var(--faint);letter-spacing:.04em;margin-bottom:8px;margin-top:-6px}
