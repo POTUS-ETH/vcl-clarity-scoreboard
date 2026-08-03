@@ -217,11 +217,6 @@ details.fold .fold-body{padding:14px}
       radial-gradient(circle,transparent 44%,rgba(77,237,160,.06) 45%,transparent 46%),
       radial-gradient(circle at 50% 50%, #0c1512, #060a09 78%);
     box-shadow:0 0 0 11px var(--bg), 0 0 0 12px var(--line), 0 0 46px rgba(77,237,160,.14)}
-  /* radar sweep */
-  .hub .acct[data-slot="ma"]::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
-    background:conic-gradient(from 0deg,rgba(77,237,160,.15),transparent 70deg,transparent 360deg);
-    animation:hudsweep 6s linear infinite}
-  @keyframes hudsweep{to{transform:rotate(360deg)}}
   .hub .acct[data-slot="ma"]>*{position:relative;z-index:1}
   /* MASTER label recentered for the circle */
   .hub .acct[data-slot="ma"]::before{top:22px;left:50%;transform:translateX(-50%);background:transparent;padding:0}
