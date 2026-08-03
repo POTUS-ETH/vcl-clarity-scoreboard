@@ -323,44 +323,60 @@ async function notionQueryFiltered(dbId, filter, token) {
   } while (cursor);
   return rows;
 }
+async function notionGetPage(pageId, token) {
+  const r = await fetch(`${NOTION_API}/pages/${pageId}`, {
+    headers: { 'Authorization': `Bearer ${token}`, 'Notion-Version': NOTION_VERSION },
+  });
+  if (!r.ok) throw new Error(`Get page failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
 
 const relationIds = (page, name) => (page.properties?.[name]?.relation || []).map(r => r.id);
 
-// Recomputes Current Balance / Peak Balance / Trading Days / Consistency Rule % /
-// Completed Trades for one account from its full Prop Trade Log history, and writes
-// them back onto the Prop Firm Accounts row. Called after every trade log write so the
-// account row (and anything reading it, incl. the old rollup-table view in Notion) stays
-// in parity with the Trade Log without relying on Notion formulas for running totals.
-async function recomputeAccountStats(accountPageId, accountSize, token) {
-  const rows = await notionQueryFiltered(PROP_TRADE_LOG_DB, {
-    property: 'Account', relation: { contains: accountPageId },
-  }, token);
-  const trades = rows.map(r => ({
-    date: getProp(r, 'Date'),
-    pnl: getProp(r, 'P&L $') || 0,
-  })).filter(t => t.date).sort((a, b) => a.date.localeCompare(b.date));
+// Applies ONE new trade's P&L to an account's running stats and writes the delta back
+// onto the Prop Firm Accounts row. Deliberately incremental (reads the account's current
+// Current Balance / Peak Balance / Trading Days / Consistency / Completed Trades and adds
+// to them) rather than rebuilding from the full Prop Trade Log history — a full-history
+// rebuild silently discards any balance/peak/day-count that predates what's actually logged
+// in the Trade Log, which is how a real account's tracked history got wiped out on 2026-08-03
+// (its 51-day/$103,848 state existed only on the Account row, not as Trade Log rows).
+//
+// `priorTodayTotal` is the sum of this account's OTHER trades already logged for the same
+// date (0 if none) — the caller must query this before creating the new Trade Log row, so
+// the "is this a new trading day" and "best single day" math stays correct across multiple
+// trades logged for the same account on the same day.
+async function applyTradeToAccount(accountPageId, accountSize, pnl, priorTodayTotal, isNewDay, token) {
+  const page = await notionGetPage(accountPageId, token);
+  const prevBalance = getProp(page, 'Current Balance');
+  const prevPeak = getProp(page, 'Peak Balance');
+  const prevDays = getProp(page, 'Trading Days Completed') || 0;
+  const prevConsistency = getProp(page, 'Consistency Rule %');
+  const prevCompleted = getProp(page, 'Completed Trades') || 0;
 
-  let balance = accountSize, peak = accountSize;
-  const byDay = {};
-  for (const t of trades) {
-    balance += t.pnl;
-    if (balance > peak) peak = balance;
-    byDay[t.date] = (byDay[t.date] || 0) + t.pnl;
-  }
+  const baseBalance = prevBalance != null ? prevBalance : accountSize;
+  const basePeak = prevPeak != null ? prevPeak : accountSize;
+
+  const balance = baseBalance + pnl;
+  const peak = Math.max(basePeak, balance);
+  const tradingDays = prevDays + (isNewDay ? 1 : 0);
+  const completedTrades = prevCompleted + 1;
+
+  const prevTotalPnl = baseBalance - accountSize;
+  const prevBestDay = (prevConsistency != null && prevTotalPnl !== 0) ? prevConsistency * prevTotalPnl : 0;
+  const todayTotal = priorTodayTotal + pnl;
+  const bestDay = Math.max(prevBestDay, todayTotal);
   const totalPnl = balance - accountSize;
-  const dayTotals = Object.values(byDay);
-  const bestDay = dayTotals.length ? Math.max(...dayTotals) : 0;
   const consistency = totalPnl !== 0 ? bestDay / totalPnl : null;
 
   await notionPatchPage(accountPageId, {
     'Current Balance': { number: balance },
     'Peak Balance': { number: peak },
-    'Trading Days Completed': { number: Object.keys(byDay).length },
+    'Trading Days Completed': { number: tradingDays },
     'Consistency Rule %': consistency === null ? { number: null } : { number: consistency },
-    'Completed Trades': { number: trades.length },
+    'Completed Trades': { number: completedTrades },
   }, token);
 
-  return { balance, peak, tradingDays: Object.keys(byDay).length, consistency, completedTrades: trades.length };
+  return { balance, peak, tradingDays, consistency, completedTrades };
 }
 
 async function computePropData(token) {
@@ -444,7 +460,23 @@ async function handlePropWrite(body, token) {
 
   if (action === 'log-trade') {
     // body.tradeGroup, body.date, body.notes, body.entries: [{accountId, pnl}]
-    const affected = [];
+    // Look up same-day history PER ACCOUNT before creating any new rows, so "is this a new
+    // trading day" and "today's running total" reflect only pre-existing trades.
+    const sameDayInfo = {};
+    for (const entry of body.entries || []) {
+      if (sameDayInfo[entry.accountId]) continue;
+      const existing = await notionQueryFiltered(PROP_TRADE_LOG_DB, {
+        and: [
+          { property: 'Account', relation: { contains: entry.accountId } },
+          { property: 'Date', date: { equals: body.date } },
+        ],
+      }, token);
+      sameDayInfo[entry.accountId] = {
+        isNewDay: existing.length === 0,
+        priorTodayTotal: existing.reduce((s, r) => s + (getProp(r, 'P&L $') || 0), 0),
+      };
+    }
+
     for (const entry of body.entries || []) {
       const props = {
         'Trade': { title: [{ text: { content: `${body.tradeGroup || body.date} · ${entry.accountId}` } }] },
@@ -455,13 +487,13 @@ async function handlePropWrite(body, token) {
         'Notes': { rich_text: [{ text: { content: body.notes || '' } }] },
       };
       await notionCreatePage(PROP_TRADE_LOG_DB, props, token);
-      if (!affected.includes(entry.accountId)) affected.push(entry.accountId);
     }
     const results = {};
-    for (const accountId of affected) {
-      const size = body.accountSizes && body.accountSizes[accountId];
+    for (const entry of body.entries || []) {
+      const size = body.accountSizes && body.accountSizes[entry.accountId];
       if (size == null) continue; // client must send each affected account's starting size
-      results[accountId] = await recomputeAccountStats(accountId, size, token);
+      const { isNewDay, priorTodayTotal } = sameDayInfo[entry.accountId];
+      results[entry.accountId] = await applyTradeToAccount(entry.accountId, size, entry.pnl, priorTodayTotal, isNewDay, token);
     }
     return { ok: true, updated: results };
   }
