@@ -187,3 +187,59 @@ details.fold .fold-body{padding:14px}
 #toast{z-index:110!important}
 
 @media (max-width:860px){.grid4{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.gloss{grid-template-columns:1fr}.gloss dt{margin-top:6px}}
+
+
+/* ============================================================
+   ORB HUB ADDENDUM — 2×2 quadrants with MA as a circular dial
+   CSS-only: relies on data-slot attrs the JS already renders.
+   Desktop only; mobile keeps the stacked full-card layout.
+   ============================================================ */
+@media (min-width:641px){
+  /* quadrant grid, MA removed from flow */
+  .hub{grid-template-columns:1fr 1fr;grid-template-areas:"s1 s2" "s3 s4";gap:30px;position:relative}
+  .hub .acct[data-slot="s1"]{border-bottom-right-radius:140px;padding-right:132px}
+  .hub .acct[data-slot="s2"]{border-bottom-left-radius:140px;padding-left:132px;text-align:right}
+  .hub .acct[data-slot="s3"]{border-top-right-radius:140px;padding-right:132px}
+  .hub .acct[data-slot="s4"]{border-top-left-radius:140px;padding-left:132px;text-align:right}
+  .hub .acct[data-slot="s2"] .an,.hub .acct[data-slot="s4"] .an{justify-content:flex-end}
+  .hub .acct[data-slot="s2"] .flags,.hub .acct[data-slot="s4"] .flags{justify-content:flex-end}
+  .hub .acct[data-slot="s2"] .acct-stats,.hub .acct[data-slot="s4"] .acct-stats{direction:rtl}
+
+  /* the dial */
+  .hub .acct[data-slot="ma"]{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;
+    width:304px;height:304px;border-radius:50%;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:26px 34px;
+    border:1.5px solid var(--green-dim);
+    background:
+      radial-gradient(circle,transparent 64%,rgba(77,237,160,.06) 65%,transparent 66%),
+      radial-gradient(circle,transparent 44%,rgba(77,237,160,.06) 45%,transparent 46%),
+      radial-gradient(circle at 50% 50%, #0c1512, #060a09 78%);
+    box-shadow:0 0 0 11px var(--bg), 0 0 0 12px var(--line), 0 0 46px rgba(77,237,160,.14)}
+  /* radar sweep */
+  .hub .acct[data-slot="ma"]::after{content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:conic-gradient(from 0deg,rgba(77,237,160,.15),transparent 70deg,transparent 360deg);
+    animation:hudsweep 6s linear infinite}
+  @keyframes hudsweep{to{transform:rotate(360deg)}}
+  .hub .acct[data-slot="ma"]>*{position:relative;z-index:1}
+  /* MASTER label recentered for the circle */
+  .hub .acct[data-slot="ma"]::before{top:22px;left:50%;transform:translateX(-50%);background:transparent;padding:0}
+
+  /* compact the dial's inner content */
+  .hub .acct[data-slot="ma"] .an{justify-content:center;font-size:14px;margin:14px 0 2px}
+  .hub .acct[data-slot="ma"] .af{font-size:9.5px;margin-bottom:4px}
+  .hub .acct[data-slot="ma"] .acct-id{display:none}
+  .hub .acct[data-slot="ma"] .acct-stats{display:flex;justify-content:center;gap:16px;margin-bottom:6px}
+  .hub .acct[data-slot="ma"] .acct-stats div:first-child .v{font-size:21px}
+  .hub .acct[data-slot="ma"] .range-bar{width:82%;margin-bottom:4px}
+  .hub .acct[data-slot="ma"] .range-labels{font-size:9px}
+  .hub .acct[data-slot="ma"] .range-labels + .range-labels{display:none}
+  .hub .acct[data-slot="ma"] .meta-row{flex-direction:row;gap:10px;justify-content:center;font-size:10px;margin-top:3px}
+  .hub .acct[data-slot="ma"] .flags{justify-content:center;margin-top:5px}
+  .hub .acct[data-slot="ma"] .pt-block{width:82%;margin-top:5px;padding-top:5px}
+  .hub .acct[data-slot="ma"] .pt-label{font-size:8.5px}
+  .hub .acct[data-slot="ma"] .pt-note{display:none}
+  .hub .acct[data-slot="ma"] .funded-note{display:none}
+  .hub .acct[data-slot="ma"] .advbtn{width:82%;font-size:9.5px;padding:5px 8px}
+}
