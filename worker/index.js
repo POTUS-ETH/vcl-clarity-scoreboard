@@ -286,6 +286,7 @@ const PROP_ACCOUNTS_DB   = '62194cc58c014cbfbde3a0e5defd85d2';
 const PROP_TRADE_LOG_DB  = '1f754291902c4d3bb671b7d7e83e22d2';
 const PROP_PAYOUT_LOG_DB = 'ef64fac8910a4d4988970b7f5c28e1d5';
 const PROP_FIRMS_DB      = 'b0efbedeffb84410ad9c3a55e80a9ed7';
+const PORTFOLIO_HQ_PAGE  = '3a07e541-46b5-8191-9bdc-d67a995b6814';
 
 async function notionCreatePage(dbId, properties, token) {
   const r = await fetch(`${NOTION_API}/pages`, {
@@ -380,11 +381,12 @@ async function applyTradeToAccount(accountPageId, accountSize, pnl, priorTodayTo
 }
 
 async function computePropData(token) {
-  const [accountPages, tradePages, payoutPages, firmPages] = await Promise.all([
+  const [accountPages, tradePages, payoutPages, firmPages, hqPage] = await Promise.all([
     notionQueryFiltered(PROP_ACCOUNTS_DB, null, token),
     notionQueryFiltered(PROP_TRADE_LOG_DB, null, token),
     notionQueryFiltered(PROP_PAYOUT_LOG_DB, null, token),
     notionQueryFiltered(PROP_FIRMS_DB, null, token),
+    notionGetPage(PORTFOLIO_HQ_PAGE, token),
   ]);
   const firmName = {};
   for (const f of firmPages) firmName[f.id] = getProp(f, 'Name') || getProp(f, 'Firm') || TITLE_of(f);
@@ -450,7 +452,13 @@ async function computePropData(token) {
     };
   }).filter(p => p.date).sort((a, b) => b.date.localeCompare(a.date));
 
-  return { generatedAt: new Date().toISOString(), accounts, trades, payouts };
+  const hq = {
+    moatManual:     getProp(hqPage, 'MOAT Balance $ (manual)'),
+    fundedBreaches: getProp(hqPage, 'Funded Breaches (Build Total)'),
+    cohortPhase:    getProp(hqPage, 'Current Cohort Phase'),
+  };
+
+  return { generatedAt: new Date().toISOString(), accounts, trades, payouts, hq };
 }
 
 const FIRM_ICE_HOURS = { Lucid: 48, Apex: 120 };

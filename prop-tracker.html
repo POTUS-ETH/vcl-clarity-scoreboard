@@ -28,8 +28,8 @@
   <div class="grid4">
     <div class="card stat"><div class="k"><span class="tip" title="How many prop accounts are currently open, out of the 25-account end goal">Accounts open</span></div><div class="v" id="kpiAccounts">—</div><div class="d" id="kpiAccountsSub"></div></div>
     <div class="card stat"><div class="k"><span class="tip" title="Combined size of accounts that have passed their test — real buying power, out of the $1.5M end goal">Funded capital</span></div><div class="v" id="kpiFunded">—</div><div class="d" id="kpiFundedSub"></div></div>
-    <div class="card stat"><div class="k"><span class="tip" title="War chest built from the 50% payout split — pays for new and replacement accounts. Updated manually when payouts land.">MOAT balance</span></div><div class="v pos">$0</div><div class="d">manual — updates on payout</div></div>
-    <div class="card stat"><div class="k"><span class="tip" title="Funded accounts lost to a drawdown breach over the whole build — each one gets replaced from the MOAT">Funded breaches</span></div><div class="v mut">0</div><div class="d">build total</div></div>
+    <div class="card stat"><div class="k"><span class="tip" title="War chest built from the 50% payout split — pays for new and replacement accounts. Updated manually when payouts land.">MOAT balance</span></div><div class="v pos" id="kpiMoat">$0</div><div class="d">manual — updates on payout</div></div>
+    <div class="card stat"><div class="k"><span class="tip" title="Funded accounts lost to a drawdown breach over the whole build — each one gets replaced from the MOAT">Funded breaches</span></div><div class="v mut" id="kpiBreaches">0</div><div class="d">build total</div></div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
@@ -265,6 +265,7 @@ const ROTATION_GROUPS = [
 let ACCOUNTS = [];
 let TRADES = [];
 let PAYOUTS = [];
+let HQ_DATA = {};
 
 function firmSize(a){ return (FIRM_RULES[FIRM_KEY(a.firm)] && FIRM_RULES[FIRM_KEY(a.firm)][a.size]) || {eval:{}, funded:{}}; }
 function getEvalRules(a){ return firmSize(a).eval || {}; }
@@ -434,9 +435,25 @@ function renderKPIs(){
   document.getElementById('kpiFunded').innerHTML = `${fundedCap>=1000?'$'+(fundedCap/1000)+'k':'$0'}<span class="mut" style="font-size:14px"> / $1.5M</span>`;
   document.getElementById('kpiFundedSub').textContent = `${funded.length} account${funded.length===1?'':'s'} funded`;
 
+  // MOAT — prefer Portfolio HQ manual value when available
+  const moatEl = document.getElementById('kpiMoat');
+  const moatVal = HQ_DATA.moatManual ?? null;
+  if (moatVal !== null) {
+    const neg = moatVal < 0;
+    moatEl.textContent = (neg ? '−$' : '$') + Math.abs(moatVal).toLocaleString();
+    moatEl.className = `v ${neg ? 'neg' : 'pos'}`;
+  } else {
+    moatEl.textContent = '$0';
+    moatEl.className = 'v pos';
+  }
+
+  // Funded breaches — prefer Portfolio HQ value when available
+  const breachVal = HQ_DATA.fundedBreaches ?? null;
+  document.getElementById('kpiBreaches').textContent = breachVal !== null ? breachVal : 0;
+
   document.getElementById('cohortACount').textContent = `${ACCOUNTS.length}/5 open · Lucid`;
   document.getElementById('phaseNote').innerHTML = ACCOUNTS.length>=5
-    ? `Now: all 5 Cohort A slots open, cluster phase confirmed — MA fires with sA1+sA3 on one turn, then MA with sA2+sA4 on the next, alternating.`
+    ? `Now: all 5 Cohort A slots open, cluster phase confirmed — MA fires with sA1+sA3 on one turn, then MA with the two Cluster-2 subs on the next, alternating.`
     : `Now: ${ACCOUNTS.length} accounts open. The master (MA) trades every turn; the sub(s) rotate in.`;
 }
 
@@ -515,6 +532,7 @@ async function refresh(){
   ACCOUNTS = data.accounts || [];
   TRADES = data.trades || [];
   PAYOUTS = data.payouts || [];
+  HQ_DATA = data.hq || {};
   renderAll(data.generatedAt);
 }
 
