@@ -252,6 +252,7 @@ const CORS = {
 // corrected full-ladder model (single source of truth in v3.html).
 const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
+const V3_CRAIG_DB  = '72f82a1bf61a4a56ab81e61b6b2aabdf';     // Craig's own crypto log — separate board, own widget
 
 async function computeV3Raw(token, dbId) {
   const trades = await queryAll(dbId, token);
@@ -580,6 +581,8 @@ export default {
         ? await computeV3Raw(env.NOTION_TOKEN, V3_DB)
         : view === 'v3-crypto'
         ? await computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB)
+        : view === 'v3-craig'
+        ? await computeV3Raw(env.NOTION_TOKEN, V3_CRAIG_DB)
         : view === 'prop'
         ? await computePropData(env.NOTION_TOKEN)
         : await computeScoreboard(env.NOTION_TOKEN);
