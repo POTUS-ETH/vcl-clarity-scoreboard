@@ -105,7 +105,8 @@ let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true;
 let CAL_OC='best', CAL_SESS='all', CAL_MONTH=null, calDefaulted=false;
 
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
-const fR=x=>(x>=0?'+':'')+x.toFixed(2)+'R';
+const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
+const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
 const cls=x=>x>0?'pos':(x<0?'neg':'mut');
 function stats(s){const n=s.length; if(!n) return {n:0};
   const w=s.filter(r=>r>0).length, t=s.reduce((a,b)=>a+b,0);
@@ -137,21 +138,24 @@ function matrix(pool){
        `</td><td class="${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</td>`+
        `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}</td>`+
        `<td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>`+
-       `<td class="${s.n?'neg':'na'}">${s.n?'-'+s.dd.toFixed(2)+'R':'—'}</td>`+
+       `<td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>`+
        `<td class="mut">${s.n||'—'}</td></tr>`;});
   return `<table class="matrix"><thead><tr><th></th><th>Outcome</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 function compare(pool){
-  const mgs=['target','evs','pvs'], fills=['solo','lad','sc'];
+  const rows=[['target','1.618','→ 1.618'],['target','2.272','→ 2.272'],
+              ['evs',null,'Entry-VWAP stop'],['pvs',null,'Position-VWAP stop']];
+  const fills=['solo','lad','sc'];
   let h=`<div class="cmp"><div></div>`+fills.map(f=>`<div class="h">${FILL[f]}</div>`).join('')+`</div>`;
-  mgs.forEach(m=>{
-    h+=`<div class="cmp" style="margin-top:6px"><div class="h">${MG[m]}</div>`;
+  rows.forEach(([m,tg,label])=>{
+    h+=`<div class="cmp" style="margin-top:6px"><div class="h">${label}</div>`;
     fills.forEach(f=>{
-      const o=OUT.find(x=>x.mg===m&&x.fill===f);
+      const o=OUT.find(x=>x.mg===m&&x.fill===f&&(tg===null||x.tgt===tg));
       if(!o){h+=`<div class="cell"><div class="v na">—</div><div class="k">n/a</div></div>`; return;}
-      const s=stat(o.k,pool);
-      h+=`<div class="cell"><div class="v ${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</div>`+
-         `<div class="k">${o.k} · ${s.n?Math.round(s.wr*100)+'% · n'+s.n:'no trades'}</div></div>`;});
+      const st=stat(o.k,pool);
+      const thin=st.n>0&&st.n<5?' <span style="color:#e0b341">thin</span>':'';
+      h+=`<div class="cell"><div class="v ${st.n?cls(st.exp):'na'}">${st.n?fR(st.exp):'—'}</div>`+
+         `<div class="k">${o.k} · ${st.n?Math.round(st.wr*100)+'% · n'+st.n+thin:'no data'}</div></div>`;});
     h+=`</div>`;});
   return h;
 }
@@ -183,7 +187,20 @@ function fillMix(pool){
   return `<div class="rowline"><span>Entry only</span><span><b>${c.solo}</b> <span class="mini">${Math.round(c.solo/tot*100)}%</span></span></div>`+
          `<div class="rowline"><span>Entry + L1 filled</span><span><b>${c.lad}</b> <span class="mini">${Math.round(c.lad/tot*100)}%</span></span></div>`;
 }
-
+function coverage(pool){
+  const n=pool.length||1;
+  const rows=[['Fixed target (needs 1.618 + 2.272 price)', ser('O1',pool).length+ser('O3',pool).length+ser('O9',pool).length>0
+                 ? pool.filter(t=>t.o&&(t.o.O1!=null||t.o.O3!=null||t.o.O9!=null)).length : 0],
+              ['Entry-VWAP stop (needs EVS Price)',  pool.filter(t=>t.o&&(t.o.O5!=null||t.o.O6!=null)).length],
+              ['Position-VWAP stop (needs PVS Price)',pool.filter(t=>t.o&&(t.o.O7!=null||t.o.O8!=null)).length]];
+  let h='';
+  rows.forEach(([lbl,c])=>{
+    const pct=Math.round(c/n*100), low=pct<50;
+    h+=`<div class="rowline"><span>${lbl}</span><span><b class="${low?'neg':''}">${c}/${pool.length}</b> `+
+       `<span class="mini">${pct}%</span></span></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">An outcome can only score a trade whose inputs are filled in. Low coverage means that management is being judged on a fraction of the sample — not that it performed badly.</div>`;
+  return h;
+}
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   document.getElementById('foot').innerHTML =
@@ -197,12 +214,12 @@ function render(){
     <div class="grid2">
       <div class="card top" style="margin-bottom:12px"><div class="crown">🏆 Best outcome</div>
         <div class="combo-md">${best?best.o.k+' · '+best.o.n:'—'}</div>
-        <div class="mini" style="margin-bottom:6px">${best?FILL[best.o.fill]+' · '+MG[best.o.mg]:''}</div>
+        <div class="mini" style="margin-bottom:6px">${best?FILL[best.o.fill]+' · '+MG[best.o.mg]:''}${bs.n>0&&bs.n<5?' <span style="color:#e0b341">· thin sample, n'+bs.n+'</span>':''}</div>
         <div class="stats">
           <div class="stat"><div class="k">Expectancy</div><div class="v ${bs.n?cls(bs.exp):'mut'}">${bs.n?fR(bs.exp):'—'}</div></div>
           <div class="stat"><div class="k">Win rate</div><div class="v">${bs.n?Math.round(bs.wr*100)+'%':'—'}</div></div>
           <div class="stat"><div class="k">Total R</div><div class="v ${bs.n?cls(bs.total):'mut'}">${bs.n?fR(bs.total):'—'}</div></div>
-          <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?'-'+bs.dd.toFixed(2)+'R':'—'}</div></div>
+          <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?fDD(bs.dd):'—'}</div></div>
         </div></div>
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best per fill type</div>${byFill(pool)}</div>
         <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div></div>
@@ -214,7 +231,10 @@ function render(){
     <div class="card" style="margin-bottom:12px"><div class="lbl">All twelve, ranked by expectancy</div>
       <div style="margin-top:8px">${matrix(pool)}</div>
     </div>
-    <div class="card"><div class="lbl">Best outcome by session</div>${sessions(pool)}</div>`;
+    <div class="grid2">
+      <div class="card"><div class="lbl">Best outcome by session</div>${sessions(pool)}</div>
+      <div class="card"><div class="lbl">Input coverage — what each management can actually score</div>${coverage(pool)}</div>
+    </div>`;
 }
 
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig';
