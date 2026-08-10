@@ -88,7 +88,7 @@ const OUT=[
  {k:'O17',mg:'pvs',tgt:'2.272', fill:'lad' },
  {k:'O18',mg:'pvs',tgt:'2.272', fill:'sc'  },
 ];
-const FILL={solo:'Entry only', lad:'Entry + L1', sc:'Entry + L1, 50% off'};
+const FILL={solo:'Entry only', lad:'Entry + L1', sc:'50% off'};
 const FILLS=['solo','lad','sc'];
 const MG  ={be:'Break-even at the anchor', evs:'Entry-VWAP trail', pvs:'Position-VWAP trail'};
 const MGS =['be','evs','pvs'];
@@ -203,27 +203,40 @@ function fillMix(pool){
          `<div class="mini" style="margin-top:6px">The 50%-off outcomes need both fills, so they score the same rows as Entry + L1.</div>`;
 }
 
-// How far each trail actually got, on the rows where that trail was logged
+// How far each trail actually got, on the rows where that trail was logged.
+// A trail firing short of the target is NOT automatically a loss — a BoS stop
+// can fire well in profit — so each bucket carries its own mean R.
 function trailReach(pool){
   const defs=[['Entry-VWAP trail','evsHit1','evsHit2', MGKEYS.evs],
               ['Position-VWAP trail','pvsHit1','pvsHit2', MGKEYS.pvs]];
+  // what that trail actually paid on this trade, scored to 2.272 at its own fill
+  const paid=(t,keys)=>num(t.o&&t.o[keys[t.L1Filled?4:3]]);
+  const meanR=g=>{const v=g.map(x=>x.r).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
   let h='';
   defs.forEach(([lbl,h1,h2,keys])=>{
-    const logged=pool.filter(t=>t.o&&keys.some(k=>num(t.o[k])!=null));
+    const logged=pool.filter(t=>t.o&&keys.some(k=>num(t.o[k])!=null))
+                     .map(t=>({t, r:paid(t,keys)}));
     const n=logged.length;
     if(!n){ h+=`<div class="rowline"><span>${lbl}</span><span class="mut">not logged yet</span></div>`; return; }
-    const far=logged.filter(t=>t[h2]).length;
-    const mid=logged.filter(t=>!t[h2]&&t[h1]).length;
-    const stopped=n-far-mid;
-    const p=x=>Math.round(x/n*100);
+    const far=logged.filter(x=>x.t[h2]);
+    const mid=logged.filter(x=>!x.t[h2]&&x.t[h1]);
+    const early=logged.filter(x=>!x.t[h2]&&!x.t[h1]);
+    const p=g=>Math.round(g.length/n*100);
+    const leg=(g,c,txt)=>{const m=meanR(g);
+      return `<div style="display:flex;justify-content:space-between;gap:8px">`+
+             `<span><span style="color:${c}">■</span> ${txt}</span>`+
+             `<span><b>${g.length}</b> <span class="${m==null?'mut':cls(m)}">${m==null?'—':'avg '+fR(m)}</span></span></div>`;};
     h+=`<div class="rowline" style="display:block">`+
        `<div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>`+
        `<div class="seg"><i style="width:${p(far)}%;background:#3fb950"></i>`+
        `<i style="width:${p(mid)}%;background:#2d7dd2"></i>`+
-       `<i style="width:${p(stopped)}%;background:#f85149"></i></div>`+
-       `<div class="mini">reached 2.272 <b>${far}</b> · stopped between 1.618 and 2.272 <b>${mid}</b> · stopped before 1.618 <b>${stopped}</b></div>`+
-       `</div>`;});
-  h+=`<div class="mini" style="margin-top:6px">This is the question the trails exist to answer: how often letting it run actually got paid versus giving the move back.</div>`;
+       `<i style="width:${p(early)}%;background:#c9a227"></i></div>`+
+       `<div class="mini">`+
+         leg(far,'#3fb950','ran all the way to 2.272')+
+         leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')+
+         leg(early,'#c9a227','stopped before 1.618')+
+       `</div></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">This is the question the trails exist to answer: how often letting it run got paid. Stopping short is not a loss — the average R on each bucket says what it was actually worth. Scored to 2.272 at each trade&rsquo;s own fill.</div>`;
   return h;
 }
 
@@ -266,10 +279,10 @@ function render(){
           <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?fDD(bs.dd):'—'}</div></div>
         </div></div>
         <div class="card" style="margin-bottom:12px"><div class="lbl">Best per stop management</div>${byMg(pool)}</div>
-        <div class="card"><div class="lbl">Best per target</div>${byTgt(pool)}</div></div>
-      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best per fill type</div>${byFill(pool)}</div>
-        <div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
-        <div class="card" style="margin-bottom:12px"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">Best per target</div>${byTgt(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">Best per fill type</div>${byFill(pool)}</div>
+        <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div></div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
         <div class="card"><div class="lbl">Input coverage — what each management can actually score</div>${coverage(pool)}</div></div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Stop × target × fill — expectancy</div>
