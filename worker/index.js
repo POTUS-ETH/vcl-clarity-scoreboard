@@ -256,13 +256,16 @@ const V3_CRAIG_DB  = '72f82a1bf61a4a56ab81e61b6b2aabdf';     // Craig's own cryp
 
 // Craig's 12 outcome columns, in order. Read straight off the Notion formulas so
 // there is exactly one place the R math lives.
+// 18 outcomes = stop management (BE / EVS trail / PVS trail) x target (1.618 / 2.272)
+// x fill scheme (Entry only / Entry+L1 / Entry+L1 with 50% off at the lock).
+// Order matters: index i maps to key 'O(i+1)'.
 const CRAIG_OUTCOMES = [
-  'O1 · Entry → 1.618',    'O2 · Entry → 2.272',
-  'O3 · Entry+L1 → 1.618', 'O4 · Entry+L1 → 2.272',
-  'O5 · Entry → EVS',      'O6 · Entry+L1 → EVS',
-  'O7 · Entry → PVS',      'O8 · Entry+L1 → PVS',
-  'O9 · 50% → 1.618',      'O10 · 50% → 2.272',
-  'O11 · 50% → EVS',       'O12 · 50% → PVS',
+  'O1 · BE 1.618 · Entry',   'O2 · BE 1.618 · Entry+L1',   'O3 · BE 1.618 · 50%',
+  'O4 · BE 2.272 · Entry',   'O5 · BE 2.272 · Entry+L1',   'O6 · BE 2.272 · 50%',
+  'O7 · EVS 1.618 · Entry',  'O8 · EVS 1.618 · Entry+L1',  'O9 · EVS 1.618 · 50%',
+  'O10 · EVS 2.272 · Entry', 'O11 · EVS 2.272 · Entry+L1', 'O12 · EVS 2.272 · 50%',
+  'O13 · PVS 1.618 · Entry', 'O14 · PVS 1.618 · Entry+L1', 'O15 · PVS 1.618 · 50%',
+  'O16 · PVS 2.272 · Entry', 'O17 · PVS 2.272 · Entry+L1', 'O18 · PVS 2.272 · 50%',
 ];
 
 async function computeCraig(token, dbId) {
@@ -282,6 +285,12 @@ async function computeCraig(token, dbId) {
       L1Filled:  getProp(t, 'L1 Filled'),
       RangePct:  getProp(t, 'Range %'),
       date:      getProp(t, 'Date'),
+      evsHit1:   getProp(t, 'EVS Hit 1.618'),
+      evsHit2:   getProp(t, 'EVS Hit 2.272'),
+      pvsHit1:   getProp(t, 'PVS Hit 1.618'),
+      pvsHit2:   getProp(t, 'PVS Hit 2.272'),
+      evsPrice:  getProp(t, 'EVS Price'),
+      pvsPrice:  getProp(t, 'PVS Price'),
       o,
     });
   }
