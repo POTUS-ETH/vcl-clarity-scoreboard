@@ -254,6 +254,40 @@ const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
 const V3_CRAIG_DB  = '72f82a1bf61a4a56ab81e61b6b2aabdf';     // Craig's own crypto log — separate board, own widget
 
+// Craig's 12 outcome columns, in order. Read straight off the Notion formulas so
+// there is exactly one place the R math lives.
+const CRAIG_OUTCOMES = [
+  'O1 · Entry → 1.618',    'O2 · Entry → 2.272',
+  'O3 · Entry+L1 → 1.618', 'O4 · Entry+L1 → 2.272',
+  'O5 · Entry → EVS',      'O6 · Entry+L1 → EVS',
+  'O7 · Entry → PVS',      'O8 · Entry+L1 → PVS',
+  'O9 · 50% → 1.618',      'O10 · 50% → 2.272',
+  'O11 · 50% → EVS',       'O12 · 50% → PVS',
+];
+
+async function computeCraig(token, dbId) {
+  const trades = await queryAll(dbId, token);
+  const rows = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (title.toUpperCase().startsWith('TEST')) continue;
+    const o = {};
+    CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
+    rows.push({
+      Trade:     title,
+      Direction: getProp(t, 'Direction'),
+      Timeframe: getProp(t, 'Timeframe'),
+      Session:   getProp(t, 'Session'),
+      Pair:      getProp(t, 'Pair'),
+      L1Filled:  getProp(t, 'L1 Filled'),
+      RangePct:  getProp(t, 'Range %'),
+      date:      getProp(t, 'Date'),
+      o,
+    });
+  }
+  return { updated: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+}
+
 async function computeV3Raw(token, dbId) {
   const trades = await queryAll(dbId, token);
   const rows = [];
@@ -582,7 +616,7 @@ export default {
         : view === 'v3-crypto'
         ? await computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB)
         : view === 'v3-craig'
-        ? await computeV3Raw(env.NOTION_TOKEN, V3_CRAIG_DB)
+        ? await computeCraig(env.NOTION_TOKEN, V3_CRAIG_DB)
         : view === 'prop'
         ? await computePropData(env.NOTION_TOKEN)
         : await computeScoreboard(env.NOTION_TOKEN);
