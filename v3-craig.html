@@ -123,17 +123,27 @@ function applyFilters(){
     (ASSET==='all' || String(t.Pair||'').toLowerCase()===ASSET) &&
     (TF==='all'    || t.Timeframe===TF));
 }
+const MIN_N=5;
 function bestOf(list){const v=list.filter(x=>x.s.n>0); if(!v.length) return null;
   return v.sort((a,b)=>b.s.exp-a.s.exp)[0];}
+// prefer an outcome with a real sample; fall back to thin only if nothing qualifies
+function bestSolid(list){
+  const solid=list.filter(x=>x.s.n>=MIN_N);
+  if(solid.length) return {pick:bestOf(solid), fellBack:false, skipped:bestOf(list)};
+  return {pick:bestOf(list), fellBack:true, skipped:null};}
 
 function matrix(pool){
   const rows=OUT.map(o=>({o, s:stat(o.k,pool)}));
   rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
   const top=Math.max(...rows.map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
   let h='';
-  rows.forEach((r,i)=>{const s=r.s, best=i===0&&s.n>0;
+  const N=pool.length||1;
+  rows.forEach((r,i)=>{const s=r.s, thin=s.n>0&&s.n<MIN_N;
+    const best=s.n>=MIN_N && !rows.slice(0,i).some(x=>x.s.n>=MIN_N);
     const w=s.n?Math.min(100,Math.abs(s.exp)/top*100):0;
-    h+=`<tr class="${best?'best':''}"><td class="oc">${r.o.k}</td><td>${r.o.n}`+
+    h+=`<tr class="${best?'best':''}" style="${thin?'opacity:.5':''}"><td class="oc">${r.o.k}</td><td>${r.o.n}`+
+       (thin?` <span class="mini" style="color:#e0b341">thin</span>`:'')+
+       ` <span class="mini">${Math.round(s.n/N*100)}% cov</span>`+
        (s.n?`<div class="bar"><i style="width:${w}%;background:${s.exp>=0?'#3fb950':'#f85149'}"></i></div>`:'')+
        `</td><td class="${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</td>`+
        `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}</td>`+
@@ -196,8 +206,8 @@ function coverage(pool){
   let h='';
   rows.forEach(([lbl,c])=>{
     const pct=Math.round(c/n*100), low=pct<50;
-    h+=`<div class="rowline"><span>${lbl}</span><span><b class="${low?'neg':''}">${c}/${pool.length}</b> `+
-       `<span class="mini">${pct}%</span></span></div>`;});
+    h+=`<div class="rowline"><span>${low?'<span style="color:#e0b341">⚠ </span>':''}${lbl}</span>`+
+       `<span><b class="${low?'neg':''}">${c}/${pool.length}</b> <span class="mini">${pct}%</span></span></div>`;});
   h+=`<div class="mini" style="margin-top:6px">An outcome can only score a trade whose inputs are filled in. Low coverage means that management is being judged on a fraction of the sample — not that it performed badly.</div>`;
   return h;
 }
@@ -208,13 +218,16 @@ function render(){
     'R comes straight from the Notion outcome formulas — this board aggregates, it does not recompute. '+
     'Max DD is the worst peak-to-trough in cumulative R for that outcome alone.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
-  const best=bestOf(OUT.map(o=>({o,s:stat(o.k,pool)})));
-  const bs=best?best.s:{n:0};
+  const cards=OUT.map(o=>({o,s:stat(o.k,pool)}));
+  const bres=bestSolid(cards), best=bres.pick, bs=best?best.s:{n:0};
+  const outranked = (!bres.fellBack && bres.skipped && best && bres.skipped.o.k!==best.o.k && bres.skipped.s.exp>bs.exp)
+    ? bres.skipped : null;
   board.innerHTML=`
     <div class="grid2">
       <div class="card top" style="margin-bottom:12px"><div class="crown">🏆 Best outcome</div>
         <div class="combo-md">${best?best.o.k+' · '+best.o.n:'—'}</div>
-        <div class="mini" style="margin-bottom:6px">${best?FILL[best.o.fill]+' · '+MG[best.o.mg]:''}${bs.n>0&&bs.n<5?' <span style="color:#e0b341">· thin sample, n'+bs.n+'</span>':''}</div>
+        <div class="mini" style="margin-bottom:6px">${best?FILL[best.o.fill]+' · '+MG[best.o.mg]:''}${bres.fellBack&&bs.n<MIN_N?' <span style="color:#e0b341">· thin sample, n'+bs.n+' — nothing has reached n'+MIN_N+' yet</span>':''}</div>
+        ${outranked?`<div class="mini" style="color:#e0b341;margin-bottom:6px">${outranked.o.k} shows a higher ${fR(outranked.s.exp)} but only n${outranked.s.n} — ignored as too thin to rank.</div>`:''}
         <div class="stats">
           <div class="stat"><div class="k">Expectancy</div><div class="v ${bs.n?cls(bs.exp):'mut'}">${bs.n?fR(bs.exp):'—'}</div></div>
           <div class="stat"><div class="k">Win rate</div><div class="v">${bs.n?Math.round(bs.wr*100)+'%':'—'}</div></div>
@@ -222,7 +235,8 @@ function render(){
           <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?fDD(bs.dd):'—'}</div></div>
         </div></div>
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best per fill type</div>${byFill(pool)}</div>
-        <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div></div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div>
+        <div class="card"><div class="lbl">Input coverage — what each management can actually score</div>${coverage(pool)}</div></div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Management × fill type — expectancy</div>
       <div style="margin-top:8px">${compare(pool)}</div>
@@ -231,10 +245,7 @@ function render(){
     <div class="card" style="margin-bottom:12px"><div class="lbl">All twelve, ranked by expectancy</div>
       <div style="margin-top:8px">${matrix(pool)}</div>
     </div>
-    <div class="grid2">
-      <div class="card"><div class="lbl">Best outcome by session</div>${sessions(pool)}</div>
-      <div class="card"><div class="lbl">Input coverage — what each management can actually score</div>${coverage(pool)}</div>
-    </div>`;
+    <div class="card"><div class="lbl">Best outcome by session</div>${sessions(pool)}</div>`;
 }
 
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig';
