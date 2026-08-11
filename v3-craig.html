@@ -111,10 +111,18 @@ const stat=(k,pool)=>{const s=ser(k,pool), o=stats(s); o.dd=maxDD(s); return o;}
 // rows this outcome could ever score, given its fill requirement — the honest coverage denominator
 const eligible=(k,pool)=>{const f=OF[k].fill; return pool.filter(t=>f==='solo'?true:!!t.L1Filled).length;};
 
+// Trades are logged retroactively, so created_time is when the row was TYPED, not
+// when the trade happened. Max DD is the one order-dependent statistic, so order by
+// when the trade actually occurred: date, then session within the trading day.
+const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
+const chrono=(a,b)=>
+  String(a.date||'').localeCompare(String(b.date||'')) ||
+  ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) ||
+  String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
   TRADES = ALL.filter(t =>
     (ASSET==='all' || String(t.Pair||'').toLowerCase()===ASSET) &&
-    (TF==='all'    || t.Timeframe===TF));
+    (TF==='all'    || t.Timeframe===TF)).sort(chrono);
 }
 const MIN_N=5;
 const bestOf=list=>{const v=list.filter(x=>x.s.n>0); return v.length?v.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;};
@@ -282,7 +290,8 @@ function render(){
   const pool=TRADES, board=document.getElementById('board');
   document.getElementById('foot').innerHTML =
     'Each trade is scored under all eighteen managements at once. R comes straight from the Notion outcome formulas — this board aggregates, it does not recompute. '+
-    'Max DD is the worst peak-to-trough in cumulative R for that outcome, walked in chronological order. '+
+    'Max DD is the worst peak-to-trough in cumulative R for that outcome, walked in trade order — date then session, not the order rows were typed. '+
+    'Trades within one session have no recorded sequence, so it is exact to session granularity. '+
     'An outcome is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
   const cards=OUT.map(o=>({o,s:stat(o.k,pool)}));
