@@ -301,6 +301,7 @@ async function computeCraig(token, dbId) {
       l1:        getProp(t, 'L1 Price'),
       sl:        getProp(t, 'SL Price'),
       maxRun:    getProp(t, 'Max Run'),
+      anchor:    getProp(t, '1 of Fib Price'),   // fib 1.0 — drives the BE move on all 18
       t1618:     getProp(t, '1.618 Price'),
       t2272:     getProp(t, '2.272 Price'),
       notes:     getProp(t, 'Notes'),
