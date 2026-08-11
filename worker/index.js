@@ -33,7 +33,10 @@ async function queryAll(dbId, token) {
     'Content-Type': 'application/json',
   };
   do {
-    const body = { page_size: 100 };
+    // Sort ascending so array order IS chronological order. Consumers walk the
+    // array to compute drawdown; without this Notion returns newest-first and
+    // every peak-to-trough figure is measured over a reversed sequence.
+    const body = { page_size: 100, sorts: [{ timestamp: 'created_time', direction: 'ascending' }] };
     if (cursor) body.start_cursor = cursor;
     const r = await fetch(`${NOTION_API}/databases/${dbId}/query`, {
       method: 'POST', headers, body: JSON.stringify(body),
@@ -277,6 +280,8 @@ async function computeCraig(token, dbId) {
     const o = {};
     CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
     rows.push({
+      id:        t.id,            // stable row identity — lets a board figure be traced to a trade
+      created:   t.created_time,  // the only reliable ordering key; Date has no time component
       Trade:     title,
       Direction: getProp(t, 'Direction'),
       Timeframe: getProp(t, 'Timeframe'),
@@ -291,10 +296,24 @@ async function computeCraig(token, dbId) {
       pvsHit2:   getProp(t, 'PVS Hit 2.272'),
       evsPrice:  getProp(t, 'EVS Price'),
       pvsPrice:  getProp(t, 'PVS Price'),
+      // raw inputs, so a consumer can check a published R against its own geometry
+      entry:     getProp(t, 'Entry Price'),
+      l1:        getProp(t, 'L1 Price'),
+      sl:        getProp(t, 'SL Price'),
+      maxRun:    getProp(t, 'Max Run'),
+      t1618:     getProp(t, '1.618 Price'),
+      t2272:     getProp(t, '2.272 Price'),
+      notes:     getProp(t, 'Notes'),
       o,
     });
   }
-  return { updated: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+  return {
+    updated: new Date().toISOString(),
+    tradeCount: rows.length,
+    queriedCount: trades.length,   // rows.length is post-filter; expose both so drops are visible
+    skipped: trades.length - rows.length,
+    trades: rows,
+  };
 }
 
 async function computeV3Raw(token, dbId) {
@@ -618,17 +637,22 @@ export default {
     try {
       const url = new URL(request.url);
       const view = url.searchParams.get('view');
-      const data = view === 'calendar'
-        ? await computeCalendarData(env.NOTION_TOKEN)
-        : view === 'v3'
-        ? await computeV3Raw(env.NOTION_TOKEN, V3_DB)
-        : view === 'v3-crypto'
-        ? await computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB)
-        : view === 'v3-craig'
-        ? await computeCraig(env.NOTION_TOKEN, V3_CRAIG_DB)
-        : view === 'prop'
-        ? await computePropData(env.NOTION_TOKEN)
-        : await computeScoreboard(env.NOTION_TOKEN);
+      // An unknown view must NOT silently fall through to the futures board —
+      // a typo like ?view=v3craig used to serve a different database at 200.
+      const VIEWS = {
+        calendar:    () => computeCalendarData(env.NOTION_TOKEN),
+        v3:          () => computeV3Raw(env.NOTION_TOKEN, V3_DB),
+        'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
+        'v3-craig':  () => computeCraig(env.NOTION_TOKEN, V3_CRAIG_DB),
+        prop:        () => computePropData(env.NOTION_TOKEN),
+        scoreboard:  () => computeScoreboard(env.NOTION_TOKEN),
+      };
+      if (view !== null && !Object.prototype.hasOwnProperty.call(VIEWS, view)) {
+        return new Response(JSON.stringify({
+          error: `Unknown view "${view}"`, known: Object.keys(VIEWS),
+        }), { status: 400, headers: { ...CORS, 'Content-Type': 'application/json' } });
+      }
+      const data = await (VIEWS[view] || VIEWS.scoreboard)();
       return new Response(JSON.stringify(data), {
         status: 200, headers: { ...CORS, 'Content-Type': 'application/json' },
       });

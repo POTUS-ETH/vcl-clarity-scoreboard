@@ -21,8 +21,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .matrix{width:100%;border-collapse:collapse;font-size:12px}
 .matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
-.matrix td:first-child,.matrix th:first-child{text-align:left}
-.matrix td:nth-child(2),.matrix th:nth-child(2){text-align:left}
+.matrix td:first-child,.matrix th:first-child,.matrix td:nth-child(2),.matrix th:nth-child(2){text-align:left}
 .matrix tr.best td{background:#182335}
 .lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:6px}
 .combo-md{font-size:16px;font-weight:700;margin-bottom:8px}
@@ -31,8 +30,8 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .stat .v{font-size:16px;font-weight:700}
 .pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
 .rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 0;border-top:1px solid #232a36;font-size:12px}
-.rowline>span:last-child{flex:none;text-align:right}
 .rowline:first-of-type{border-top:0}
+.rowline>span:last-child{flex:none;text-align:right}
 .pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
 .mini{font-size:11px;color:#8b93a1}
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
@@ -52,8 +51,11 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .cell .k{font-size:9px;color:#6b7280}
 .cell.win{border-color:#2d5a3d;background:#131f18}
 .na{color:#3d4553}
-.seg{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#1b2130;margin:5px 0 3px}
-.seg>i{display:block;height:100%}
+.warn{background:#1d1a10;border:1px solid #4a3d18;border-radius:8px;padding:10px 12px;font-size:11px;color:#e0c98a;line-height:1.6;margin-top:8px}
+.ctl{width:100%;border-collapse:collapse;font-size:12px}
+.ctl th,.ctl td{padding:6px 8px;text-align:right;border-bottom:1px solid #232a36}
+.ctl th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494}
+.ctl td:first-child,.ctl th:first-child{text-align:left}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
@@ -68,51 +70,46 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
   <div class="foot" id="foot"></div>
 </div>
 <script>
-// 18 = stop management (be / evs / pvs) x target (1.618 / 2.272) x fill (solo / lad / sc)
+// 18 = stop management (none / evs / pvs) x target (1.618 / 2.272) x fill (solo / lad / sc).
+// The sc (50%-off) variants hold the ORIGINAL SL rather than moving to break-even —
+// their partial is what de-risks them. That is flagged per-cell, not hidden in the group label.
 const OUT=[
- {k:'O1', mg:'be', tgt:'1.618', fill:'solo'},
- {k:'O2', mg:'be', tgt:'1.618', fill:'lad' },
- {k:'O3', mg:'be', tgt:'1.618', fill:'sc'  },
- {k:'O4', mg:'be', tgt:'2.272', fill:'solo'},
- {k:'O5', mg:'be', tgt:'2.272', fill:'lad' },
- {k:'O6', mg:'be', tgt:'2.272', fill:'sc'  },
- {k:'O7', mg:'evs',tgt:'1.618', fill:'solo'},
- {k:'O8', mg:'evs',tgt:'1.618', fill:'lad' },
- {k:'O9', mg:'evs',tgt:'1.618', fill:'sc'  },
- {k:'O10',mg:'evs',tgt:'2.272', fill:'solo'},
- {k:'O11',mg:'evs',tgt:'2.272', fill:'lad' },
- {k:'O12',mg:'evs',tgt:'2.272', fill:'sc'  },
- {k:'O13',mg:'pvs',tgt:'1.618', fill:'solo'},
- {k:'O14',mg:'pvs',tgt:'1.618', fill:'lad' },
- {k:'O15',mg:'pvs',tgt:'1.618', fill:'sc'  },
- {k:'O16',mg:'pvs',tgt:'2.272', fill:'solo'},
- {k:'O17',mg:'pvs',tgt:'2.272', fill:'lad' },
- {k:'O18',mg:'pvs',tgt:'2.272', fill:'sc'  },
+ {k:'O1', mg:'none',tgt:'1.618',fill:'solo'}, {k:'O2', mg:'none',tgt:'1.618',fill:'lad'}, {k:'O3', mg:'none',tgt:'1.618',fill:'sc'},
+ {k:'O4', mg:'none',tgt:'2.272',fill:'solo'}, {k:'O5', mg:'none',tgt:'2.272',fill:'lad'}, {k:'O6', mg:'none',tgt:'2.272',fill:'sc'},
+ {k:'O7', mg:'evs', tgt:'1.618',fill:'solo'}, {k:'O8', mg:'evs', tgt:'1.618',fill:'lad'}, {k:'O9', mg:'evs', tgt:'1.618',fill:'sc'},
+ {k:'O10',mg:'evs', tgt:'2.272',fill:'solo'}, {k:'O11',mg:'evs', tgt:'2.272',fill:'lad'}, {k:'O12',mg:'evs', tgt:'2.272',fill:'sc'},
+ {k:'O13',mg:'pvs', tgt:'1.618',fill:'solo'}, {k:'O14',mg:'pvs', tgt:'1.618',fill:'lad'}, {k:'O15',mg:'pvs', tgt:'1.618',fill:'sc'},
+ {k:'O16',mg:'pvs', tgt:'2.272',fill:'solo'}, {k:'O17',mg:'pvs', tgt:'2.272',fill:'lad'}, {k:'O18',mg:'pvs', tgt:'2.272',fill:'sc'},
 ];
 const FILL={solo:'Entry only', lad:'Entry + L1', sc:'50% off'};
 const FILLS=['solo','lad','sc'];
-const MG  ={be:'Break-even at the anchor', evs:'Entry-VWAP trail', pvs:'Position-VWAP trail'};
-const MGS =['be','evs','pvs'];
-const MGSHORT={be:'BE', evs:'EVS', pvs:'PVS'};
+const MG={none:'No trail — break-even at the anchor', evs:'Entry-VWAP trail', pvs:'Position-VWAP trail'};
+const MGS=['none','evs','pvs'];
+const MGSHORT={none:'BE', evs:'EVS', pvs:'PVS'};
 const TGTS=['1.618','2.272'];
-const name=o=>`${MGSHORT[o.mg]} · ${o.tgt} · ${FILL[o.fill]}`;
-// which outcome keys belong to each management, in order
-const MGKEYS={be:['O1','O2','O3','O4','O5','O6'],
-              evs:['O7','O8','O9','O10','O11','O12'],
-              pvs:['O13','O14','O15','O16','O17','O18']};
+// the 50%-off column never moves its stop, whichever block it sits in
+const stopOf=o=>o.fill==='sc' ? 'SL held' : MGSHORT[o.mg];
+const name=o=>`${stopOf(o)} · ${o.tgt} · ${FILL[o.fill]}`;
+const MGKEYS={}; MGS.forEach(m=>MGKEYS[m]=OUT.filter(o=>o.mg===m).map(o=>o.k));
+const OF={}; OUT.forEach(o=>OF[o.k]=o);
 
-let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true;
+let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true, lastOk=null;
 
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
 const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
 const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
-const cls=x=>x>0?'pos':(x<0?'neg':'mut');
+const cls=x=>x>0.005?'pos':(x<-0.005?'neg':'mut');
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function stats(s){const n=s.length; if(!n) return {n:0};
-  const w=s.filter(r=>r>0).length, t=s.reduce((a,b)=>a+b,0);
-  return {n, wins:w, wr:w/n, exp:t/n, total:t};}
+  // a 0.00R scratch is neither a win nor a loss — counting it as a loss buries
+  // exactly the outcome break-even management exists to produce
+  const w=s.filter(r=>r>0.005).length, l=s.filter(r=>r<-0.005).length, t=s.reduce((a,b)=>a+b,0);
+  return {n, wins:w, losses:l, scratches:n-w-l, wr:(w+l)?w/(w+l):0, exp:t/n, total:t};}
 function maxDD(s){let c=0,p=0,m=0; for(const r of s){c+=r; if(c>p)p=c; const d=p-c; if(d>m)m=d;} return m;}
 const ser=(k,pool)=>pool.map(t=>num(t.o&&t.o[k])).filter(x=>x!=null);
 const stat=(k,pool)=>{const s=ser(k,pool), o=stats(s); o.dd=maxDD(s); return o;};
+// rows this outcome could ever score, given its fill requirement — the honest coverage denominator
+const eligible=(k,pool)=>{const f=OF[k].fill; return pool.filter(t=>f==='solo'?true:!!t.L1Filled).length;};
 
 function applyFilters(){
   TRADES = ALL.filter(t =>
@@ -120,53 +117,85 @@ function applyFilters(){
     (TF==='all'    || t.Timeframe===TF));
 }
 const MIN_N=5;
-function bestOf(list){const v=list.filter(x=>x.s.n>0); if(!v.length) return null;
-  return v.slice().sort((a,b)=>b.s.exp-a.s.exp)[0];}
-// prefer an outcome with a real sample; fall back to thin only if nothing qualifies
+const bestOf=list=>{const v=list.filter(x=>x.s.n>0); return v.length?v.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;};
 function bestSolid(list){
   const solid=list.filter(x=>x.s.n>=MIN_N);
-  if(solid.length) return {pick:bestOf(solid), fellBack:false, skipped:bestOf(list)};
-  return {pick:bestOf(list), fellBack:true, skipped:null};}
+  if(solid.length){
+    const pick=bestOf(solid);
+    // every thin outcome that outranks the pick, not just the single best
+    const skipped=list.filter(x=>x.s.n>0&&x.s.n<MIN_N&&x.s.exp>pick.s.exp).sort((a,b)=>b.s.exp-a.s.exp);
+    return {pick, fellBack:false, skipped};
+  }
+  return {pick:bestOf(list), fellBack:true, skipped:[]};}
 
 function matrix(pool){
   const rows=OUT.map(o=>({o, s:stat(o.k,pool)}));
-  rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
-  const top=Math.max(...rows.map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
-  const N=pool.length||1;
+  rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.n?b.s.exp:-Infinity)-(a.s.n?a.s.exp:-Infinity)));
+  // scale the bars off outcomes that actually have a sample, so one n=1 row can't flatten the rest
+  const solid=rows.filter(r=>r.s.n>=MIN_N);
+  const top=Math.max(...(solid.length?solid:rows).map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
   let h='';
   rows.forEach((r,i)=>{const s=r.s, thin=s.n>0&&s.n<MIN_N;
     const best=s.n>=MIN_N && !rows.slice(0,i).some(x=>x.s.n>=MIN_N);
+    const el=eligible(r.o.k,pool)||1;
     const w=s.n?Math.min(100,Math.abs(s.exp)/top*100):0;
     h+=`<tr class="${best?'best':''}" style="${thin?'opacity:.5':''}"><td class="oc">${r.o.k}</td>`+
-       `<td><span class="tag">${MGSHORT[r.o.mg]}</span> ${r.o.tgt} · ${FILL[r.o.fill]}`+
+       `<td><span class="tag">${stopOf(r.o)}</span> ${r.o.tgt} · ${FILL[r.o.fill]}`+
        (thin?` <span class="mini" style="color:#e0b341">thin</span>`:'')+
-       ` <span class="mini">${Math.round(s.n/N*100)}% cov</span>`+
+       ` <span class="mini">${Math.round(s.n/el*100)}% of ${el} eligible</span>`+
        (s.n?`<div class="bar"><i style="width:${w}%;background:${s.exp>=0?'#3fb950':'#f85149'}"></i></div>`:'')+
        `</td><td class="${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</td>`+
-       `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}</td>`+
+       `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}${s.n&&s.scratches?`<span class="mini"> ${s.scratches}sc</span>`:''}</td>`+
        `<td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>`+
        `<td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>`+
        `<td class="mut">${s.n||'—'}</td></tr>`;});
   return `<table class="matrix"><thead><tr><th></th><th>Stop · target · fill</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
-// 6 management x target rows, 3 fill columns — every one of the 18 has a cell
 function compare(pool){
   let h='';
   MGS.forEach(m=>{
     h+=`<div class="cmpgrp">${MG[m]}</div>`;
-    h+=`<div class="cmp"><div></div>`+FILLS.map(f=>`<div class="h">${FILL[f]}</div>`).join('')+`</div>`;
+    h+=`<div class="cmp"><div></div>`+FILLS.map(f=>`<div class="h">${FILL[f]}${f==='sc'?' <span style="color:#6b7280">· SL held</span>':''}</div>`).join('')+`</div>`;
     TGTS.forEach(tg=>{
-      // highlight the strongest cell in this row that clears MIN_N
       const cells=FILLS.map(f=>{const o=OUT.find(x=>x.mg===m&&x.tgt===tg&&x.fill===f); return {o,s:stat(o.k,pool)};});
       const solid=cells.filter(c=>c.s.n>=MIN_N);
       const win=solid.length?solid.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;
       h+=`<div class="cmp" style="margin-top:6px"><div class="h">→ ${tg}</div>`;
-      cells.forEach(c=>{
-        const st=c.s, thin=st.n>0&&st.n<MIN_N?' <span style="color:#e0b341">thin</span>':'';
+      cells.forEach(c=>{const st=c.s, thin=st.n>0&&st.n<MIN_N?' <span style="color:#e0b341">thin</span>':'';
         h+=`<div class="cell${win&&win.o.k===c.o.k?' win':''}"><div class="v ${st.n?cls(st.exp):'na'}">${st.n?fR(st.exp):'—'}</div>`+
            `<div class="k">${c.o.k} · ${st.n?Math.round(st.wr*100)+'% · n'+st.n+thin:'no data'}</div></div>`;});
       h+=`</div>`;});});
+  return h;
+}
+
+// Matched-subset control: the trails can only be scored on rows where the trail was
+// logged. Comparing their average to BE's full-sample average compares two different
+// sets of trades. This re-runs every comparison on identical rows.
+function control(pool){
+  let h=`<table class="ctl"><thead><tr><th>Cell</th><th>BE all rows</th><th>BE matched</th><th>EVS</th><th>PVS</th><th>EVS edge</th><th>PVS edge</th><th>n</th></tr></thead><tbody>`;
+  let flips=0, rows=0;
+  [['1.618',' lad','O2','O8','O14'],['2.272',' lad','O5','O11','O17'],
+   ['1.618',' 50%','O3','O9','O15'],['2.272',' 50%','O6','O12','O18']].forEach(([tg,lb,be,ev,pv])=>{
+    const full=mean(ser(be,pool));
+    const m=pool.filter(t=>num(t.o&&t.o[ev])!=null && num(t.o&&t.o[be])!=null);
+    if(!m.length) return; rows++;
+    const mb=mean(m.map(t=>num(t.o[be]))), me=mean(m.map(t=>num(t.o[ev])));
+    const mp=mean(m.map(t=>num(t.o[pv])).filter(x=>x!=null));
+    const eFull=mean(ser(ev,pool)), pFull=mean(ser(pv,pool));
+    const eApp=eFull-full, eCtl=me-mb;
+    const pApp=pFull-full, pCtl=(mp==null?null:mp-mb);
+    if(eApp>0.005&&eCtl<-0.005) flips++;
+    if(pCtl!=null&&pApp>0.005&&pCtl<-0.005) flips++;
+    h+=`<tr><td>${tg}${lb}</td><td class="${cls(full)}">${fR(full)}</td><td class="${cls(mb)}">${fR(mb)}</td>`+
+       `<td class="${cls(me)}">${fR(me)}</td><td class="${mp==null?'na':cls(mp)}">${mp==null?'—':fR(mp)}</td>`+
+       `<td class="${cls(eCtl)}">${fR(eApp)} → <b>${fR(eCtl)}</b></td>`+
+       `<td class="${pCtl==null?'na':cls(pCtl)}">${pCtl==null?'—':fR(pApp)+' → <b>'+fR(pCtl)+'</b>'}</td>`+
+       `<td class="mut">${m.length}</td></tr>`;});
+  h+=`</tbody></table>`;
+  if(!rows) return `<div class="empty-note">No row yet carries both a trail value and its break-even counterpart.</div>`;
+  h+=`<div class="mini" style="margin-top:8px">"Edge" is the trail's advantage over break-even: the apparent figure from each one's own sample, then the same comparison on identical rows.</div>`;
+  if(flips) h+=`<div class="warn"><b>${flips} of the comparisons reverse sign under the control.</b> On its own sample the trail looks better; on the same trades it is worse. Read the controlled column, not the apparent one.</div>`;
   return h;
 }
 
@@ -176,7 +205,13 @@ function bestBy(pool, groups){
     const sub=OUT.filter(o=>keys.includes(o.k)).map(o=>({o,s:stat(o.k,pool)}));
     const r=bestSolid(sub), b=r.pick;
     h+=`<div class="rowline"><span><span class="pill">${lbl}</span> ${b?b.o.k+' · '+name(b.o):'—'}</span>`+
-       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini">n'+b.s.n+(r.fellBack&&b.s.n<MIN_N?' thin':'')+'</span>':'—'}</span></div>`;});
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini">n'+b.s.n+(r.fellBack&&b.s.n<MIN_N?' thin':'')+'</span>':'—'}</span></div>`;
+    // a suppressed higher number is disclosed here, not silently dropped
+    if(r.skipped.length){
+      const s=r.skipped[0];
+      h+=`<div class="mini" style="color:#e0b341;padding:0 0 5px">${s.o.k} shows ${fR(s.s.exp)} but only n${s.s.n}`+
+         (r.skipped.length>1?` (and ${r.skipped.length-1} more thin)`:'')+` — too thin to rank.</div>`;}
+  });
   return h;
 }
 const byMg  = pool=>bestBy(pool, MGS.map(m=>[MGSHORT[m], MGKEYS[m]]));
@@ -190,89 +225,74 @@ function sessions(pool){
   ses.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
   let h='';
   ses.forEach(se=>{const sub=pool.filter(t=>t.Session===se);
-    const b=bestOf(OUT.map(o=>({o,s:stat(o.k,sub)})));
+    // same MIN_N discipline as the crown — a one-trade session must not be presented as a finding
+    const r=bestSolid(OUT.map(o=>({o,s:stat(o.k,sub)}))), b=r.pick;
+    const thin=b&&b.s.n<MIN_N;
     h+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?b.o.k+' · '+name(b.o):'—'}</span>`+
-       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini">n'+b.s.n+'</span>':'—'}</span></div>`;});
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini'+(thin?'" style="color:#e0b341"':'"')+'>n'+b.s.n+(thin?' too thin':'')+'</span>':'—'}</span></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Sessions hold a fraction of the sample each, so most of these will read "too thin" until the log is much larger.</div>`;
   return h;
 }
 function fillMix(pool){
   const c={solo:0,lad:0};
   pool.forEach(t=>{ if(t.L1Filled) c.lad++; else c.solo++; });
   const tot=c.solo+c.lad||1;
-  return `<div class="rowline"><span>Entry only</span><span><b>${c.solo}</b> <span class="mini">${Math.round(c.solo/tot*100)}%</span></span></div>`+
-         `<div class="rowline"><span>Entry + L1 filled</span><span><b>${c.lad}</b> <span class="mini">${Math.round(c.lad/tot*100)}%</span></span></div>`+
-         `<div class="mini" style="margin-top:6px">The 50%-off outcomes need both fills, so they score the same rows as Entry + L1.</div>`;
+  return `<div class="rowline"><span>Entry only <span class="mini">scores every outcome's solo column</span></span><span><b>${c.solo}</b> <span class="mini">${Math.round(c.solo/tot*100)}%</span></span></div>`+
+         `<div class="rowline"><span>Entry + L1 filled <span class="mini">scores the lad and 50% columns</span></span><span><b>${c.lad}</b> <span class="mini">${Math.round(c.lad/tot*100)}%</span></span></div>`+
+         `<div class="mini" style="margin-top:6px">Entry always fills, so the entry-only outcomes are scored on <b>every</b> row — a laddered trade still tells you what entry-only would have paid. The 50% columns need both fills.</div>`;
 }
 
-// How far each trail actually got, on the rows where that trail was logged.
-// A trail firing short of the target is NOT automatically a loss — a BoS stop
-// can fire well in profit — so each bucket carries its own mean R.
 function trailReach(pool){
-  const defs=[['Entry-VWAP trail','evsHit1','evsHit2', MGKEYS.evs],
-              ['Position-VWAP trail','pvsHit1','pvsHit2', MGKEYS.pvs]];
-  // what that trail actually paid on this trade, scored to 2.272 at its own fill
-  const paid=(t,keys)=>num(t.o&&t.o[keys[t.L1Filled?4:3]]);
-  const meanR=g=>{const v=g.map(x=>x.r).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  const defs=[['Entry-VWAP trail','evsHit1','evsHit2','evs'],['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
   let h='';
-  defs.forEach(([lbl,h1,h2,keys])=>{
-    const logged=pool.filter(t=>t.o&&keys.some(k=>num(t.o[k])!=null))
-                     .map(t=>({t, r:paid(t,keys)}));
+  defs.forEach(([lbl,h1,h2,mg])=>{
+    // score each row on the outcome matching how it actually filled. 50%-off is a
+    // management choice rather than a fill outcome, so a laddered row is read full-size.
+    const key=t=>OUT.find(o=>o.mg===mg&&o.tgt==='2.272'&&o.fill===(t.L1Filled?'lad':'solo')).k;
+    const logged=pool.filter(t=>t.o&&num(t.o[key(t)])!=null).map(t=>({t,r:num(t.o[key(t)])}));
     const n=logged.length;
     if(!n){ h+=`<div class="rowline"><span>${lbl}</span><span class="mut">not logged yet</span></div>`; return; }
-    const far=logged.filter(x=>x.t[h2]);
-    const mid=logged.filter(x=>!x.t[h2]&&x.t[h1]);
-    const early=logged.filter(x=>!x.t[h2]&&!x.t[h1]);
-    const p=g=>Math.round(g.length/n*100);
-    const leg=(g,c,txt)=>{const m=meanR(g);
-      return `<div style="display:flex;justify-content:space-between;gap:8px">`+
-             `<span><span style="color:${c}">■</span> ${txt}</span>`+
+    const far=logged.filter(x=>x.t[h2]), mid=logged.filter(x=>!x.t[h2]&&x.t[h1]), early=logged.filter(x=>!x.t[h2]&&!x.t[h1]);
+    const leg=(g,c,txt)=>{const m=mean(g.map(x=>x.r));
+      return `<div style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${c}">■</span> ${txt}</span>`+
              `<span><b>${g.length}</b> <span class="${m==null?'mut':cls(m)}">${m==null?'—':'avg '+fR(m)}</span></span></div>`;};
-    h+=`<div class="rowline" style="display:block">`+
-       `<div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>`+
-       `<div class="seg"><i style="width:${p(far)}%;background:#3fb950"></i>`+
-       `<i style="width:${p(mid)}%;background:#2d7dd2"></i>`+
-       `<i style="width:${p(early)}%;background:#c9a227"></i></div>`+
-       `<div class="mini">`+
-         leg(far,'#3fb950','ran all the way to 2.272')+
-         leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')+
-         leg(early,'#c9a227','stopped before 1.618')+
-       `</div></div>`;});
-  h+=`<div class="mini" style="margin-top:6px">This is the question the trails exist to answer: how often letting it run got paid. Stopping short is not a loss — the average R on each bucket says what it was actually worth. Scored to 2.272 at each trade&rsquo;s own fill.</div>`;
+    h+=`<div class="rowline" style="display:block"><div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>`+
+       `<div class="mini">`+leg(far,'#3fb950','ran all the way to 2.272')+leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')+leg(early,'#c9a227','stopped before 1.618')+`</div></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Stopping short is not a loss — the average R on each bucket says what it was actually worth. Scored to 2.272, full size, at each trade&rsquo;s own fill.</div>`;
   return h;
 }
 
 function coverage(pool){
-  const n=pool.length||1;
-  const rows=[['Break-even at the anchor — needs 1.618 + 2.272 price and Max Run', MGKEYS.be],
-              ['Entry-VWAP trail — needs an EVS hit tick or an EVS Price',        MGKEYS.evs],
-              ['Position-VWAP trail — needs a PVS hit tick or a PVS Price',       MGKEYS.pvs]];
+  const rows=[['No trail — needs Max Run', MGKEYS.none],
+              ['Entry-VWAP trail — needs an EVS tick, an EVS Price, or a trade that never cleared the anchor', MGKEYS.evs],
+              ['Position-VWAP trail — same, for PVS', MGKEYS.pvs]];
   let h='';
   rows.forEach(([lbl,keys])=>{
+    // denominator is rows the group could ever score, not the whole pool
+    const el=pool.filter(t=>t.o&&keys.some(k=>OF[k].fill==='solo'||t.L1Filled)).length||1;
     const c=pool.filter(t=>t.o&&keys.some(k=>num(t.o[k])!=null)).length;
-    const pct=Math.round(c/n*100), low=pct<50;
+    const pct=Math.round(c/el*100), low=pct<50;
     h+=`<div class="rowline"><span>${low?'<span style="color:#e0b341">⚠ </span>':''}${lbl}</span>`+
-       `<span><b class="${low?'neg':''}">${c}/${pool.length}</b> <span class="mini">${pct}%</span></span></div>`;});
-  h+=`<div class="mini" style="margin-top:6px">An outcome can only score a trade whose inputs are filled in. Low coverage means that management is being judged on a fraction of the sample — not that it performed badly.</div>`;
+       `<span><b class="${low?'neg':''}">${c}/${el}</b> <span class="mini">${pct}%</span></span></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">A blank means the inputs to decide that outcome were never recorded — never that the trade was a loss. Losers are scored: a trade that never cleared the anchor takes −1R under every management.</div>`;
   return h;
 }
 
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   document.getElementById('foot').innerHTML =
-    'Each trade is scored under all eighteen managements at once; only those matching its fill type and logged inputs carry a value, the rest are blank and excluded from every average. '+
-    'R comes straight from the Notion outcome formulas — this board aggregates, it does not recompute. '+
-    'Max DD is the worst peak-to-trough in cumulative R for that outcome alone. An outcome is only crowned once it has n'+MIN_N+'.';
+    'Each trade is scored under all eighteen managements at once. R comes straight from the Notion outcome formulas — this board aggregates, it does not recompute. '+
+    'Max DD is the worst peak-to-trough in cumulative R for that outcome, walked in chronological order. '+
+    'An outcome is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
   const cards=OUT.map(o=>({o,s:stat(o.k,pool)}));
   const bres=bestSolid(cards), best=bres.pick, bs=best?best.s:{n:0};
-  const outranked = (!bres.fellBack && bres.skipped && best && bres.skipped.o.k!==best.o.k && bres.skipped.s.exp>bs.exp)
-    ? bres.skipped : null;
   board.innerHTML=`
     <div class="grid2">
       <div><div class="card top"><div class="crown">🏆 Best outcome</div>
         <div class="combo-md">${best?best.o.k+' · '+name(best.o):'—'}</div>
-        <div class="mini" style="margin-bottom:6px">${best?MG[best.o.mg]+' · target '+best.o.tgt:''}${bres.fellBack&&bs.n<MIN_N?' <span style="color:#e0b341">· thin sample, n'+bs.n+' — nothing has reached n'+MIN_N+' yet</span>':''}</div>
-        ${outranked?`<div class="mini" style="color:#e0b341;margin-bottom:6px">${outranked.o.k} shows a higher ${fR(outranked.s.exp)} but only n${outranked.s.n} — ignored as too thin to rank.</div>`:''}
+        <div class="mini" style="margin-bottom:6px">${best?MG[best.o.mg]+' · target '+best.o.tgt:''}${bres.fellBack&&bs.n<MIN_N?' <span style="color:#e0b341">· thin sample, n'+bs.n+'</span>':''}</div>
+        ${bres.skipped.length?`<div class="mini" style="color:#e0b341;margin-bottom:6px">Passed over as too thin: ${bres.skipped.slice(0,4).map(s=>s.o.k+' '+fR(s.s.exp)+' n'+s.s.n).join(' · ')}${bres.skipped.length>4?' …':''}</div>`:''}
         <div class="stats">
           <div class="stat"><div class="k">Expectancy</div><div class="v ${bs.n?cls(bs.exp):'mut'}">${bs.n?fR(bs.exp):'—'}</div></div>
           <div class="stat"><div class="k">Win rate</div><div class="v">${bs.n?Math.round(bs.wr*100)+'%':'—'}</div></div>
@@ -281,10 +301,11 @@ function render(){
         </div></div>
         <div class="card" style="margin-bottom:12px"><div class="lbl">Best per stop management</div>${byMg(pool)}</div>
         <div class="card" style="margin-bottom:12px"><div class="lbl">Best per target</div>${byTgt(pool)}</div>
-        <div class="card" style="margin-bottom:12px"><div class="lbl">Best per fill type</div>${byFill(pool)}</div>
-        <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div></div>
-      <div><div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
-        <div class="card"><div class="lbl">Input coverage — what each management can actually score</div>${coverage(pool)}</div></div>
+        <div class="card"><div class="lbl">Best per fill type</div>${byFill(pool)}</div></div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Trail vs break-even, on identical rows</div>${control(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div>
+        <div class="card"><div class="lbl">Input coverage</div>${coverage(pool)}</div></div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Stop × target × fill — expectancy</div>
       ${compare(pool)}
@@ -305,11 +326,15 @@ async function poll(){
     const j=await res.json();
     ALL=(j&&j.trades)||[];
     applyFilters(); render();
+    lastOk=Date.now();
     st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
     firstLoad=false;
   }catch(e){
     if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
       document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker.</div></div>'; }
+    else{ // never leave stale numbers looking live
+      const age=Math.round((Date.now()-lastOk)/1000);
+      st.innerHTML=`<span class="err">STALE — worker unreachable, figures are ${age}s old</span>`; }
   }
 }
 function wire(id,attr,set){
