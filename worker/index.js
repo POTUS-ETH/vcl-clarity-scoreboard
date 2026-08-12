@@ -60,6 +60,11 @@ function getProp(page, name) {
     case 'multi_select': return p.multi_select?.map(s => s.name) || [];
     case 'checkbox':     return p.checkbox;
     case 'date':         return p.date?.start || null;
+    case 'unique_id':
+    case 'auto_increment_id': {
+      const v = p[p.type];
+      return (v && typeof v === 'object') ? (v.number ?? null) : (v ?? null);
+    }
     case 'formula':
       switch (p.formula.type) {
         case 'number':  return p.formula.number;
@@ -281,6 +286,7 @@ async function computeCraig(token, dbId) {
     CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
     rows.push({
       id:        t.id,            // stable row identity — lets a board figure be traced to a trade
+      num:       getProp(t, '#'), // permanent row number, for citing a trade in discussion
       created:   t.created_time,  // the only reliable ordering key; Date has no time component
       Trade:     title,
       Direction: getProp(t, 'Direction'),
