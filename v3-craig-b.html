@@ -176,7 +176,14 @@ function tradeR(t, m, mode){
   return num(o[l1 ? m.lad : m.solo]);
 }
 function seriesFor(m, pool, mode){ return pool.map(t=>tradeR(t,m,mode)).filter(x=>x!=null); }
-function ciFor(m, pool, mode){ return ci95(seriesFor(m,pool,mode)); }
+// expectancy = mean R (ci.mean); win rate excludes scratches, matching how a 0R trade is neither a win nor a loss
+function fullStats(series){
+  const ci=ci95(series);
+  const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length;
+  const scratches=series.length-wins-losses;
+  return {...ci, wins, losses, scratches, winRate:(wins+losses)?wins/(wins+losses):0, total:series.reduce((a,b)=>a+b,0), dd:maxDD(series)};
+}
+function statsFor(m, pool, mode){ return fullStats(seriesFor(m,pool,mode)); }
 function paired(mA,modeA,mB,modeB,pool){
   const d=[]; pool.forEach(t=>{const a=tradeR(t,mA,modeA),b=tradeR(t,mB,modeB); if(a!=null&&b!=null) d.push(b-a);});
   return ci95(d);
@@ -215,18 +222,16 @@ function whiskerSVG(ci,w,h){
 function bestCandidate(pool){
   let best=null;
   METH.forEach(m=>['blend','sc'].forEach(mode=>{
-    const ci=ciFor(m,pool,mode);
-    if(ci.n && (!best || ci.mean>best.ci.mean)) best={m,mode,ci};
+    const s=statsFor(m,pool,mode);
+    if(s.n && (!best || s.mean>best.s.mean)) best={m,mode,s};
   }));
   return best;
 }
 function answerBlock(pool){
   const best=bestCandidate(pool);
   if(!best) return `<div class="card answer"><div class="empty-note">No trades match this filter yet.</div></div>`;
-  const series=seriesFor(best.m,pool,best.mode);
-  const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length, scr=series.length-wins-losses;
-  const dd=maxDD(series);
-  const sig = best.ci.lo>0;
+  const s=best.s;
+  const sig = s.lo>0;
   const rivals=[];
   METH.forEach(m=>['blend','sc'].forEach(mode=>{
     if(m.k===best.m.k && mode===best.mode) return;
@@ -236,16 +241,17 @@ function answerBlock(pool){
   return `<div class="card answer">
     <div class="eyebrow">Leading policy — matched trades</div>
     <div class="policy">${nameOf(best.m)}${best.mode==='sc'?' <span class="tag sc">50% off</span>':''}</div>
-    <div class="band"><div class="bandnum ${cls(best.ci.mean)}">${fR(best.ci.mean)}</div>
-      <div class="bandci">95% CI [${fR(best.ci.lo)}, ${fR(best.ci.hi)}] · n${best.ci.n}</div></div>
+    <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
+      <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
     <div class="stats">
-      <div class="stat"><div class="k">Win / Scratch / Loss</div><div class="v">${wins} / ${scr} / ${losses}</div></div>
-      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(dd)}</div></div>
-      <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(best.ci.n/4.6))} days</div></div>
+      <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
+      <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
+      <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(s.n/4.6))} days</div></div>
     </div>
     ${sig ? '' : `<div class="caveat" style="margin-top:9px">This is the leading number, not a proven winner — its 95% interval includes 0.
       ${rivals.length ? 'Not significantly ahead of: '+rivals.join(', ')+'.' : ''}
-      With ${best.ci.n} trades this board can reliably tell methodologies apart only when they differ by roughly a full R — most of the gaps here are smaller than that.</div>`}
+      With ${s.n} trades this board can reliably tell methodologies apart only when they differ by roughly a full R — most of the gaps here are smaller than that.</div>`}
   </div>`;
 }
 
@@ -255,10 +261,11 @@ function cubeBlock(pool){
   MGS.forEach(mg=>{
     let rows='';
     TGTS.forEach(t=>{
-      const m=findM(mg,t), ci=ciFor(m,pool,'blend');
+      const m=findM(mg,t), s=statsFor(m,pool,'blend');
       rows+=`<div class="row">
-        <div class="rowlbl"><span>→ ${t}</span><span>${fR(ci.mean??0)} n${ci.n}</span></div>
-        ${whiskerSVG(ci,300,26)}
+        <div class="rowlbl"><span>→ ${t}</span><span>${fR(s.mean??0)} n${s.n}</span></div>
+        ${whiskerSVG(s,300,26)}
+        <div class="rowlbl" style="margin-top:2px"><span>${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>Σ ${s.n?fR(s.total):'—'}</span></div>
       </div>`;
     });
     const d=paired(findM(mg,'1.618'),'blend',findM(mg,'2.272'),'blend',pool);
@@ -340,17 +347,20 @@ function integrityStrip(pool){
 /* ============================== L2 — all 12, ranked ============================== */
 function rankedTable(pool){
   const rows=[];
-  METH.forEach(m=>{ rows.push({m,mode:'blend',ci:ciFor(m,pool,'blend')}); rows.push({m,mode:'sc',ci:ciFor(m,pool,'sc')}); });
-  rows.sort((a,b)=>(b.ci.n?b.ci.mean:-99)-(a.ci.n?a.ci.mean:-99));
+  METH.forEach(m=>{ rows.push({m,mode:'blend',s:statsFor(m,pool,'blend')}); rows.push({m,mode:'sc',s:statsFor(m,pool,'sc')}); });
+  rows.sort((a,b)=>(b.s.n?b.s.mean:-99)-(a.s.n?a.s.mean:-99));
   let h='';
   rows.forEach(r=>{
-    const sig=r.ci.n && !(r.ci.lo<0&&r.ci.hi>0);
+    const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
     h+=`<tr><td><span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${r.mode==='sc'?' <span class="tag sc">50% off</span>':''}</td>
-      <td style="width:180px">${r.ci.n?whiskerSVG(r.ci,170,22):'<span class="na">no data</span>'}</td>
-      <td class="${r.ci.n?cls(r.ci.mean):'na'}">${r.ci.n?fR(r.ci.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
-      <td class="mut">${r.ci.n||'—'}</td></tr>`;
+      <td style="width:150px">${s.n?whiskerSVG(s,140,22):'<span class="na">no data</span>'}</td>
+      <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
+      <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
+      <td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>
+      <td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>
+      <td class="mut">${s.n||'—'}</td></tr>`;
   });
-  return `<table class="matrix"><thead><tr><th>Stop · target · variant</th><th>95% CI</th><th>mean</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return `<table class="matrix"><thead><tr><th>Stop · target · variant</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
 /* ============================== L2 — trail reach ============================== */
