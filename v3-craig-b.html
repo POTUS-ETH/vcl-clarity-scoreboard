@@ -342,17 +342,20 @@ function beMoveBlock(pool){
 
 /* ============================== L1 — data integrity strip ============================== */
 function integrityStrip(pool){
-  let measured=0, closeable=0, total=0;
-  const closeRows=new Set();
+  let measured=0, closeable=0, incomplete=0, total=0;
+  const closeRows=new Set(), incompleteRows=new Set();
   pool.forEach(r=>METH.forEach(m=>['blend','sc'].forEach(mode=>{
     total++;
     const v=tradeR(r,m,mode);
-    if(v!=null) measured++;
+    if(v!=null){ measured++; return; }
+    const tgtPrice = m.tgt==='1.618' ? r.t1618 : r.t2272;
+    if(tgtPrice==null){ incomplete++; incompleteRows.add(r.num); }
     else { closeable++; closeRows.add(r.num); }
   })));
   return `<div class="card strip">
     <span class="n">${measured}</span><span class="mini">measured</span>
     <span class="n todo">${closeable}</span><span class="mini">closeable — <b>${closeRows.size} chart reading${closeRows.size===1?'':'s'}</b> (rows ${[...closeRows].sort((a,b)=>a-b).join(', ')||'—'}) would close these — price cleared the trail anchor but no exit was logged</span>
+    ${incomplete?`<span class="n" style="color:var(--neg)">${incomplete}</span><span class="mini">incomplete — <b>${incompleteRows.size} trade${incompleteRows.size===1?'':'s'}</b> (rows ${[...incompleteRows].sort((a,b)=>a-b).join(', ')}) never got a 1.618/2.272 Price logged, so nothing can be scored yet</span>`:''}
     <span class="legend" style="margin-left:auto">
       <span><i class="swatch" style="background:var(--pos)"></i>measured +</span>
       <span><i class="swatch" style="background:var(--neg)"></i>measured −</span>
