@@ -256,7 +256,7 @@ function answerBlock(pool){
     if(p.n>0 && !(p.hi<0)) rivals.push(nameOf(m)+(mode==='sc'?' 50%off':''));
   }));
   return `<div class="card answer">
-    <div class="eyebrow">Leading policy — matched trades</div>
+    <div class="eyebrow">Top performer — matched trades</div>
     <div class="policy">${nameOf(best.m)}${best.mode==='sc'?' <span class="tag sc">50% off</span>':''}</div>
     <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
       <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
@@ -418,11 +418,12 @@ function disclosure(id,title,bodyHtml){
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
-  board.innerHTML = answerBlock(pool) + cubeBlock(pool) +
-    `<div class="twocol">${insuranceBlock(pool)}${beMoveBlock(pool)}</div>` +
-    integrityStrip(pool) +
+  board.innerHTML = answerBlock(pool) +
     disclosure('d-all','All 12, ranked', rankedTable(pool)) +
     disclosure('d-trail','How far the trails ran', trailReach(pool)) +
+    cubeBlock(pool) +
+    `<div class="twocol">${insuranceBlock(pool)}${beMoveBlock(pool)}</div>` +
+    integrityStrip(pool) +
     `<div class="foot">Every comparison on this board is paired on identical trades, because outcomes here differ by 0.1–0.4R and unmatched row sets alone can move a mean by more than that. R comes straight from the Notion outcome formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
