@@ -134,11 +134,14 @@ const METH=[
 ];
 const MGS=['none','evs','pvs'];
 const MGNAME={none:'BE · no trail', evs:'EVS · entry-VWAP trail', pvs:'PVS · peak-VWAP trail'};
-const MGDESC={
-  none: 'Scenario: stop sits at break-even once price clears the 1.0 fib, then just waits — no further trailing.',
-  evs:  'Scenario: stop trails a VWAP anchored at your entry price, tightening continuously as the trade runs.',
-  pvs:  'Scenario: stop trails a VWAP re-anchored at the peak swing after fill — reacts faster than EVS.',
-};
+// the actual rule, stated as a sequence of what happens — not a stats caveat
+const MGSTOP={none:'stop moves to BE', evs:'stop trails the entry-anchored VWAP', pvs:'stop trails a VWAP re-anchored at the peak swing after fill'};
+const MGCLOSE={none:'closes either at BE or at target', evs:'closes at the trail stop or at target', pvs:'closes at the trail stop or at target'};
+function mechDesc(mg, mode){
+  let s=`When entry or entry+L1 fills, stop stays at the 0 of fib until price crosses the 1 of fib — then ${MGSTOP[mg]}, and the trade ${MGCLOSE[mg]}.`;
+  if(mode==='sc') s+=' Half the position banks at entry if price retraces after L1 fills; the rest follows this same rule to close.';
+  return s;
+}
 const MGSHORT={none:'BE', evs:'EVS', pvs:'PVS'};
 const TGTS=['1.618','2.272'];
 const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
@@ -252,7 +255,7 @@ function answerBlock(pool){
     <div class="policy">${nameOf(best.m)}${best.mode==='sc'?' <span class="tag sc">50% off</span>':''}</div>
     <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
       <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
-    <div class="fsub">If this 95% CI clears zero, the lead is real at 95% confidence — if it still crosses zero, this is the log's best guess so far, not a proven winner.</div>
+    <div class="fsub">${mechDesc(best.m.mg, best.mode)}</div>
     <div class="stats">
       <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
       <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
@@ -282,7 +285,7 @@ function cubeBlock(pool){
     const d=paired(findM(mg,'1.618'),'blend',findM(mg,'2.272'),'blend',pool);
     facets+=`<div class="facet">
       <div class="fname">${MGNAME[mg]}</div>
-      <div class="fsub">${MGDESC[mg]}</div>
+      <div class="fsub">${mechDesc(mg,'blend')}</div>
       ${rows}
       <div class="marginrow"><span>2.272 − 1.618, paired</span><b class="${d.n?cls(d.mean):''}">${d.n?fR(d.mean)+(d.lo>0?' ':d.hi<0?' ':' · ns'):'—'}</b></div>
     </div>`;
