@@ -99,9 +99,9 @@ function maxDD(s){let c=0,p=0,m=0; for(const r of s){c+=r; if(c>p)p=c; const d=p
 function tradeR(t, m, mode){
   const o=t.o||{}, l1=!!t.L1Filled;
   if(mode==='sc'){
-    if(!l1) return null;
+    if(!l1) return num(o[m.solo]);
     if('retracedToEntry' in t){
-      if(!t.retracedToEntry) return -1;
+      if(!t.retracedToEntry) return num(o[m.lad]);
       return num(o[m.sc]);
     }
     return num(o[m.sc]);
@@ -110,7 +110,7 @@ function tradeR(t, m, mode){
 }
 function seriesFor(m, pool, mode){ return pool.map(t=>tradeR(t,m,mode)).filter(x=>x!=null); }
 function statFor(m, pool, mode){ const s=seriesFor(m,pool,mode), o=stats(s); o.dd=maxDD(s); return o; }
-const eligible=(m, pool, mode)=>{ if(mode==='sc') return pool.filter(t=>!!t.L1Filled).length; return pool.length; };
+const eligible=(m, pool, mode)=>pool.length;
 
 const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>
@@ -137,19 +137,21 @@ function bestSolid(list){
   return {pick:bestOf(list), fellBack:true, skipped:[]};
 }
 
-function matrix(pool, mode){
-  mode = mode || 'blend';
-  const rows=METH.map(m=>({m, s:statFor(m,pool,mode)}));
+function matrix(pool){
+  const rows=[];
+  METH.forEach(m=>rows.push({m, mode:'blend', s:statFor(m,pool,'blend')}));
+  METH.forEach(m=>rows.push({m, mode:'sc',    s:statFor(m,pool,'sc')}));
   rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.n?b.s.exp:-Infinity)-(a.s.n?a.s.exp:-Infinity)));
   const solid=rows.filter(r=>r.s.n>=MIN_N);
   const top=Math.max(...(solid.length?solid:rows).map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
   let h='';
   rows.forEach((r,i)=>{const s=r.s, thin=s.n>0&&s.n<MIN_N;
     const best=s.n>=MIN_N && !rows.slice(0,i).some(x=>x.s.n>=MIN_N);
-    const el=eligible(r.m,pool,mode)||1;
+    const el=eligible(r.m,pool,r.mode)||1;
     const w=s.n?Math.min(100,Math.abs(s.exp)/top*100):0;
+    const scTag=r.mode==='sc'?' <span class="tag" style="background:#2a1f14;color:#e0b341">50% off</span>':'';
     h+=`<tr class="${best?'best':''}" style="${thin?'opacity:.5':''}"><td>`+
-       `<span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}`+
+       `<span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${scTag}`+
        (thin?` <span class="mini" style="color:#e0b341">thin</span>`:'')+
        ` <span class="mini">${Math.round(s.n/el*100)}% of ${el} eligible</span>`+
        (s.n?`<div class="bar"><i style="width:${w}%;background:${s.exp>=0?'#3fb950':'#f85149'}"></i></div>`:'')+
@@ -158,7 +160,7 @@ function matrix(pool, mode){
        `<td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>`+
        `<td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>`+
        `<td class="mut">${s.n||'—'}</td></tr>`;});
-  return `<table class="matrix"><thead><tr><th>Stop · target</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return `<table class="matrix"><thead><tr><th>Stop · target · variant</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
 function compare(pool, mode){
@@ -295,7 +297,7 @@ function render(){
   document.getElementById('foot').innerHTML =
     'SIX methodologies (stop × target), each blended per trade by whether L1 actually filled. '+
     'Fill is a FILTER now, not a methodology axis — entry-only and entry+L1 are the same trade, not different strategies. '+
-    'The 50%-off variant is a management CHOICE (bank a 50% partial at entry when price retraces after L1). Shown as its own card AND as a side-by-side insurance test vs no-partial. '+
+    'The 50%-off variant is a full methodology (always trade; bank a 50% partial when L1 fills and price retraces). Shown as its own card, side-by-side insurance test, and ranked alongside the blended methodologies in the big matrix. '+
     'Max DD is the worst peak-to-trough in cumulative R for that methodology, walked in trade order — date then session, not the order rows were typed. '+
     'A methodology is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
@@ -327,12 +329,12 @@ function render(){
     <div class="card" style="margin-bottom:12px"><div class="lbl">50% insurance test — OFF vs ON, side by side (L1-filled trades)</div>
       ${insurance(pool)}
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">50%-off variant — take a partial at entry (L1-filled trades only)</div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">50%-off variant — run the 50%-off methodology on every trade</div>
       ${compare(pool,'sc')}
-      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you banked a 50% partial back at entry once L1 filled and price retraced. Trades that never filled L1 are excluded (no partial to take); trades that filled L1 but never retraced score as a full -1R (no partial fired).</div>
+      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you were running the 50%-off approach: bank a 50% partial at entry when L1 fills AND price retraces. When the partial rule doesn't fire (L1 never filled, or L1 filled but price never came back to entry), the trade scores exactly like the blended methodology — so the sc column only differs from blended on retraced L1-filled trades.</div>
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">All methodologies, ranked by expectancy (blended)</div>
-      <div style="margin-top:8px">${matrix(pool,'blend')}</div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">All methodologies, ranked by expectancy — blended + 50%-off variants (12 rows)</div>
+      <div style="margin-top:8px">${matrix(pool)}</div>
     </div>
     <div class="card"><div class="lbl">Best methodology by session (blended)</div>${sessions(pool)}</div>`;
 }
