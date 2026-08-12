@@ -106,8 +106,6 @@ details.l2 .body{padding:0 14px 14px}
     <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies, each scored on every trade · paired on identical rows</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
-      <div class="tg" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
-      <div class="tg" id="fillTg"><button data-f="all" class="on">ALL FILLS</button><button data-f="solo">ENTRY ONLY</button><button data-f="lad">ENTRY + L1</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -116,7 +114,7 @@ details.l2 .body{padding:0 14px 14px}
     <div class="body">
       <p><b>What's on this board.</b> Every logged trade is replayed under 6 stop/target rules — BE, EVS-trail, or PVS-trail, each aimed at either the 1.618 or 2.272 fib target — plus a 50%-off variant. That's up to 12 hypothetical scores per trade, all describing the same real trade.</p>
       <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; EVS trails a VWAP anchored at entry; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
-      <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against. The FILL filter above only lets you inspect a subset out of curiosity; it never changes how a trade is scored.</p>
+      <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against or filter for.</p>
       <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
       <p><b>Reading a mark.</b> Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Max drawdown is the worst peak-to-trough dip in cumulative R. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
@@ -152,7 +150,7 @@ const TGTS=['1.618','2.272'];
 const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 const findM=(mg,tgt)=>METH.find(m=>m.mg===mg&&m.tgt===tgt);
 
-let TRADES=[], ALL=[], ASSET='all', TF='all', FILL='all', firstLoad=true, lastOk=null;
+let TRADES=[], ALL=[], ASSET='all', firstLoad=true, lastOk=null;
 const OPEN=new Set();
 
 /* ============================== stats primitives ============================== */
@@ -207,9 +205,7 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => (ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET) && (TF==='all'||t.Timeframe===TF) &&
-    (FILL==='all' || (FILL==='solo' ? !t.L1Filled : !!t.L1Filled))
-  ).sort(chrono);
+  TRADES = ALL.filter(t => ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET).sort(chrono);
 }
 
 /* ============================== dot + whisker mark ============================== */
@@ -441,7 +437,7 @@ async function poll(){
     ALL=(j&&j.trades)||[];
     applyFilters(); render();
     lastOk=Date.now();
-    st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
     firstLoad=false;
   }catch(e){
     if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
@@ -455,11 +451,9 @@ function wire(id,attr,set){
     b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
       document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
       set(v); applyFilters(); render();
-      document.getElementById('status').textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trades · switched`; };});
+      document.getElementById('status').textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trades · switched`; };});
 }
 wire('assetTg','a',v=>{ if(v===undefined) return ASSET; ASSET=v; });
-wire('tfTg','t',  v=>{ if(v===undefined) return TF;    TF=v;    });
-wire('fillTg','f',v=>{ if(v===undefined) return FILL;  FILL=v;  });
 poll(); setInterval(poll,5000);
 </script>
 </body></html>
