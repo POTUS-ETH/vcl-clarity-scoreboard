@@ -366,6 +366,11 @@ function integrityStrip(pool){
 }
 
 /* ============================== L2 — all 12, ranked ============================== */
+const MECHSHORT={
+  none: '0 → 1 of fib, then stop to BE — closes at BE or target',
+  evs:  '0 → 1 of fib, then stop trails entry-VWAP — closes at trail or target',
+  pvs:  '0 → 1 of fib, then stop trails peak-VWAP — closes at trail or target',
+};
 function rankedTable(pool){
   const rows=[];
   METH.forEach(m=>{ rows.push({m,mode:'blend',s:statsFor(m,pool,'blend')}); rows.push({m,mode:'sc',s:statsFor(m,pool,'sc')}); });
@@ -373,7 +378,8 @@ function rankedTable(pool){
   let h='';
   rows.forEach(r=>{
     const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
-    h+=`<tr><td><span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${r.mode==='sc'?' <span class="tag sc">50% off</span>':''}</td>
+    const mech=MECHSHORT[r.m.mg]+(r.mode==='sc'?' · half banks on retrace to entry':'');
+    h+=`<tr><td><span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${r.mode==='sc'?' <span class="tag sc">50% off</span>':''}<div class="mini" style="font-weight:400;margin-top:2px">${mech}</div></td>
       <td style="width:150px">${s.n?whiskerSVG(s,140,22):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
       <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
