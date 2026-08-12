@@ -100,6 +100,10 @@ function tradeR(t, m, mode){
   const o=t.o||{}, l1=!!t.L1Filled;
   if(mode==='sc'){
     if(!l1) return null;
+    if('retracedToEntry' in t){
+      if(!t.retracedToEntry) return -1;
+      return num(o[m.sc]);
+    }
     return num(o[m.sc]);
   }
   return num(o[l1 ? m.lad : m.solo]);
@@ -248,6 +252,26 @@ function fillMix(pool){
          `<div class="mini" style="margin-top:6px">Each methodology blends per-trade: solo if L1 didn't fill, lad if it did. Use the FILL filter above to segment.</div>`;
 }
 
+function insurance(pool){
+  const l1Pool = pool.filter(t => t.L1Filled);
+  if(!l1Pool.length) return `<div class="empty-note">No L1-filled trades in this filter yet.</div>`;
+  let h = `<table class="matrix"><thead><tr><th>Stop · target</th><th>OFF · no partial</th><th>ON · 50% partial</th><th>Delta</th><th>n</th></tr></thead><tbody>`;
+  METH.forEach(m => {
+    const off = statFor(m, l1Pool, 'blend');
+    const on  = statFor(m, l1Pool, 'sc');
+    const delta = (off.n && on.n) ? (on.exp - off.exp) : null;
+    const thin = off.n>0 && off.n<MIN_N;
+    h += `<tr style="${thin?'opacity:.5':''}"><td><span class="tag">${MGSHORT[m.mg]}</span> ${m.tgt}${thin?' <span class="mini" style="color:#e0b341">thin</span>':''}</td>`+
+         `<td class="${off.n?cls(off.exp):'na'}">${off.n?fR(off.exp):'—'}</td>`+
+         `<td class="${on.n?cls(on.exp):'na'}">${on.n?fR(on.exp):'—'}</td>`+
+         `<td class="${delta==null?'na':cls(delta)}">${delta==null?'—':fR(delta)}</td>`+
+         `<td class="mut">${off.n||'—'}</td></tr>`;
+  });
+  h += `</tbody></table>`;
+  h += `<div class="mini" style="margin-top:6px">L1-filled trades only. <b>OFF</b> = ride the full ladder (no partial). <b>ON</b> = bank a 50% partial at entry when price retraces after L1. Positive delta = the partial helped on average; negative = it cost. Trades that filled L1 but never retraced score identically under both — their contribution to the delta is zero.</div>`;
+  return h;
+}
+
 function trailReach(pool){
   const defs=[['Entry-VWAP trail','evsHit1','evsHit2','evs'],['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
   let h='';
@@ -271,7 +295,7 @@ function render(){
   document.getElementById('foot').innerHTML =
     'SIX methodologies (stop × target), each blended per trade by whether L1 actually filled. '+
     'Fill is a FILTER now, not a methodology axis — entry-only and entry+L1 are the same trade, not different strategies. '+
-    'The 50%-off variant is a management CHOICE (bank a 50% partial at entry once L1 fills), shown as a separate card. '+
+    'The 50%-off variant is a management CHOICE (bank a 50% partial at entry when price retraces after L1). Shown as its own card AND as a side-by-side insurance test vs no-partial. '+
     'Max DD is the worst peak-to-trough in cumulative R for that methodology, walked in trade order — date then session, not the order rows were typed. '+
     'A methodology is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
@@ -300,9 +324,12 @@ function render(){
       ${compare(pool,'blend')}
       <div class="mini" style="margin-top:10px">Six methodologies, per-trade blended by whether L1 actually filled. Use the FILL filter above to view Entry-only or Entry+L1 subsets in isolation.</div>
     </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">50% insurance test — OFF vs ON, side by side (L1-filled trades)</div>
+      ${insurance(pool)}
+    </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">50%-off variant — take a partial at entry (L1-filled trades only)</div>
       ${compare(pool,'sc')}
-      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you banked a 50% partial back at entry once L1 filled. Trades that never filled L1 are excluded (no partial to take).</div>
+      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you banked a 50% partial back at entry once L1 filled and price retraced. Trades that never filled L1 are excluded (no partial to take); trades that filled L1 but never retraced score as a full -1R (no partial fired).</div>
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">All methodologies, ranked by expectancy (blended)</div>
       <div style="margin-top:8px">${matrix(pool,'blend')}</div>
