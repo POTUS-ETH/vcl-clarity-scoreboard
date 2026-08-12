@@ -111,13 +111,18 @@ details.l2 .body{padding:0 14px 14px}
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
-  <details class="primer" open>
+  <details class="primer">
     <summary>How to read this board</summary>
     <div class="body">
-      <p>Every logged trade is replayed under <b>6 stop/target rules</b> — BE, EVS-trail, or PVS-trail, each aimed at either the 1.618 or 2.272 fib target — plus a <b>50%-off variant</b> that banks half the position at entry if price retraces after L1 fills. That's up to 12 hypothetical scores per trade, all describing the same real trade.</p>
-      <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 actually fills is the market's decision, not yours. Every score above already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against. The FILL filter above only lets you inspect a subset out of curiosity; it never changes how a trade is scored.</p>
-      <p><b>Dot = mean R. Line = 95% confidence interval.</b> If the line crosses zero, this log doesn't yet have enough trades to be sure that methodology beats scratch.</p>
-      <p>Every comparison below — stop vs. stop, partial ON vs. OFF — is <b>paired on the identical trades</b> scored by both sides, never a pooled average over different subsets. Some methodologies (the trail ones) have fewer logged trades than others, and pooling mismatched subsets can flip a ranking that a fair, matched comparison would not.</p>
+      <p><b>What's on this board.</b> Every logged trade is replayed under 6 stop/target rules — BE, EVS-trail, or PVS-trail, each aimed at either the 1.618 or 2.272 fib target — plus a 50%-off variant. That's up to 12 hypothetical scores per trade, all describing the same real trade.</p>
+      <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; EVS trails a VWAP anchored at entry; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
+      <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against. The FILL filter above only lets you inspect a subset out of curiosity; it never changes how a trade is scored.</p>
+      <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
+      <p><b>Reading a mark.</b> Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
+      <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Max drawdown is the worst peak-to-trough dip in cumulative R. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
+      <p><b>Why every comparison is paired.</b> Outcomes here differ by only 0.1–0.4R, and the trail methodologies (EVS/PVS) have fewer logged trades than BE — they need chart-read evidence BE doesn't. Averaging each side over whatever trades happen to be scored can flip a ranking that a fair, same-trades comparison would not. So every delta on this board — stop vs. stop, 50%-off vs. full ladder, runner-up vs. leader — is computed only over rows scored on both sides being compared.</p>
+      <p><b>Break-even move card.</b> Tracks how the BE rule actually landed: what fraction of trades cleared the 1 of fib and fired the move, and of those, what fraction then closed flat exactly at break-even instead of running further.</p>
+      <p><b>"Closeable" in the data-integrity strip</b> means price cleared the trail anchor but no exit was ever logged for it — the only kind of blank on this board. It closes the moment Craig reads that trade's chart; nothing else is missing or estimated.</p>
     </div>
   </details>
   <div id="board"></div>
