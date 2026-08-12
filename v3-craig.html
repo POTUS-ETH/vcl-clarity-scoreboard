@@ -1,5 +1,345 @@
-cd vcl-clarity-scoreboard
-cp <the file I gave you> v3-craig.html
-git add v3-craig.html
-git commit -m "Craig scoreboard: collapse fill into filter (Option 2), keep 50%-off separable"
-git push
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VCL v3 — Craig · Option 2 (fill as filter)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
+.wrap{max-width:1040px;margin:0 auto}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:11px;color:#8b93a1}
+.tg{display:inline-flex;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
+.tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
+.tg button:first-child{border-left:0}
+.tg button.on{background:#3b82f6;color:#fff}
+.card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:16px}
+.top{border:2px solid #3b82f6;margin-bottom:12px}
+.top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.matrix{width:100%;border-collapse:collapse;font-size:12px}
+.matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
+.matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix tr.best td{background:#182335}
+.lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:6px}
+.combo-md{font-size:16px;font-weight:700;margin-bottom:8px}
+.stats{display:flex;flex-wrap:wrap;gap:12px 18px}
+.stat .k{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6b7280}
+.stat .v{font-size:16px;font-weight:700}
+.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
+.rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 0;border-top:1px solid #232a36;font-size:12px}
+.rowline:first-of-type{border-top:0}
+.rowline>span:last-child{flex:none;text-align:right}
+.pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
+.mini{font-size:11px;color:#8b93a1}
+.empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.err{color:#f87171;font-size:12px}
+.foot{font-size:10px;color:#6b7280;margin-top:14px;line-height:1.6}
+.tf{display:flex;gap:6px}
+.tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
+.bar{height:6px;border-radius:3px;background:#1b2130;overflow:hidden;margin-top:3px}
+.bar>i{display:block;height:100%;border-radius:3px}
+.cmp{display:grid;grid-template-columns:132px repeat(2,1fr);gap:6px;align-items:center}
+.cmp .h{font-size:10px;color:#8b93a1;letter-spacing:1px;text-transform:uppercase}
+.cmpgrp{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#7b8494;margin:12px 0 4px;padding-top:8px;border-top:1px solid #232a36}
+.cmpgrp:first-of-type{border-top:0;padding-top:0;margin-top:8px}
+.cell{background:#141a24;border:1px solid #1f2735;border-radius:6px;padding:7px 9px}
+.cell .v{font-size:15px;font-weight:700}
+.cell .k{font-size:9px;color:#6b7280}
+.cell.win{border-color:#2d5a3d;background:#131f18}
+.na{color:#3d4553}
+.warn{background:#1d1a10;border:1px solid #4a3d18;border-radius:8px;padding:10px 12px;font-size:11px;color:#e0c98a;line-height:1.6;margin-top:8px}
+.ctl{width:100%;border-collapse:collapse;font-size:12px}
+.ctl th,.ctl td{padding:6px 8px;text-align:right;border-bottom:1px solid #232a36}
+.ctl th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494}
+.ctl td:first-child,.ctl th:first-child{text-align:left}
+</style></head><body>
+<div class="wrap">
+  <div class="hd">
+    <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies × fill filter · R read live from the Notion outcome formulas</div></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
+      <div class="tg tf" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
+      <div class="tg" id="fillTg"><button data-f="all" class="on">ALL FILLS</button><button data-f="solo">ENTRY ONLY</button><button data-f="lad">ENTRY + L1</button></div>
+      <div class="mini" id="status">loading…</div>
+    </div>
+  </div>
+  <div id="board"></div>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+const METH=[
+ {k:'BE-1.618',  mg:'none', tgt:'1.618', solo:'O1',  lad:'O2',  sc:'O3'},
+ {k:'BE-2.272',  mg:'none', tgt:'2.272', solo:'O4',  lad:'O5',  sc:'O6'},
+ {k:'EVS-1.618', mg:'evs',  tgt:'1.618', solo:'O7',  lad:'O8',  sc:'O9'},
+ {k:'EVS-2.272', mg:'evs',  tgt:'2.272', solo:'O10', lad:'O11', sc:'O12'},
+ {k:'PVS-1.618', mg:'pvs',  tgt:'1.618', solo:'O13', lad:'O14', sc:'O15'},
+ {k:'PVS-2.272', mg:'pvs',  tgt:'2.272', solo:'O16', lad:'O17', sc:'O18'},
+];
+const MG={none:'BE at anchor', evs:'Entry-VWAP trail', pvs:'Position-VWAP trail'};
+const MGS=['none','evs','pvs'];
+const MGSHORT={none:'BE', evs:'EVS', pvs:'PVS'};
+const TGTS=['1.618','2.272'];
+const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
+
+let TRADES=[], ALL=[], ASSET='all', TF='all', FILL='all', firstLoad=true, lastOk=null;
+
+const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
+const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
+const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
+const cls=x=>x>0.005?'pos':(x<-0.005?'neg':'mut');
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+function stats(s){const n=s.length; if(!n) return {n:0};
+  const w=s.filter(r=>r>0.005).length, l=s.filter(r=>r<-0.005).length, t=s.reduce((a,b)=>a+b,0);
+  return {n, wins:w, losses:l, scratches:n-w-l, wr:(w+l)?w/(w+l):0, exp:t/n, total:t};}
+function maxDD(s){let c=0,p=0,m=0; for(const r of s){c+=r; if(c>p)p=c; const d=p-c; if(d>m)m=d;} return m;}
+
+function tradeR(t, m, mode){
+  const o=t.o||{}, l1=!!t.L1Filled;
+  if(mode==='sc'){
+    if(!l1) return null;
+    return num(o[m.sc]);
+  }
+  return num(o[l1 ? m.lad : m.solo]);
+}
+function seriesFor(m, pool, mode){ return pool.map(t=>tradeR(t,m,mode)).filter(x=>x!=null); }
+function statFor(m, pool, mode){ const s=seriesFor(m,pool,mode), o=stats(s); o.dd=maxDD(s); return o; }
+const eligible=(m, pool, mode)=>{ if(mode==='sc') return pool.filter(t=>!!t.L1Filled).length; return pool.length; };
+
+const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
+const chrono=(a,b)=>
+  String(a.date||'').localeCompare(String(b.date||'')) ||
+  ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) ||
+  String(a.created||'').localeCompare(String(b.created||''));
+function applyFilters(){
+  TRADES = ALL.filter(t =>
+    (ASSET==='all' || String(t.Pair||'').toLowerCase()===ASSET) &&
+    (TF==='all'    || t.Timeframe===TF) &&
+    (FILL==='all'  || (FILL==='solo' ? !t.L1Filled : !!t.L1Filled))
+  ).sort(chrono);
+}
+
+const MIN_N=5;
+const bestOf=list=>{const v=list.filter(x=>x.s.n>0); return v.length?v.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;};
+function bestSolid(list){
+  const solid=list.filter(x=>x.s.n>=MIN_N);
+  if(solid.length){
+    const pick=bestOf(solid);
+    const skipped=list.filter(x=>x.s.n>0&&x.s.n<MIN_N&&x.s.exp>pick.s.exp).sort((a,b)=>b.s.exp-a.s.exp);
+    return {pick, fellBack:false, skipped};
+  }
+  return {pick:bestOf(list), fellBack:true, skipped:[]};
+}
+
+function matrix(pool, mode){
+  mode = mode || 'blend';
+  const rows=METH.map(m=>({m, s:statFor(m,pool,mode)}));
+  rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.n?b.s.exp:-Infinity)-(a.s.n?a.s.exp:-Infinity)));
+  const solid=rows.filter(r=>r.s.n>=MIN_N);
+  const top=Math.max(...(solid.length?solid:rows).map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
+  let h='';
+  rows.forEach((r,i)=>{const s=r.s, thin=s.n>0&&s.n<MIN_N;
+    const best=s.n>=MIN_N && !rows.slice(0,i).some(x=>x.s.n>=MIN_N);
+    const el=eligible(r.m,pool,mode)||1;
+    const w=s.n?Math.min(100,Math.abs(s.exp)/top*100):0;
+    h+=`<tr class="${best?'best':''}" style="${thin?'opacity:.5':''}"><td>`+
+       `<span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}`+
+       (thin?` <span class="mini" style="color:#e0b341">thin</span>`:'')+
+       ` <span class="mini">${Math.round(s.n/el*100)}% of ${el} eligible</span>`+
+       (s.n?`<div class="bar"><i style="width:${w}%;background:${s.exp>=0?'#3fb950':'#f85149'}"></i></div>`:'')+
+       `</td><td class="${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</td>`+
+       `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}${s.n&&s.scratches?`<span class="mini"> ${s.scratches}sc</span>`:''}</td>`+
+       `<td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>`+
+       `<td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>`+
+       `<td class="mut">${s.n||'—'}</td></tr>`;});
+  return `<table class="matrix"><thead><tr><th>Stop · target</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+}
+
+function compare(pool, mode){
+  mode = mode || 'blend';
+  let h='';
+  MGS.forEach(mg=>{
+    h+=`<div class="cmpgrp">${MG[mg]}</div>`;
+    h+=`<div class="cmp"><div></div>`+TGTS.map(t=>`<div class="h">→ ${t}</div>`).join('')+`</div>`;
+    const cells=TGTS.map(tg=>{const m=METH.find(x=>x.mg===mg&&x.tgt===tg); return {m,s:statFor(m,pool,mode)};});
+    const solid=cells.filter(c=>c.s.n>=MIN_N);
+    const win=solid.length?solid.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;
+    h+=`<div class="cmp" style="margin-top:6px"><div class="h">exp</div>`;
+    cells.forEach(c=>{const st=c.s, thin=st.n>0&&st.n<MIN_N?' <span style="color:#e0b341">thin</span>':'';
+      h+=`<div class="cell${win&&win.m.k===c.m.k?' win':''}"><div class="v ${st.n?cls(st.exp):'na'}">${st.n?fR(st.exp):'—'}</div>`+
+         `<div class="k">${st.n?Math.round(st.wr*100)+'% · n'+st.n+thin:'no data'}</div></div>`;});
+    h+=`</div>`;});
+  return h;
+}
+
+function control(pool){
+  let h=`<table class="ctl"><thead><tr><th>Target</th><th>BE all rows</th><th>BE matched</th><th>EVS</th><th>PVS</th><th>EVS edge</th><th>PVS edge</th><th>n</th></tr></thead><tbody>`;
+  let flips=0, rows=0;
+  TGTS.forEach(tg=>{
+    const be = METH.find(m=>m.mg==='none'&&m.tgt===tg);
+    const evs = METH.find(m=>m.mg==='evs'&&m.tgt===tg);
+    const pvs = METH.find(m=>m.mg==='pvs'&&m.tgt===tg);
+    const full = mean(seriesFor(be, pool, 'blend'));
+    const matched = pool.filter(t=>tradeR(t,evs,'blend')!=null && tradeR(t,be,'blend')!=null);
+    if(!matched.length) return; rows++;
+    const mb = mean(matched.map(t=>tradeR(t,be,'blend')));
+    const me = mean(matched.map(t=>tradeR(t,evs,'blend')));
+    const mp = mean(matched.map(t=>tradeR(t,pvs,'blend')).filter(x=>x!=null));
+    const eFull = mean(seriesFor(evs, pool, 'blend'));
+    const pFull = mean(seriesFor(pvs, pool, 'blend'));
+    const eApp = eFull-full, eCtl = me-mb;
+    const pApp = (pFull==null||full==null)?null:pFull-full, pCtl = (mp==null?null:mp-mb);
+    if(eApp>0.005&&eCtl<-0.005) flips++;
+    if(pCtl!=null&&pApp!=null&&pApp>0.005&&pCtl<-0.005) flips++;
+    h+=`<tr><td>${tg}</td><td class="${cls(full)}">${fR(full)}</td><td class="${cls(mb)}">${fR(mb)}</td>`+
+       `<td class="${cls(me)}">${fR(me)}</td><td class="${mp==null?'na':cls(mp)}">${mp==null?'—':fR(mp)}</td>`+
+       `<td class="${cls(eCtl)}">${fR(eApp)} → <b>${fR(eCtl)}</b></td>`+
+       `<td class="${pCtl==null?'na':cls(pCtl)}">${pCtl==null?'—':fR(pApp)+' → <b>'+fR(pCtl)+'</b>'}</td>`+
+       `<td class="mut">${matched.length}</td></tr>`;});
+  h+=`</tbody></table>`;
+  if(!rows) return `<div class="empty-note">No row yet carries both a trail value and its break-even counterpart.</div>`;
+  h+=`<div class="mini" style="margin-top:8px">"Edge" is the trail's advantage over break-even: the apparent figure from each one's own sample, then the same comparison on identical rows.</div>`;
+  if(flips) h+=`<div class="warn"><b>${flips} of the comparisons reverse sign under the control.</b> On its own sample the trail looks better; on the same trades it is worse. Read the controlled column, not the apparent one.</div>`;
+  return h;
+}
+
+function bestByGroup(pool, groups, mode){
+  mode = mode || 'blend';
+  let h='';
+  groups.forEach(([lbl,keys])=>{
+    const sub=METH.filter(m=>keys.includes(m.k)).map(m=>({m,s:statFor(m,pool,mode)}));
+    if(!sub.length){h+=`<div class="rowline"><span><span class="pill">${lbl}</span> —</span><span class="mut">no methodology</span></div>`;return;}
+    const r=bestSolid(sub), b=r.pick;
+    h+=`<div class="rowline"><span><span class="pill">${lbl}</span> ${b?nameOf(b.m):'—'}</span>`+
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini">n'+b.s.n+(r.fellBack&&b.s.n<MIN_N?' thin':'')+'</span>':'—'}</span></div>`;
+    if(r.skipped.length){
+      const s=r.skipped[0];
+      h+=`<div class="mini" style="color:#e0b341;padding:0 0 5px">${nameOf(s.m)} shows ${fR(s.s.exp)} but only n${s.s.n}`+
+         (r.skipped.length>1?` (and ${r.skipped.length-1} more thin)`:'')+` — too thin to rank.</div>`;}
+  });
+  return h;
+}
+const byMg  = pool=>bestByGroup(pool, MGS.map(m=>[MGSHORT[m], METH.filter(x=>x.mg===m).map(x=>x.k)]));
+const byTgt = pool=>bestByGroup(pool, TGTS.map(t=>['→ '+t, METH.filter(x=>x.tgt===t).map(x=>x.k)]));
+
+function sessions(pool){
+  const ses=[...new Set(pool.map(t=>t.Session).filter(Boolean))];
+  if(!ses.length) return '<div class="empty-note">No Session tagged yet.</div>';
+  const order=['Asia','London','NY AM','NY PM'];
+  ses.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  let h='';
+  ses.forEach(se=>{const sub=pool.filter(t=>t.Session===se);
+    const r=bestSolid(METH.map(m=>({m,s:statFor(m,sub,'blend')}))), b=r.pick;
+    const thin=b&&b.s.n<MIN_N;
+    h+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?nameOf(b.m):'—'}</span>`+
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini'+(thin?'" style="color:#e0b341"':'"')+'>n'+b.s.n+(thin?' too thin':'')+'</span>':'—'}</span></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Sessions hold a fraction of the sample each, so most of these will read "too thin" until the log is much larger.</div>`;
+  return h;
+}
+
+function fillMix(pool){
+  const c={solo:0,lad:0};
+  pool.forEach(t=>{ if(t.L1Filled) c.lad++; else c.solo++; });
+  const tot=c.solo+c.lad||1;
+  return `<div class="rowline"><span>Entry only <span class="mini">L1 did not fill</span></span><span><b>${c.solo}</b> <span class="mini">${Math.round(c.solo/tot*100)}%</span></span></div>`+
+         `<div class="rowline"><span>Entry + L1 filled <span class="mini">blended full-size position</span></span><span><b>${c.lad}</b> <span class="mini">${Math.round(c.lad/tot*100)}%</span></span></div>`+
+         `<div class="mini" style="margin-top:6px">Each methodology blends per-trade: solo if L1 didn't fill, lad if it did. Use the FILL filter above to segment.</div>`;
+}
+
+function trailReach(pool){
+  const defs=[['Entry-VWAP trail','evsHit1','evsHit2','evs'],['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
+  let h='';
+  defs.forEach(([lbl,h1,h2,mg])=>{
+    const m = METH.find(x=>x.mg===mg&&x.tgt==='2.272');
+    const logged = pool.filter(t=>tradeR(t,m,'blend')!=null).map(t=>({t, r:tradeR(t,m,'blend')}));
+    const n=logged.length;
+    if(!n){ h+=`<div class="rowline"><span>${lbl}</span><span class="mut">not logged yet</span></div>`; return; }
+    const far=logged.filter(x=>x.t[h2]), mid=logged.filter(x=>!x.t[h2]&&x.t[h1]), early=logged.filter(x=>!x.t[h2]&&!x.t[h1]);
+    const leg=(g,c,txt)=>{const mv=mean(g.map(x=>x.r));
+      return `<div style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${c}">■</span> ${txt}</span>`+
+             `<span><b>${g.length}</b> <span class="${mv==null?'mut':cls(mv)}">${mv==null?'—':'avg '+fR(mv)}</span></span></div>`;};
+    h+=`<div class="rowline" style="display:block"><div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>`+
+       `<div class="mini">`+leg(far,'#3fb950','ran all the way to 2.272')+leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')+leg(early,'#c9a227','stopped before 1.618')+`</div></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Stopping short is not a loss — the average R on each bucket says what it was actually worth. Scored to 2.272 at each trade's actual fill.</div>`;
+  return h;
+}
+
+function render(){
+  const pool=TRADES, board=document.getElementById('board');
+  document.getElementById('foot').innerHTML =
+    'SIX methodologies (stop × target), each blended per trade by whether L1 actually filled. '+
+    'Fill is a FILTER now, not a methodology axis — entry-only and entry+L1 are the same trade, not different strategies. '+
+    'The 50%-off variant is a management CHOICE (bank a 50% partial at entry once L1 fills), shown as a separate card. '+
+    'Max DD is the worst peak-to-trough in cumulative R for that methodology, walked in trade order — date then session, not the order rows were typed. '+
+    'A methodology is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
+  const cards=METH.map(m=>({m,s:statFor(m,pool,'blend')}));
+  const bres=bestSolid(cards), best=bres.pick, bs=best?best.s:{n:0};
+  board.innerHTML=`
+    <div class="grid2">
+      <div><div class="card top"><div class="crown">🏆 Best methodology (blended fill)</div>
+        <div class="combo-md">${best?nameOf(best.m):'—'}</div>
+        <div class="mini" style="margin-bottom:6px">${best?MG[best.m.mg]+' · target '+best.m.tgt:''}${bres.fellBack&&bs.n<MIN_N?' <span style="color:#e0b341">· thin sample, n'+bs.n+'</span>':''}</div>
+        ${bres.skipped.length?`<div class="mini" style="color:#e0b341;margin-bottom:6px">Passed over as too thin: ${bres.skipped.slice(0,4).map(s=>nameOf(s.m)+' '+fR(s.s.exp)+' n'+s.s.n).join(' · ')}${bres.skipped.length>4?' …':''}</div>`:''}
+        <div class="stats">
+          <div class="stat"><div class="k">Expectancy</div><div class="v ${bs.n?cls(bs.exp):'mut'}">${bs.n?fR(bs.exp):'—'}</div></div>
+          <div class="stat"><div class="k">Win rate</div><div class="v">${bs.n?Math.round(bs.wr*100)+'%':'—'}</div></div>
+          <div class="stat"><div class="k">Total R</div><div class="v ${bs.n?cls(bs.total):'mut'}">${bs.n?fR(bs.total):'—'}</div></div>
+          <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?fDD(bs.dd):'—'}</div></div>
+        </div></div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">Best per stop management</div>${byMg(pool)}</div>
+        <div class="card"><div class="lbl">Best per target</div>${byTgt(pool)}</div></div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Trail vs break-even, on identical rows</div>${control(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
+        <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Stop × target — expectancy (blended fill)</div>
+      ${compare(pool,'blend')}
+      <div class="mini" style="margin-top:10px">Six methodologies, per-trade blended by whether L1 actually filled. Use the FILL filter above to view Entry-only or Entry+L1 subsets in isolation.</div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">50%-off variant — take a partial at entry (L1-filled trades only)</div>
+      ${compare(pool,'sc')}
+      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you banked a 50% partial back at entry once L1 filled. Trades that never filled L1 are excluded (no partial to take).</div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">All methodologies, ranked by expectancy (blended)</div>
+      <div style="margin-top:8px">${matrix(pool,'blend')}</div>
+    </div>
+    <div class="card"><div class="lbl">Best methodology by session (blended)</div>${sessions(pool)}</div>`;
+}
+
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig';
+async function poll(){
+  const st=document.getElementById('status');
+  try{
+    const res=await fetch(WORKER+'&t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('worker '+res.status);
+    const j=await res.json();
+    ALL=(j&&j.trades)||[];
+    applyFilters(); render();
+    lastOk=Date.now();
+    st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    firstLoad=false;
+  }catch(e){
+    if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker.</div></div>'; }
+    else{ const age=Math.round((Date.now()-lastOk)/1000);
+      st.innerHTML=`<span class="err">STALE — worker unreachable, figures are ${age}s old</span>`; }
+  }
+}
+function wire(id,attr,set){
+  document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
+      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
+      set(v); applyFilters(); render();
+      document.getElementById('status').textContent=
+        `${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · switched`; };});
+}
+wire('assetTg','a',v=>{ if(v===undefined) return ASSET; ASSET=v; });
+wire('tfTg','t',  v=>{ if(v===undefined) return TF;    TF=v;    });
+wire('fillTg','f',v=>{ if(v===undefined) return FILL;  FILL=v;  });
+poll(); setInterval(poll,5000);
+</script>
+</body></html>
