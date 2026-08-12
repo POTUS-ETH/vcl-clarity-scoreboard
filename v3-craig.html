@@ -2,452 +2,343 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VCL v3 — Craig · 18 Outcomes</title>
+<title>VCL v3 — Craig · Option 2 (fill as filter)</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
 .wrap{max-width:1040px;margin:0 auto}
-.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-.hd h1{font-size:17px;font-weight:700;letter-spacing:.5px}
-.hd .sub{font-size:10px;color:#8b93a1}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:11px;color:#8b93a1}
 .tg{display:inline-flex;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
-.tg button{border:0;background:#161b24;padding:4px 9px;font:inherit;font-size:10px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
+.tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
 .tg button:first-child{border-left:0}
-.tg button.on{background:#3987e5;color:#fff}
-.mini{font-size:10px;color:#8b93a1}
-.err{color:#e66767;font-size:11px}
-
-/* ---- design tokens (dataviz spec: colourblind-safe diverging pair) ---- */
-:root{
-  --pos:#3987e5; --neg:#e66767; --closeable:#fab219; --derived:#697285;
-  --zero:#383f4d; --card:#161b24; --border:#232a36; --ink:#e6e8ec; --mut:#8b93a1;
-}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
-.lbl{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
-
-/* ---- L0 answer ---- */
-.answer{border:1px solid #2a4a72;background:linear-gradient(180deg,#141d2c,#161b24);margin-bottom:10px}
-.answer .eyebrow{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#6fa3e0;margin-bottom:4px}
-.answer .policy{font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.3}
-.answer .band{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.answer .bandnum{font-size:22px;font-weight:700}
-.answer .bandci{font-size:11px;color:var(--mut)}
-.answer .caveat{font-size:11px;color:#e0b341;background:#1d1a10;border:1px solid #4a3d18;border-radius:6px;padding:7px 9px;line-height:1.5}
-.answer .stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
-.answer .stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
-.answer .stat .v{font-size:14px;font-weight:700}
-
-/* ---- L1 cube ---- */
-.cubewrap{margin-bottom:10px}
-.cubehead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.facets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-@media (max-width:820px){.facets{grid-template-columns:1fr}}
-.facet{background:#141a24;border:1px solid #1f2735;border-radius:8px;padding:10px}
-.facet .fname{font-size:11px;font-weight:700;margin-bottom:2px}
-.facet .fsub{font-size:9px;color:var(--mut);margin-bottom:8px}
-.facet .row{margin-bottom:10px}
-.facet .row:last-child{margin-bottom:0}
-.facet .rowlbl{font-size:10px;color:var(--mut);margin-bottom:2px;display:flex;justify-content:space-between}
-.facet svg{display:block;width:100%;height:34px}
-.marginrow{display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid #232a36;font-size:10px;color:var(--mut)}
-.marginrow b{color:var(--ink)}
-.basistoggle{font-size:9px}
-
-/* ---- data integrity strip ---- */
-.strip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;padding:9px 12px;margin-bottom:10px}
-.strip .n{font-weight:700}
-.strip .todo{color:var(--closeable);font-weight:600}
-.legend{display:flex;gap:12px;font-size:9px;color:var(--mut);flex-wrap:wrap}
-.legend span{display:inline-flex;align-items:center;gap:4px}
-.swatch{width:9px;height:9px;border-radius:2px;display:inline-block}
-
-/* ---- L2 disclosures ---- */
-details{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
-details summary{cursor:pointer;padding:11px 14px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);list-style:none;display:flex;justify-content:space-between;align-items:center}
-details summary::-webkit-details-marker{display:none}
-details summary::after{content:'+ expand';font-size:9px;color:#4a5568;text-transform:none;letter-spacing:0}
-details[open] summary::after{content:'- collapse'}
-details .body{padding:0 14px 14px}
-
-/* ---- shared dot/whisker + tables ---- */
-.matrix{width:100%;border-collapse:collapse;font-size:11px}
-.matrix th,.matrix td{padding:6px 8px;text-align:right;border-bottom:1px solid #232a36;vertical-align:middle}
+.tg button.on{background:#3b82f6;color:#fff}
+.card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:16px}
+.top{border:2px solid #3b82f6;margin-bottom:12px}
+.top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.matrix{width:100%;border-collapse:collapse;font-size:12px}
+.matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
-.matrix td:first-child,.matrix th:first-child,.matrix td:nth-child(2),.matrix th:nth-child(2){text-align:left}
-.oc{color:#9aa3b2;width:32px;font-size:10px}
-.tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
-.rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 0;border-top:1px solid #232a36;font-size:11px}
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix tr.best td{background:#182335}
+.lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:6px}
+.combo-md{font-size:16px;font-weight:700;margin-bottom:8px}
+.stats{display:flex;flex-wrap:wrap;gap:12px 18px}
+.stat .k{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6b7280}
+.stat .v{font-size:16px;font-weight:700}
+.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
+.rowline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:5px 0;border-top:1px solid #232a36;font-size:12px}
 .rowline:first-of-type{border-top:0}
-.pill{font-size:9px;padding:1px 6px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
-.foot{font-size:9.5px;color:#6b7280;margin-top:10px;line-height:1.6}
-.na{color:#3d4553}
+.rowline>span:last-child{flex:none;text-align:right}
+.pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
+.mini{font-size:11px;color:#8b93a1}
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.err{color:#f87171;font-size:12px}
+.foot{font-size:10px;color:#6b7280;margin-top:14px;line-height:1.6}
+.tf{display:flex;gap:6px}
+.tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
+.bar{height:6px;border-radius:3px;background:#1b2130;overflow:hidden;margin-top:3px}
+.bar>i{display:block;height:100%;border-radius:3px}
+.cmp{display:grid;grid-template-columns:132px repeat(2,1fr);gap:6px;align-items:center}
+.cmp .h{font-size:10px;color:#8b93a1;letter-spacing:1px;text-transform:uppercase}
+.cmpgrp{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#7b8494;margin:12px 0 4px;padding-top:8px;border-top:1px solid #232a36}
+.cmpgrp:first-of-type{border-top:0;padding-top:0;margin-top:8px}
+.cell{background:#141a24;border:1px solid #1f2735;border-radius:6px;padding:7px 9px}
+.cell .v{font-size:15px;font-weight:700}
+.cell .k{font-size:9px;color:#6b7280}
+.cell.win{border-color:#2d5a3d;background:#131f18}
+.na{color:#3d4553}
+.warn{background:#1d1a10;border:1px solid #4a3d18;border-radius:8px;padding:10px 12px;font-size:11px;color:#e0c98a;line-height:1.6;margin-top:8px}
+.ctl{width:100%;border-collapse:collapse;font-size:12px}
+.ctl th,.ctl td{padding:6px 8px;text-align:right;border-bottom:1px solid #232a36}
+.ctl th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494}
+.ctl td:first-child,.ctl th:first-child{text-align:left}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>VCL v3 — CRAIG</h1><div class="sub">18 outcomes, one entry · every comparison below is on matched trades</div></div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies × fill filter · R read live from the Notion outcome formulas</div></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
-      <div class="tg" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
+      <div class="tg tf" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
+      <div class="tg" id="fillTg"><button data-f="all" class="on">ALL FILLS</button><button data-f="solo">ENTRY ONLY</button><button data-f="lad">ENTRY + L1</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
   <div id="board"></div>
+  <div class="foot" id="foot"></div>
 </div>
 <script>
-/* ============================== metadata ============================== */
-const OUT=[
- {k:'O1', mg:'be', tgt:'1.618', fill:'solo'}, {k:'O2', mg:'be', tgt:'1.618', fill:'lad'}, {k:'O3', mg:'be', tgt:'1.618', fill:'sc'},
- {k:'O4', mg:'be', tgt:'2.272', fill:'solo'}, {k:'O5', mg:'be', tgt:'2.272', fill:'lad'}, {k:'O6', mg:'be', tgt:'2.272', fill:'sc'},
- {k:'O7', mg:'evs',tgt:'1.618', fill:'solo'}, {k:'O8', mg:'evs',tgt:'1.618', fill:'lad'}, {k:'O9', mg:'evs',tgt:'1.618', fill:'sc'},
- {k:'O10',mg:'evs',tgt:'2.272', fill:'solo'}, {k:'O11',mg:'evs',tgt:'2.272', fill:'lad'}, {k:'O12',mg:'evs',tgt:'2.272', fill:'sc'},
- {k:'O13',mg:'pvs',tgt:'1.618', fill:'solo'}, {k:'O14',mg:'pvs',tgt:'1.618', fill:'lad'}, {k:'O15',mg:'pvs',tgt:'1.618', fill:'sc'},
- {k:'O16',mg:'pvs',tgt:'2.272', fill:'solo'}, {k:'O17',mg:'pvs',tgt:'2.272', fill:'lad'}, {k:'O18',mg:'pvs',tgt:'2.272', fill:'sc'},
+const METH=[
+ {k:'BE-1.618',  mg:'none', tgt:'1.618', solo:'O1',  lad:'O2',  sc:'O3'},
+ {k:'BE-2.272',  mg:'none', tgt:'2.272', solo:'O4',  lad:'O5',  sc:'O6'},
+ {k:'EVS-1.618', mg:'evs',  tgt:'1.618', solo:'O7',  lad:'O8',  sc:'O9'},
+ {k:'EVS-2.272', mg:'evs',  tgt:'2.272', solo:'O10', lad:'O11', sc:'O12'},
+ {k:'PVS-1.618', mg:'pvs',  tgt:'1.618', solo:'O13', lad:'O14', sc:'O15'},
+ {k:'PVS-2.272', mg:'pvs',  tgt:'2.272', solo:'O16', lad:'O17', sc:'O18'},
 ];
-const OF={}; OUT.forEach(o=>OF[o.k]=o);
-const MGS=['be','evs','pvs'];
-const MGNAME={be:'BE · no trail', evs:'EVS · entry-VWAP trail', pvs:'PVS · peak-VWAP trail'};
+const MG={none:'BE at anchor', evs:'Entry-VWAP trail', pvs:'Position-VWAP trail'};
+const MGS=['none','evs','pvs'];
+const MGSHORT={none:'BE', evs:'EVS', pvs:'PVS'};
 const TGTS=['1.618','2.272'];
-const FILLNAME={solo:'Entry only', lad:'Entry + L1', sc:'50% off'};
-const soloKey =(m,t)=>OUT.find(o=>o.mg===m&&o.tgt===t&&o.fill==='solo').k;
-const ladKey  =(m,t)=>OUT.find(o=>o.mg===m&&o.tgt===t&&o.fill==='lad').k;
-const scKey   =(m,t)=>OUT.find(o=>o.mg===m&&o.tgt===t&&o.fill==='sc').k;
+const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 
-let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true, lastOk=null;
-const OPEN=new Set(); // which <details> are open, survives re-render
+let TRADES=[], ALL=[], ASSET='all', TF='all', FILL='all', firstLoad=true, lastOk=null;
 
-/* ============================== stats primitives ============================== */
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
 const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
 const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
 const cls=x=>x>0.005?'pos':(x<-0.005?'neg':'mut');
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
-const sd=a=>{if(a.length<2)return 0; const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
-// t(.975, df) lookup — small-n exact critical values, converges to 1.96
-const TTAB={2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,9:2.262,10:2.228,11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,17:2.110,18:2.101,19:2.093,20:2.086,21:2.080,22:2.074,23:2.069,24:2.064,25:2.060,26:2.056,27:2.052,28:2.048,29:2.045,30:2.042};
-const tCrit=df=>df<2?12.7:df>30?1.96:TTAB[df];
-function ci95(series){
-  const a=series.filter(x=>x!=null), n=a.length;
-  if(!n) return {n:0,mean:null,se:null,lo:null,hi:null};
-  const m=mean(a), s=sd(a), se=n>1?s/Math.sqrt(n):0, t=tCrit(n-1);
-  return {n, mean:m, se, lo:m-t*se, hi:m+t*se};
-}
-function maxDD(series){let c=0,p=0,m=0; for(const r of series){c+=r; if(c>p)p=c; const d=p-c; if(d>m)m=d;} return m;}
+function stats(s){const n=s.length; if(!n) return {n:0};
+  const w=s.filter(r=>r>0.005).length, l=s.filter(r=>r<-0.005).length, t=s.reduce((a,b)=>a+b,0);
+  return {n, wins:w, losses:l, scratches:n-w-l, wr:(w+l)?w/(w+l):0, exp:t/n, total:t};}
+function maxDD(s){let c=0,p=0,m=0; for(const r of s){c+=r; if(c>p)p=c; const d=p-c; if(d>m)m=d;} return m;}
 
-/* paired comparison: only rows where BOTH keys are non-null, mean of (b-a) */
-function paired(keyA,keyB,pool){
-  const d=[]; pool.forEach(r=>{const a=cellVal(r,keyA),b=cellVal(r,keyB); if(a!=null&&b!=null) d.push(b-a);});
-  return ci95(d);
-}
-function winTieLoss(keyA,keyB,pool){
-  let w=0,t=0,l=0;
-  pool.forEach(r=>{const a=cellVal(r,keyA),b=cellVal(r,keyB); if(a==null||b==null)return;
-    const d=b-a; if(d>0.005)w++; else if(d<-0.005)l++; else t++;});
-  return {w,t,l};
-}
-
-/* ============================== fixed-risk rescale ============================== */
-function riskOf(r,fill){
-  if(r.entry==null||r.sl==null) return null;
-  if(fill==='solo') return Math.abs(r.entry-r.sl);
-  if(r.l1==null) return null;
-  return Math.abs((r.entry+r.l1)/2 - r.sl);
-}
-function fixedRiskVal(r,key){
-  const o=OF[key], v=cellVal(r,key);
-  if(v==null||o.fill==='solo') return v;
-  const rs=riskOf(r,'solo'), rf=riskOf(r,o.fill);
-  if(rs==null||rf==null||rf===0) return null;
-  return v*(rf/rs);
-}
-
-/* ============================== client-side "derived" stopgap =============================
-   The Notion-side degeneration fix (lad/sc := solo when L1 never filled) is staged but not
-   yet applied to every column live. Until it lands, mirror it here so the board reads
-   correctly today. Cells produced this way are tagged 'derived', never shown as measured. */
-function cellState(r,key){
-  const o=OF[key], raw=r.o?r.o[key]:null;
-  if(raw!=null) return 'measured';
-  if(o.fill!=='solo' && r.L1Filled===false){
-    const sk=soloKey(o.mg,o.tgt);
-    if(r.o && r.o[sk]!=null) return 'derived';
-  }
-  return 'blank'; // resolved to structural / closeable below
-}
-function cellVal(r,key){
-  const st=cellState(r,key);
-  if(st==='measured') return r.o[key];
-  if(st==='derived'){const o=OF[key]; return r.o[soloKey(o.mg,o.tgt)];}
-  return null;
-}
-function cellBlankReason(r,key){
-  const o=OF[key];
-  if(o.fill!=='solo' && r.L1Filled) return null; // not applicable-blank, it's a real trail gap below
-  if(o.fill==='solo' && r.maxRun==null) return 'structural'; // max run missing entirely
-  return 'closeable'; // trail ran past anchor, evidence never logged
-}
-
-/* ============================== filters ============================== */
-const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
-const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
-  ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
-function applyFilters(){
-  TRADES = ALL.filter(t => (ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET) && (TF==='all'||t.Timeframe===TF)).sort(chrono);
-}
-
-/* ============================== dot + whisker mark ============================== */
-// domain fixed across the whole board so every mark is comparable at a glance
-const DOMAIN=[-1.2,2.8];
-function xPos(v,w){ return ((v-DOMAIN[0])/(DOMAIN[1]-DOMAIN[0]))*w; }
-function whiskerSVG(ci,opts){
-  opts=opts||{};
-  const w=opts.w||300, h=opts.h||34, id=opts.id||('w'+Math.random().toString(36).slice(2));
-  const zero=xPos(0,w);
-  if(!ci.n) return `<svg viewBox="0 0 ${w} ${h}"><line x1="${zero}" y1="4" x2="${zero}" y2="${h-4}" stroke="var(--zero)" stroke-width="1"/><text x="4" y="${h/2+4}" fill="#3d4553" font-size="10">no data</text></svg>`;
-  const xLo=xPos(ci.lo,w), xHi=xPos(ci.hi,w), xM=xPos(ci.mean,w);
-  const crosses = ci.lo<0 && ci.hi>0;
-  const col = crosses ? '#6b7280' : (ci.mean>=0?'var(--pos)':'var(--neg)');
-  return `<svg viewBox="0 0 ${w} ${h}">
-    <line x1="${zero}" y1="2" x2="${zero}" y2="${h-2}" stroke="var(--zero)" stroke-width="1"/>
-    <line x1="${xLo}" y1="${h/2}" x2="${xHi}" y2="${h/2}" stroke="${col}" stroke-width="1.5" opacity="${crosses?0.55:0.85}"/>
-    <line x1="${xLo}" y1="${h/2-4}" x2="${xLo}" y2="${h/2+4}" stroke="${col}" stroke-width="1.5" opacity="0.6"/>
-    <line x1="${xHi}" y1="${h/2-4}" x2="${xHi}" y2="${h/2+4}" stroke="${col}" stroke-width="1.5" opacity="0.6"/>
-    <circle cx="${xM}" cy="${h/2}" r="4.5" fill="${col}" stroke="#0e1117" stroke-width="1.5"/>
-  </svg>`;
-}
-// anchored-increment: solo dot as the base mark, lad shown as a hairline extension off it —
-// never a peer dot, so it cannot be misread as an independent measurement
-function incrementSVG(soloCi, ladPS, ladFX, w,h){
-  if(!soloCi.n) return whiskerSVG(soloCi,{w,h});
-  const zero=xPos(0,w), xSolo=xPos(soloCi.mean,w);
-  const xLo=xPos(soloCi.lo,w), xHi=xPos(soloCi.hi,w);
-  const col = (soloCi.lo<0&&soloCi.hi>0) ? '#6b7280' : (soloCi.mean>=0?'var(--pos)':'var(--neg)');
-  let extra='';
-  if(ladPS!=null){
-    const xPS=xPos(soloCi.mean+ladPS,w);
-    extra+=`<line x1="${xSolo}" y1="${h/2}" x2="${xPS}" y2="${h/2}" stroke="#9dc0f6" stroke-width="1" stroke-dasharray="1,2" opacity="0.8"/>`;
-    extra+=`<circle cx="${xPS}" cy="${h/2}" r="2.5" fill="none" stroke="#9dc0f6" stroke-width="1.3"/>`;
-  }
-  if(ladFX!=null){
-    const xFX=xPos(soloCi.mean+ladFX,w);
-    extra+=`<circle cx="${xFX}" cy="${h/2}" r="1.6" fill="#9dc0f6" opacity="0.9"/>`;
-  }
-  return `<svg viewBox="0 0 ${w} ${h}">
-    <line x1="${zero}" y1="2" x2="${zero}" y2="${h-2}" stroke="var(--zero)" stroke-width="1"/>
-    <line x1="${xLo}" y1="${h/2}" x2="${xHi}" y2="${h/2}" stroke="${col}" stroke-width="1.5" opacity="0.55"/>
-    <circle cx="${xSolo}" cy="${h/2}" r="4" fill="${col}" stroke="#0e1117" stroke-width="1.5"/>
-    ${extra}
-  </svg>`;
-}
-
-/* ============================== L0 — the answer ============================== */
-function bestCell(pool){
-  // rank the 6 stop×target cells on matched SOLO mean (fill is a basis note, not part of the call)
-  let best=null;
-  MGS.forEach(m=>TGTS.forEach(t=>{
-    const key=soloKey(m,t);
-    const ci=ci95(pool.map(r=>cellVal(r,key)).filter(x=>x!=null));
-    if(!ci.n) return;
-    if(!best || ci.mean>best.ci.mean) best={m,t,key,ci};
-  }));
-  return best;
-}
-function answerBlock(pool){
-  const best=bestCell(pool);
-  if(!best) return `<div class="card answer"><div class="empty-note">No trades match this filter yet.</div></div>`;
-  const series=pool.map(r=>cellVal(r,best.key)).filter(x=>x!=null);
-  const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length, scr=series.length-wins-losses;
-  const dd=maxDD(series);
-  const sig = best.ci.lo>0;
-  // find what it's NOT significantly ahead of, for the honest caveat
-  const rivals=[];
-  MGS.forEach(m=>TGTS.forEach(t=>{
-    if(m===best.m&&t===best.t) return;
-    const k=soloKey(m,t), p=paired(best.key,k,pool);
-    if(p.n>0 && !(p.hi<0)) rivals.push(MGNAME[m].split(' ')[0]+' '+t); // not significantly worse than best
-  }));
-  return `<div class="card answer">
-    <div class="eyebrow">Leading policy — entry-only sizing, matched trades</div>
-    <div class="policy">${MGNAME[best.m]} → target ${best.t}</div>
-    <div class="band"><div class="bandnum ${cls(best.ci.mean)}">${fR(best.ci.mean)}</div>
-      <div class="bandci">95% CI [${fR(best.ci.lo)}, ${fR(best.ci.hi)}] · n${best.ci.n}</div></div>
-    <div class="stats">
-      <div class="stat"><div class="k">Win / Scratch / Loss</div><div class="v">${wins} / ${scr} / ${losses}</div></div>
-      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(dd)}</div></div>
-      <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(best.ci.n/4.6))} days</div></div>
-    </div>
-    ${sig ? '' : `<div class="caveat" style="margin-top:9px">This is the leading number, not a proven winner — its 95% interval includes 0.
-      ${rivals.length ? 'Not significantly ahead of: '+rivals.join(', ')+'.' : ''}
-      With ${best.ci.n} trades this board can reliably tell strategies apart only when they differ by roughly a full R — most of the gaps below are smaller than that.</div>`}
-  </div>`;
-}
-
-/* ============================== L1 — the cube ============================== */
-let BASIS='psr'; // 'psr' per-scheme-R (as-computed) | 'fx' fixed-risk
-function cubeBlock(pool){
-  let facets='';
-  MGS.forEach(m=>{
-    let rows='';
-    TGTS.forEach(t=>{
-      const sk=soloKey(m,t), lk=ladKey(m,t);
-      const soloVals=pool.map(r=>cellVal(r,sk)).filter(x=>x!=null);
-      const matchedPool=pool.filter(r=>cellVal(r,sk)!=null && cellVal(r,lk)!=null);
-      const soloCi=ci95(matchedPool.map(r=>cellVal(r,sk)));
-      const ladPS = matchedPool.length ? mean(matchedPool.map(r=>cellVal(r,lk))) - soloCi.mean : null;
-      const ladFX = matchedPool.length ? mean(matchedPool.map(r=>fixedRiskVal(r,lk))) - soloCi.mean : null;
-      const showLad = BASIS==='psr' ? ladPS : ladFX;
-      rows+=`<div class="row">
-        <div class="rowlbl"><span>→ ${t}</span><span>${fR(soloCi.mean??0)} n${soloCi.n}${matchedPool.length?' <span style="opacity:.6">+'+fR(showLad)+' lad</span>':''}</span></div>
-        ${incrementSVG(soloCi, BASIS==='psr'?ladPS:null, BASIS==='fx'?ladFX:null, 300,30)}
-      </div>`;
-    });
-    // bottom-of-facet: paired delta between the two targets, solo basis
-    const d=paired(soloKey(m,'1.618'),soloKey(m,'2.272'),pool);
-    facets+=`<div class="facet">
-      <div class="fname">${MGNAME[m]}</div>
-      <div class="fsub">solo fill, entry-only sizing</div>
-      ${rows}
-      <div class="marginrow"><span>2.272 − 1.618</span><b class="${d.n?cls(d.mean):''}">${d.n?fR(d.mean)+(d.lo>0?' ↑':d.hi<0?' ↓':' · ns'):'—'}</b></div>
-    </div>`;
-  });
-  // right margin equivalent: paired delta between stops at each target (printed once, under the grid)
-  const stopDeltas=[];
-  for(let i=0;i<MGS.length;i++)for(let j=i+1;j<MGS.length;j++){
-    TGTS.forEach(t=>{
-      const p=paired(soloKey(MGS[i],t),soloKey(MGS[j],t),pool);
-      if(p.n) stopDeltas.push(`${MGNAME[MGS[j]].split(' ')[0]}−${MGNAME[MGS[i]].split(' ')[0]} @${t}: <b class="${p.lo>0?'pos':p.hi<0?'neg':'mut'}">${fR(p.mean)}</b>${p.lo>0||p.hi<0?' <span style="color:#4ade80">sig</span>':''}`);
-    });
-  }
-  return `<div class="cubewrap">
-    <div class="cubehead">
-      <div class="lbl" style="margin-bottom:0">Which stop, which target — paired on identical trades</div>
-      <div class="tg basistoggle" id="basisTg"><button data-b="psr" class="${BASIS==='psr'?'on':''}">per-scheme R</button><button data-b="fx" class="${BASIS==='fx'?'on':''}">fixed risk</button></div>
-    </div>
-    <div class="facets">${facets}</div>
-    <div class="mini" style="margin-top:8px;padding:8px 10px;background:#141a24;border-radius:8px;border:1px solid #1f2735">
-      <b>Stop-vs-stop, paired</b> (green = 95% CI clears zero): ${stopDeltas.join(' &nbsp;·&nbsp; ')}
-    </div>
-  </div>`;
-}
-
-/* ============================== L1 — data integrity strip ============================== */
-function integrityStrip(pool){
-  let derived=0, closeableSet=new Set(), structural=0, measured=0, total=0;
-  const closeRows=new Set();
-  pool.forEach(r=>OUT.forEach(o=>{
-    total++;
-    const st=cellState(r,o.k);
-    if(st==='measured') measured++;
-    else if(st==='derived') derived++;
-    else{
-      const why=cellBlankReason(r,o.k);
-      if(why==='structural') structural++;
-      else { closeableSet.add(r.num+':'+o.k); closeRows.add(r.num); }
+function tradeR(t, m, mode){
+  const o=t.o||{}, l1=!!t.L1Filled;
+  if(mode==='sc'){
+    if(!l1) return num(o[m.solo]);
+    if('retracedToEntry' in t){
+      if(!t.retracedToEntry) return num(o[m.lad]);
+      return num(o[m.sc]);
     }
-  }));
-  return `<div class="card strip">
-    <span class="n">${measured}</span><span class="mini">measured</span>
-    ${derived?`<span class="n" style="color:var(--derived)">${derived}</span><span class="mini">derived (entry-only mirrored, L1 never filled)</span>`:''}
-    <span class="n todo">${closeableSet.size}</span><span class="mini">closeable — <b>${closeRows.size} chart reading${closeRows.size===1?'':'s'}</b> (rows ${[...closeRows].sort((a,b)=>a-b).join(', ')||'—'}) would close ${closeableSet.size&&closeRows.size?'all':'these'}</span>
-    ${structural?`<span class="n na">${structural}</span><span class="mini">structural (no trade to measure)</span>`:''}
-    <span class="legend" style="margin-left:auto">
-      <span><i class="swatch" style="background:var(--pos)"></i>measured +</span>
-      <span><i class="swatch" style="background:var(--neg)"></i>measured −</span>
-      <span><i class="swatch" style="background:var(--derived);opacity:.6"></i>derived</span>
-      <span><i class="swatch" style="background:var(--closeable)"></i>closeable</span>
-    </span>
-  </div>`;
+    return num(o[m.sc]);
+  }
+  return num(o[l1 ? m.lad : m.solo]);
+}
+function seriesFor(m, pool, mode){ return pool.map(t=>tradeR(t,m,mode)).filter(x=>x!=null); }
+function statFor(m, pool, mode){ const s=seriesFor(m,pool,mode), o=stats(s); o.dd=maxDD(s); return o; }
+const eligible=(m, pool, mode)=>pool.length;
+
+const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
+const chrono=(a,b)=>
+  String(a.date||'').localeCompare(String(b.date||'')) ||
+  ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) ||
+  String(a.created||'').localeCompare(String(b.created||''));
+function applyFilters(){
+  TRADES = ALL.filter(t =>
+    (ASSET==='all' || String(t.Pair||'').toLowerCase()===ASSET) &&
+    (TF==='all'    || t.Timeframe===TF) &&
+    (FILL==='all'  || (FILL==='solo' ? !t.L1Filled : !!t.L1Filled))
+  ).sort(chrono);
 }
 
-/* ============================== L2 — all 18 ranked ============================== */
-function rankedTable(pool){
-  const rows=OUT.map(o=>{
-    const series=pool.map(r=>cellVal(r,o.k)).filter(x=>x!=null);
-    return {o, ci:ci95(series), dd:maxDD(series)};
-  }).sort((a,b)=>(b.ci.n?b.ci.mean:-99)-(a.ci.n?a.ci.mean:-99));
-  const top=Math.max(...rows.map(r=>r.ci.n?Math.abs(r.ci.mean):0),0.01);
+const MIN_N=5;
+const bestOf=list=>{const v=list.filter(x=>x.s.n>0); return v.length?v.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;};
+function bestSolid(list){
+  const solid=list.filter(x=>x.s.n>=MIN_N);
+  if(solid.length){
+    const pick=bestOf(solid);
+    const skipped=list.filter(x=>x.s.n>0&&x.s.n<MIN_N&&x.s.exp>pick.s.exp).sort((a,b)=>b.s.exp-a.s.exp);
+    return {pick, fellBack:false, skipped};
+  }
+  return {pick:bestOf(list), fellBack:true, skipped:[]};
+}
+
+function matrix(pool){
+  const rows=[];
+  METH.forEach(m=>rows.push({m, mode:'blend', s:statFor(m,pool,'blend')}));
+  METH.forEach(m=>rows.push({m, mode:'sc',    s:statFor(m,pool,'sc')}));
+  rows.sort((a,b)=>((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.n?b.s.exp:-Infinity)-(a.s.n?a.s.exp:-Infinity)));
+  const solid=rows.filter(r=>r.s.n>=MIN_N);
+  const top=Math.max(...(solid.length?solid:rows).map(r=>r.s.n?Math.abs(r.s.exp):0),0.01);
   let h='';
-  rows.forEach(r=>{
-    const sig=r.ci.n && !(r.ci.lo<0&&r.ci.hi>0);
-    h+=`<tr><td class="oc">${r.o.k}</td>
-      <td><span class="tag">${r.o.mg.toUpperCase()}</span> ${r.o.tgt} · ${FILLNAME[r.o.fill]}</td>
-      <td style="width:180px">${r.ci.n?whiskerSVG(r.ci,{w:170,h:22}):'<span class="na">no data</span>'}</td>
-      <td class="${r.ci.n?cls(r.ci.mean):'na'}">${r.ci.n?fR(r.ci.mean):'—'}${sig?' <b style="color:#4ade80;font-size:9px">sig</b>':''}</td>
-      <td class="${r.ci.n?'neg':'na'}">${r.ci.n?fDD(r.dd):'—'}</td>
-      <td class="mut">${r.ci.n||'—'}</td></tr>`;
+  rows.forEach((r,i)=>{const s=r.s, thin=s.n>0&&s.n<MIN_N;
+    const best=s.n>=MIN_N && !rows.slice(0,i).some(x=>x.s.n>=MIN_N);
+    const el=eligible(r.m,pool,r.mode)||1;
+    const w=s.n?Math.min(100,Math.abs(s.exp)/top*100):0;
+    const scTag=r.mode==='sc'?' <span class="tag" style="background:#2a1f14;color:#e0b341">50% off</span>':'';
+    h+=`<tr class="${best?'best':''}" style="${thin?'opacity:.5':''}"><td>`+
+       `<span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${scTag}`+
+       (thin?` <span class="mini" style="color:#e0b341">thin</span>`:'')+
+       ` <span class="mini">${Math.round(s.n/el*100)}% of ${el} eligible</span>`+
+       (s.n?`<div class="bar"><i style="width:${w}%;background:${s.exp>=0?'#3fb950':'#f85149'}"></i></div>`:'')+
+       `</td><td class="${s.n?cls(s.exp):'na'}">${s.n?fR(s.exp):'—'}</td>`+
+       `<td>${s.n?Math.round(s.wr*100)+'%':'<span class="na">—</span>'}${s.n&&s.scratches?`<span class="mini"> ${s.scratches}sc</span>`:''}</td>`+
+       `<td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>`+
+       `<td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>`+
+       `<td class="mut">${s.n||'—'}</td></tr>`;});
+  return `<table class="matrix"><thead><tr><th>Stop · target · variant</th><th>Exp</th><th>Win%</th><th>Total</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+}
+
+function compare(pool, mode){
+  mode = mode || 'blend';
+  let h='';
+  MGS.forEach(mg=>{
+    h+=`<div class="cmpgrp">${MG[mg]}</div>`;
+    h+=`<div class="cmp"><div></div>`+TGTS.map(t=>`<div class="h">→ ${t}</div>`).join('')+`</div>`;
+    const cells=TGTS.map(tg=>{const m=METH.find(x=>x.mg===mg&&x.tgt===tg); return {m,s:statFor(m,pool,mode)};});
+    const solid=cells.filter(c=>c.s.n>=MIN_N);
+    const win=solid.length?solid.slice().sort((a,b)=>b.s.exp-a.s.exp)[0]:null;
+    h+=`<div class="cmp" style="margin-top:6px"><div class="h">exp</div>`;
+    cells.forEach(c=>{const st=c.s, thin=st.n>0&&st.n<MIN_N?' <span style="color:#e0b341">thin</span>':'';
+      h+=`<div class="cell${win&&win.m.k===c.m.k?' win':''}"><div class="v ${st.n?cls(st.exp):'na'}">${st.n?fR(st.exp):'—'}</div>`+
+         `<div class="k">${st.n?Math.round(st.wr*100)+'% · n'+st.n+thin:'no data'}</div></div>`;});
+    h+=`</div>`;});
+  return h;
+}
+
+function control(pool){
+  let h=`<table class="ctl"><thead><tr><th>Target</th><th>BE all rows</th><th>BE matched</th><th>EVS</th><th>PVS</th><th>EVS edge</th><th>PVS edge</th><th>n</th></tr></thead><tbody>`;
+  let flips=0, rows=0;
+  TGTS.forEach(tg=>{
+    const be = METH.find(m=>m.mg==='none'&&m.tgt===tg);
+    const evs = METH.find(m=>m.mg==='evs'&&m.tgt===tg);
+    const pvs = METH.find(m=>m.mg==='pvs'&&m.tgt===tg);
+    const full = mean(seriesFor(be, pool, 'blend'));
+    const matched = pool.filter(t=>tradeR(t,evs,'blend')!=null && tradeR(t,be,'blend')!=null);
+    if(!matched.length) return; rows++;
+    const mb = mean(matched.map(t=>tradeR(t,be,'blend')));
+    const me = mean(matched.map(t=>tradeR(t,evs,'blend')));
+    const mp = mean(matched.map(t=>tradeR(t,pvs,'blend')).filter(x=>x!=null));
+    const eFull = mean(seriesFor(evs, pool, 'blend'));
+    const pFull = mean(seriesFor(pvs, pool, 'blend'));
+    const eApp = eFull-full, eCtl = me-mb;
+    const pApp = (pFull==null||full==null)?null:pFull-full, pCtl = (mp==null?null:mp-mb);
+    if(eApp>0.005&&eCtl<-0.005) flips++;
+    if(pCtl!=null&&pApp!=null&&pApp>0.005&&pCtl<-0.005) flips++;
+    h+=`<tr><td>${tg}</td><td class="${cls(full)}">${fR(full)}</td><td class="${cls(mb)}">${fR(mb)}</td>`+
+       `<td class="${cls(me)}">${fR(me)}</td><td class="${mp==null?'na':cls(mp)}">${mp==null?'—':fR(mp)}</td>`+
+       `<td class="${cls(eCtl)}">${fR(eApp)} → <b>${fR(eCtl)}</b></td>`+
+       `<td class="${pCtl==null?'na':cls(pCtl)}">${pCtl==null?'—':fR(pApp)+' → <b>'+fR(pCtl)+'</b>'}</td>`+
+       `<td class="mut">${matched.length}</td></tr>`;});
+  h+=`</tbody></table>`;
+  if(!rows) return `<div class="empty-note">No row yet carries both a trail value and its break-even counterpart.</div>`;
+  h+=`<div class="mini" style="margin-top:8px">"Edge" is the trail's advantage over break-even: the apparent figure from each one's own sample, then the same comparison on identical rows.</div>`;
+  if(flips) h+=`<div class="warn"><b>${flips} of the comparisons reverse sign under the control.</b> On its own sample the trail looks better; on the same trades it is worse. Read the controlled column, not the apparent one.</div>`;
+  return h;
+}
+
+function bestByGroup(pool, groups, mode){
+  mode = mode || 'blend';
+  let h='';
+  groups.forEach(([lbl,keys])=>{
+    const sub=METH.filter(m=>keys.includes(m.k)).map(m=>({m,s:statFor(m,pool,mode)}));
+    if(!sub.length){h+=`<div class="rowline"><span><span class="pill">${lbl}</span> —</span><span class="mut">no methodology</span></div>`;return;}
+    const r=bestSolid(sub), b=r.pick;
+    h+=`<div class="rowline"><span><span class="pill">${lbl}</span> ${b?nameOf(b.m):'—'}</span>`+
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini">n'+b.s.n+(r.fellBack&&b.s.n<MIN_N?' thin':'')+'</span>':'—'}</span></div>`;
+    if(r.skipped.length){
+      const s=r.skipped[0];
+      h+=`<div class="mini" style="color:#e0b341;padding:0 0 5px">${nameOf(s.m)} shows ${fR(s.s.exp)} but only n${s.s.n}`+
+         (r.skipped.length>1?` (and ${r.skipped.length-1} more thin)`:'')+` — too thin to rank.</div>`;}
   });
-  return `<table class="matrix"><thead><tr><th></th><th>Stop · target · fill</th><th>95% CI</th><th>mean</th><th>Max DD</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return h;
+}
+const byMg  = pool=>bestByGroup(pool, MGS.map(m=>[MGSHORT[m], METH.filter(x=>x.mg===m).map(x=>x.k)]));
+const byTgt = pool=>bestByGroup(pool, TGTS.map(t=>['→ '+t, METH.filter(x=>x.tgt===t).map(x=>x.k)]));
+
+function sessions(pool){
+  const ses=[...new Set(pool.map(t=>t.Session).filter(Boolean))];
+  if(!ses.length) return '<div class="empty-note">No Session tagged yet.</div>';
+  const order=['Asia','London','NY AM','NY PM'];
+  ses.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  let h='';
+  ses.forEach(se=>{const sub=pool.filter(t=>t.Session===se);
+    const r=bestSolid(METH.map(m=>({m,s:statFor(m,sub,'blend')}))), b=r.pick;
+    const thin=b&&b.s.n<MIN_N;
+    h+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?nameOf(b.m):'—'}</span>`+
+       `<span class="${b?cls(b.s.exp):'mut'}">${b?fR(b.s.exp)+' <span class="mini'+(thin?'" style="color:#e0b341"':'"')+'>n'+b.s.n+(thin?' too thin':'')+'</span>':'—'}</span></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Sessions hold a fraction of the sample each, so most of these will read "too thin" until the log is much larger.</div>`;
+  return h;
 }
 
-/* ============================== L2 — why laddering looks better than it is ============================== */
-function laddering(pool){
-  let totW=0,totT=0,totL=0, rowsHtml='';
-  MGS.forEach(m=>TGTS.forEach(t=>{
-    const sk=soloKey(m,t), lk=ladKey(m,t);
-    const wtl=winTieLoss(sk,lk,pool);
-    totW+=wtl.w; totT+=wtl.t; totL+=wtl.l;
-    const total=wtl.w+wtl.t+wtl.l||1;
-    rowsHtml+=`<div class="rowline" style="display:block">
-      <div style="display:flex;justify-content:space-between"><span>${m.toUpperCase()} → ${t}</span><span class="mini">${wtl.w}W / ${wtl.t}T / ${wtl.l}L</span></div>
-      <div style="display:flex;height:7px;border-radius:3px;overflow:hidden;margin-top:3px">
-        <div style="width:${wtl.w/total*100}%;background:var(--pos)"></div>
-        <div style="width:${wtl.t/total*100}%;background:#374151"></div>
-        <div style="width:${wtl.l/total*100}%;background:var(--neg);min-width:${wtl.l?'2px':'0'}"></div>
-      </div></div>`;
-  }));
-  const total=totW+totT+totL||1;
-  return `<div style="margin-bottom:10px">
-    <div class="rowline" style="border-top:0"><b>All 126 pairs, per-scheme R</b><span class="mini">${totW}W / ${totT}T / ${totL}L</span></div>
-    <div style="display:flex;height:10px;border-radius:4px;overflow:hidden;margin:4px 0 12px">
-      <div style="width:${totW/total*100}%;background:var(--pos)"></div>
-      <div style="width:${totT/total*100}%;background:#374151"></div>
-      <div style="width:${totL/total*100}%;background:var(--neg);min-width:${totL?'2px':'0'}"></div>
-    </div>
-  </div>${rowsHtml}
-  <div class="mini" style="margin-top:8px">Laddered risk sits closer to the stop than entry-only risk, which inflates its R independent of whether laddering is a good idea. The loss arm above is measured at 0px on every row — not because laddering can't lose, but because this metric can't show it losing, by construction. Use the paired deltas in the cube above for the real comparison.</div>`;
+function fillMix(pool){
+  const c={solo:0,lad:0};
+  pool.forEach(t=>{ if(t.L1Filled) c.lad++; else c.solo++; });
+  const tot=c.solo+c.lad||1;
+  return `<div class="rowline"><span>Entry only <span class="mini">L1 did not fill</span></span><span><b>${c.solo}</b> <span class="mini">${Math.round(c.solo/tot*100)}%</span></span></div>`+
+         `<div class="rowline"><span>Entry + L1 filled <span class="mini">blended full-size position</span></span><span><b>${c.lad}</b> <span class="mini">${Math.round(c.lad/tot*100)}%</span></span></div>`+
+         `<div class="mini" style="margin-top:6px">Each methodology blends per-trade: solo if L1 didn't fill, lad if it did. Use the FILL filter above to segment.</div>`;
 }
 
-/* ============================== L2 — trail reach (kept from prior build) ============================== */
+function insurance(pool){
+  const l1Pool = pool.filter(t => t.L1Filled);
+  if(!l1Pool.length) return `<div class="empty-note">No L1-filled trades in this filter yet.</div>`;
+  let h = `<table class="matrix"><thead><tr><th>Stop · target</th><th>OFF · no partial</th><th>ON · 50% partial</th><th>Delta</th><th>n</th></tr></thead><tbody>`;
+  METH.forEach(m => {
+    const off = statFor(m, l1Pool, 'blend');
+    const on  = statFor(m, l1Pool, 'sc');
+    const delta = (off.n && on.n) ? (on.exp - off.exp) : null;
+    const thin = off.n>0 && off.n<MIN_N;
+    h += `<tr style="${thin?'opacity:.5':''}"><td><span class="tag">${MGSHORT[m.mg]}</span> ${m.tgt}${thin?' <span class="mini" style="color:#e0b341">thin</span>':''}</td>`+
+         `<td class="${off.n?cls(off.exp):'na'}">${off.n?fR(off.exp):'—'}</td>`+
+         `<td class="${on.n?cls(on.exp):'na'}">${on.n?fR(on.exp):'—'}</td>`+
+         `<td class="${delta==null?'na':cls(delta)}">${delta==null?'—':fR(delta)}</td>`+
+         `<td class="mut">${off.n||'—'}</td></tr>`;
+  });
+  h += `</tbody></table>`;
+  h += `<div class="mini" style="margin-top:6px">L1-filled trades only. <b>OFF</b> = ride the full ladder (no partial). <b>ON</b> = bank a 50% partial at entry when price retraces after L1. Positive delta = the partial helped on average; negative = it cost. Trades that filled L1 but never retraced score identically under both — their contribution to the delta is zero.</div>`;
+  return h;
+}
+
 function trailReach(pool){
   const defs=[['Entry-VWAP trail','evsHit1','evsHit2','evs'],['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
   let h='';
   defs.forEach(([lbl,h1,h2,mg])=>{
-    const key=t=>OUT.find(o=>o.mg===mg&&o.tgt==='2.272'&&o.fill===(t.L1Filled?'lad':'solo')).k;
-    const logged=pool.filter(t=>t.o&&num(t.o[key(t)])!=null).map(t=>({t,r:num(t.o[key(t)])}));
+    const m = METH.find(x=>x.mg===mg&&x.tgt==='2.272');
+    const logged = pool.filter(t=>tradeR(t,m,'blend')!=null).map(t=>({t, r:tradeR(t,m,'blend')}));
     const n=logged.length;
     if(!n){ h+=`<div class="rowline"><span>${lbl}</span><span class="mut">not logged yet</span></div>`; return; }
     const far=logged.filter(x=>x.t[h2]), mid=logged.filter(x=>!x.t[h2]&&x.t[h1]), early=logged.filter(x=>!x.t[h2]&&!x.t[h1]);
-    const leg=(g,c,txt)=>{const m=mean(g.map(x=>x.r));
-      return `<div style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${c}">■</span> ${txt}</span>
-        <span><b>${g.length}</b> <span class="${m==null?'mut':cls(m)}">${m==null?'—':'avg '+fR(m)}</span></span></div>`;};
-    h+=`<div class="rowline" style="display:block"><div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>
-      <div class="mini">${leg(far,'var(--pos)','ran all the way to 2.272')}${leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')}${leg(early,'var(--closeable)','stopped before 1.618')}</div></div>`;
-  });
-  return h+'<div class="mini" style="margin-top:6px">Stopping short is not a loss — the average R on each bucket says what it was actually worth.</div>';
+    const leg=(g,c,txt)=>{const mv=mean(g.map(x=>x.r));
+      return `<div style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${c}">■</span> ${txt}</span>`+
+             `<span><b>${g.length}</b> <span class="${mv==null?'mut':cls(mv)}">${mv==null?'—':'avg '+fR(mv)}</span></span></div>`;};
+    h+=`<div class="rowline" style="display:block"><div style="display:flex;justify-content:space-between"><span>${lbl}</span><span class="mini">n${n}</span></div>`+
+       `<div class="mini">`+leg(far,'#3fb950','ran all the way to 2.272')+leg(mid,'#2d7dd2','stopped between 1.618 and 2.272')+leg(early,'#c9a227','stopped before 1.618')+`</div></div>`;});
+  h+=`<div class="mini" style="margin-top:6px">Stopping short is not a loss — the average R on each bucket says what it was actually worth. Scored to 2.272 at each trade's actual fill.</div>`;
+  return h;
 }
 
-/* ============================== render ============================== */
-function disclosure(id,title,bodyHtml){
-  const open=OPEN.has(id);
-  return `<details id="${id}" ${open?'open':''}><summary>${title}</summary><div class="body">${bodyHtml}</div></details>`;
-}
 function render(){
   const pool=TRADES, board=document.getElementById('board');
+  document.getElementById('foot').innerHTML =
+    'SIX methodologies (stop × target), each blended per trade by whether L1 actually filled. '+
+    'Fill is a FILTER now, not a methodology axis — entry-only and entry+L1 are the same trade, not different strategies. '+
+    'The 50%-off variant is a full methodology (always trade; bank a 50% partial when L1 fills and price retraces). Shown as its own card, side-by-side insurance test, and ranked alongside the blended methodologies in the big matrix. '+
+    'Max DD is the worst peak-to-trough in cumulative R for that methodology, walked in trade order — date then session, not the order rows were typed. '+
+    'A methodology is only crowned once it has n'+MIN_N+'; win% excludes 0.00R scratches from both sides.';
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
-  board.innerHTML = answerBlock(pool) + cubeBlock(pool) + integrityStrip(pool) +
-    disclosure('d-all','All 18 outcomes, ranked', rankedTable(pool)) +
-    disclosure('d-lad','Why laddering looks better than it is', laddering(pool)) +
-    disclosure('d-trail','How far the trails ran', trailReach(pool)) +
-    `<div class="foot">Every comparison on this board is paired on identical trades (not pooled averages over whatever happened to be scored), because outcomes here differ by 0.1–0.4R and unmatched row sets alone can move a mean by more than that. R comes straight from the Notion outcome formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
-  document.querySelectorAll('#board details').forEach(d=>{
-    d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
-  });
-  document.querySelectorAll('#basisTg button').forEach(b=>{
-    b.onclick=()=>{ BASIS=b.dataset.b; render(); };
-  });
+  const cards=METH.map(m=>({m,s:statFor(m,pool,'blend')}));
+  const bres=bestSolid(cards), best=bres.pick, bs=best?best.s:{n:0};
+  board.innerHTML=`
+    <div class="grid2">
+      <div><div class="card top"><div class="crown">🏆 Best methodology (blended fill)</div>
+        <div class="combo-md">${best?nameOf(best.m):'—'}</div>
+        <div class="mini" style="margin-bottom:6px">${best?MG[best.m.mg]+' · target '+best.m.tgt:''}${bres.fellBack&&bs.n<MIN_N?' <span style="color:#e0b341">· thin sample, n'+bs.n+'</span>':''}</div>
+        ${bres.skipped.length?`<div class="mini" style="color:#e0b341;margin-bottom:6px">Passed over as too thin: ${bres.skipped.slice(0,4).map(s=>nameOf(s.m)+' '+fR(s.s.exp)+' n'+s.s.n).join(' · ')}${bres.skipped.length>4?' …':''}</div>`:''}
+        <div class="stats">
+          <div class="stat"><div class="k">Expectancy</div><div class="v ${bs.n?cls(bs.exp):'mut'}">${bs.n?fR(bs.exp):'—'}</div></div>
+          <div class="stat"><div class="k">Win rate</div><div class="v">${bs.n?Math.round(bs.wr*100)+'%':'—'}</div></div>
+          <div class="stat"><div class="k">Total R</div><div class="v ${bs.n?cls(bs.total):'mut'}">${bs.n?fR(bs.total):'—'}</div></div>
+          <div class="stat"><div class="k">Max DD</div><div class="v neg">${bs.n?fDD(bs.dd):'—'}</div></div>
+        </div></div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">Best per stop management</div>${byMg(pool)}</div>
+        <div class="card"><div class="lbl">Best per target</div>${byTgt(pool)}</div></div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Trail vs break-even, on identical rows</div>${control(pool)}</div>
+        <div class="card" style="margin-bottom:12px"><div class="lbl">How far the trails ran</div>${trailReach(pool)}</div>
+        <div class="card"><div class="lbl">How the fills actually landed</div>${fillMix(pool)}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Stop × target — expectancy (blended fill)</div>
+      ${compare(pool,'blend')}
+      <div class="mini" style="margin-top:10px">Six methodologies, per-trade blended by whether L1 actually filled. Use the FILL filter above to view Entry-only or Entry+L1 subsets in isolation.</div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">50% insurance test — OFF vs ON, side by side (L1-filled trades)</div>
+      ${insurance(pool)}
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">50%-off variant — run the 50%-off methodology on every trade</div>
+      ${compare(pool,'sc')}
+      <div class="mini" style="margin-top:10px">Same six methodologies, scored as if you were running the 50%-off approach: bank a 50% partial at entry when L1 fills AND price retraces. When the partial rule doesn't fire (L1 never filled, or L1 filled but price never came back to entry), the trade scores exactly like the blended methodology — so the sc column only differs from blended on retraced L1-filled trades.</div>
+    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">All methodologies, ranked by expectancy — blended + 50%-off variants (12 rows)</div>
+      <div style="margin-top:8px">${matrix(pool)}</div>
+    </div>
+    <div class="card"><div class="lbl">Best methodology by session (blended)</div>${sessions(pool)}</div>`;
 }
 
-/* ============================== data + wiring ============================== */
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig';
 async function poll(){
   const st=document.getElementById('status');
@@ -458,7 +349,7 @@ async function poll(){
     ALL=(j&&j.trades)||[];
     applyFilters(); render();
     lastOk=Date.now();
-    st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
     firstLoad=false;
   }catch(e){
     if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
@@ -472,10 +363,12 @@ function wire(id,attr,set){
     b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
       document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
       set(v); applyFilters(); render();
-      document.getElementById('status').textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${TRADES.length} trades · switched`; };});
+      document.getElementById('status').textContent=
+        `${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${FILL.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · switched`; };});
 }
 wire('assetTg','a',v=>{ if(v===undefined) return ASSET; ASSET=v; });
 wire('tfTg','t',  v=>{ if(v===undefined) return TF;    TF=v;    });
+wire('fillTg','f',v=>{ if(v===undefined) return FILL;  FILL=v;  });
 poll(); setInterval(poll,5000);
 </script>
 </body></html>
