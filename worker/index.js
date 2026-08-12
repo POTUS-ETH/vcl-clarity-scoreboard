@@ -302,6 +302,9 @@ async function computeCraig(token, dbId) {
       pvsHit2:   getProp(t, 'PVS Hit 2.272'),
       evsPrice:  getProp(t, 'EVS Price'),
       pvsPrice:  getProp(t, 'PVS Price'),
+      retracedToEntry: getProp(t, 'Retraced to Entry After L1'), // definitive gate for the 50%-off partial firing
+      movedStopToBE:   getProp(t, 'Moved Stop to BE'),
+      closedAtBE:      getProp(t, 'Closed at BE'),
       // raw inputs, so a consumer can check a published R against its own geometry
       entry:     getProp(t, 'Entry Price'),
       l1:        getProp(t, 'L1 Price'),
