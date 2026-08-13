@@ -207,6 +207,13 @@ const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
 function applyFilters(){
   TRADES = ALL.filter(t => ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET).sort(chrono);
 }
+// display-only row numbers, computed fresh each poll from chrono order (date, then session, then
+// created — no ties). Not a Notion property: nothing reads or depends on this but this UI, so
+// there's nothing to break or delete. Assigned over the full unfiltered set so a trade's number
+// doesn't shift when the asset filter changes.
+function assignRowNumbers(all){
+  all.slice().sort(chrono).forEach((t,i)=>{ t.num=i+1; });
+}
 
 /* ============================== dot + whisker mark ============================== */
 const DOMAIN=[-1.2,2.8];
@@ -438,6 +445,7 @@ async function poll(){
     if(!res.ok) throw new Error('worker '+res.status);
     const j=await res.json();
     ALL=(j&&j.trades)||[];
+    assignRowNumbers(ALL);
     applyFilters(); render();
     lastOk=Date.now();
     st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;

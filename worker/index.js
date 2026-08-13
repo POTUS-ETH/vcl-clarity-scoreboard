@@ -286,7 +286,6 @@ async function computeCraig(token, dbId) {
     CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
     rows.push({
       id:        t.id,            // stable row identity — lets a board figure be traced to a trade
-      num:       getProp(t, '#'), // permanent row number, for citing a trade in discussion
       created:   t.created_time,  // the only reliable ordering key; Date has no time component
       Trade:     title,
       Direction: getProp(t, 'Direction'),
