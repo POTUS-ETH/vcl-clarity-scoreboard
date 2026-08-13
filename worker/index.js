@@ -282,6 +282,9 @@ async function computeCraig(token, dbId) {
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
     if (title.toUpperCase().startsWith('TEST')) continue;
+    // an empty "+ New" row has no Entry Price at all — distinct from a real trade with blank
+    // outcomes, which must never be skipped. This is the one field every logged attempt has.
+    if (getProp(t, 'Entry Price') == null) continue;
     const o = {};
     CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
     rows.push({
