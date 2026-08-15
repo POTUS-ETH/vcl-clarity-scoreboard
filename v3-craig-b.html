@@ -361,9 +361,8 @@ function cubeBlock(pool){
     TGTS.forEach(t=>{
       const m=findM(mg,t), s=statsFor(m,pool,'blend');
       rows+=`<div class="row">
-        <div class="rowlbl"><span>→ ${t}</span><span>${fR(s.mean??0)} n${s.n}</span></div>
+        <div class="rowlbl"><span>→ ${t} · ${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>${fR(s.mean??0)} n${s.n} · Σ ${s.n?fR(s.total):'—'}</span></div>
         ${equityCurveSVG(seriesFor(m,pool,'blend'),300,44)}
-        <div class="rowlbl" style="margin-top:2px"><span>${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>Σ ${s.n?fR(s.total):'—'}</span></div>
       </div>`;
     });
     const d=paired(findM(mg,'1.618'),'blend',findM(mg,'2.272'),'blend',pool);
