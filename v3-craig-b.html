@@ -58,7 +58,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .facet .row{margin-bottom:10px}
 .facet .row:last-child{margin-bottom:0}
 .facet .rowlbl{font-size:10px;color:var(--mut);margin-bottom:2px;display:flex;justify-content:space-between}
-.facet svg{display:block;width:100%;height:26px}
+.facet svg{display:block;width:100%;height:44px}
 .marginrow{display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid #232a36;font-size:10px;color:var(--mut)}
 .marginrow b{color:var(--ink)}
 .ctlstrip{margin-top:8px;padding:8px 10px;background:#141a24;border-radius:8px;border:1px solid #1f2735;font-size:10.5px;line-height:1.8}
@@ -117,7 +117,8 @@ details.l2 .body{padding:0 14px 14px}
       <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; EVS trails a VWAP anchored at entry; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
       <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against or filter for.</p>
       <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
-      <p><b>Reading a mark.</b> Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
+      <p><b>The curve under each cube row</b> is that methodology's cumulative R, trade by trade, in the order the trades actually happened — not dollars, not equity, just R stacked on itself. Blue and rising means it's ahead net; red and sinking means it's behind. It's the same information as expectancy and LIS/WIS above it, just shown as a shape instead of numbers, so a streak or a slow bleed is visible at a glance instead of implied by a stat.</p>
+      <p><b>Reading a dot-and-line mark</b> (the ranked table below, and the paired comparisons). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
       <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size — five -0.2R losses in a row is a 5-trade LIS but barely dents cumulative R. All three matter for different reasons: drawdown is what your equity curve actually lived through; LIS is what your discipline has to survive trade-to-trade; WIS is how long a hot streak can run before mean reversion — useful context for not oversizing off a run that was never going to last.</p>
       <p><b>Why every comparison is paired.</b> Outcomes here differ by only 0.1–0.4R, and the trail methodologies (EVS/PVS) have fewer logged trades than BE — they need chart-read evidence BE doesn't. Averaging each side over whatever trades happen to be scored can flip a ranking that a fair, same-trades comparison would not. So every delta on this board — stop vs. stop, 50%-off vs. full ladder, runner-up vs. leader — is computed only over rows scored on both sides being compared.</p>
@@ -240,6 +241,36 @@ function whiskerSVG(ci,w,h){
   </svg>`;
 }
 
+// cumulative-R equity curve for a trade series, walked in the same chrono order the
+// pool is already sorted in. Area-filled line, zero baseline always drawn so a curve
+// that dips below zero and recovers is legible, not just "line went up".
+function equityCurveSVG(series, w, h){
+  w=w||300; h=h||44;
+  if(!series.length) return `<svg viewBox="0 0 ${w} ${h}"><line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="var(--zero)" stroke-width="1"/><text x="4" y="${h/2+4}" fill="#3d4553" font-size="10">no data</text></svg>`;
+  const cum=[0]; series.forEach(r=>cum.push(cum[cum.length-1]+r));
+  const minV=Math.min(0,...cum), maxV=Math.max(0,...cum);
+  const range=(maxV-minV)||1, n=cum.length-1;
+  const pad=3;
+  const px=i=>(i/n)*w;
+  const py=v=>pad+(1-(v-minV)/range)*(h-2*pad);
+  const pts=cum.map((v,i)=>[px(i),py(v)]);
+  const line=pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const base=py(0).toFixed(1);
+  const area=`${line} L${px(n).toFixed(1)},${base} L${px(0).toFixed(1)},${base} Z`;
+  const final=cum[cum.length-1];
+  const col = final>0.005?'var(--pos)':(final<-0.005?'var(--neg)':'#6b7280');
+  const gid='eq'+Math.abs(final*1000|0)+'_'+n;
+  return `<svg viewBox="0 0 ${w} ${h}">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${col}" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line x1="0" y1="${base}" x2="${w}" y2="${base}" stroke="var(--zero)" stroke-width="1"/>
+    <path d="${area}" fill="url(#${gid})" stroke="none"/>
+    <path d="${line}" fill="none" stroke="${col}" stroke-width="1.5"/>
+  </svg>`;
+}
+
 /* ============================== L0 — leading policy ============================== */
 function bestCandidate(pool){
   const all=[];
@@ -294,7 +325,7 @@ function cubeBlock(pool){
       const m=findM(mg,t), s=statsFor(m,pool,'blend');
       rows+=`<div class="row">
         <div class="rowlbl"><span>→ ${t}</span><span>${fR(s.mean??0)} n${s.n}</span></div>
-        ${whiskerSVG(s,300,26)}
+        ${equityCurveSVG(seriesFor(m,pool,'blend'),300,44)}
         <div class="rowlbl" style="margin-top:2px"><span>${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>Σ ${s.n?fR(s.total):'—'}</span></div>
       </div>`;
     });
