@@ -106,6 +106,7 @@ details.l2 .body{padding:0 14px 14px}
     <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies, each scored on every trade · paired on identical rows</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
+      <div class="tg" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -150,7 +151,7 @@ const TGTS=['1.618','2.272'];
 const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 const findM=(mg,tgt)=>METH.find(m=>m.mg===mg&&m.tgt===tgt);
 
-let TRADES=[], ALL=[], ASSET='all', firstLoad=true, lastOk=null;
+let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true, lastOk=null;
 const OPEN=new Set();
 
 /* ============================== stats primitives ============================== */
@@ -205,7 +206,7 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET).sort(chrono);
+  TRADES = ALL.filter(t => (ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET) && (TF==='all'||t.Timeframe===TF)).sort(chrono);
 }
 // display-only row numbers, computed fresh each poll from chrono order (date, then session, then
 // created — no ties). Not a Notion property: nothing reads or depends on this but this UI, so
@@ -448,7 +449,7 @@ async function poll(){
     assignRowNumbers(ALL);
     applyFilters(); render();
     lastOk=Date.now();
-    st.textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    st.textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
     firstLoad=false;
   }catch(e){
     if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
@@ -462,9 +463,10 @@ function wire(id,attr,set){
     b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
       document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
       set(v); applyFilters(); render();
-      document.getElementById('status').textContent=`${ASSET.toUpperCase()} · ${TRADES.length} trades · switched`; };});
+      document.getElementById('status').textContent=`${ASSET.toUpperCase()} · ${TF.toUpperCase()} · ${TRADES.length} trades · switched`; };});
 }
 wire('assetTg','a',v=>{ if(v===undefined) return ASSET; ASSET=v; });
+wire('tfTg','t',  v=>{ if(v===undefined) return TF;    TF=v;    });
 poll(); setInterval(poll,5000);
 </script>
 </body></html>
