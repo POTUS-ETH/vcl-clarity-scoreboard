@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TCL Fib — Grant · two structures, every management scored</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
+.wrap{max-width:1040px;margin:0 auto}
+.hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.hd h1{font-size:17px;font-weight:700;letter-spacing:.5px}
+.hd .sub{font-size:10px;color:#8b93a1}
+.tg{display:inline-flex;border:1px solid #2a3140;border-radius:6px;overflow:hidden}
+.tg button{border:0;background:#161b24;padding:4px 9px;font:inherit;font-size:10px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
+.tg button:first-child{border-left:0}
+.tg button.on{background:#3987e5;color:#fff}
+.mini{font-size:10px;color:#8b93a1}
+.err{color:#e66767;font-size:11px}
+
+:root{
+  --pos:#3987e5; --neg:#e66767; --closeable:#fab219; --sc:#9dc0f6;
+  --zero:#383f4d; --card:#161b24; --border:#232a36; --ink:#e6e8ec; --mut:#8b93a1;
+}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.lbl{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
+.pos{color:var(--pos)}.neg{color:var(--neg)}.mut{color:var(--mut)}.na{color:#3d4553}
+
+/* ---- primer ---- */
+.primer{border:1px solid #2a3140;margin-bottom:10px}
+.primer summary{cursor:pointer;padding:11px 14px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#8fb4e8;list-style:none;display:flex;justify-content:space-between}
+.primer summary::-webkit-details-marker{display:none}
+.primer summary::after{content:'hide';font-size:9px;color:#4a5568;text-transform:none;letter-spacing:0}
+.primer:not([open]) summary::after{content:'show'}
+.primer .body{padding:0 14px 13px;font-size:11.5px;line-height:1.65;color:#c3c9d4}
+.primer .body p{margin-bottom:7px}
+.primer .body p:last-child{margin-bottom:0}
+.primer b{color:var(--ink)}
+
+/* ---- L0 answer ---- */
+.answer{border:1px solid #2a4a72;background:linear-gradient(180deg,#141d2c,#161b24);margin-bottom:10px}
+.answer .eyebrow{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#6fa3e0;margin-bottom:4px}
+.answer .policy{font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.3}
+.answer .band{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.answer .bandnum{font-size:22px;font-weight:700}
+.answer .bandci{font-size:11px;color:var(--mut)}
+.answer .curve{margin-bottom:8px}
+.answer .curve svg{display:block;width:100%;height:70px}
+.answer .caveat{font-size:11px;color:#e0b341;background:#1d1a10;border:1px solid #4a3d18;border-radius:6px;padding:7px 9px;line-height:1.5}
+.answer .stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.answer .stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+.answer .stat .v{font-size:14px;font-weight:700}
+
+/* ---- L1 cube ---- */
+.cubewrap{margin-bottom:10px}
+.facets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:820px){.facets{grid-template-columns:1fr}}
+.facet{background:#141a24;border:1px solid #1f2735;border-radius:8px;padding:10px}
+.facet .fname{font-size:11px;font-weight:700;margin-bottom:2px}
+.fsub{font-size:9.5px;color:var(--mut);margin-bottom:9px;line-height:1.5}
+.facet .row{margin-bottom:10px}
+.facet .row:last-child{margin-bottom:0}
+.facet .rowlbl{font-size:10px;color:var(--mut);margin-bottom:2px;display:flex;justify-content:space-between}
+.facet svg{display:block;width:100%;height:44px}
+.marginrow{display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid #232a36;font-size:10px;color:var(--mut)}
+.marginrow b{color:var(--ink)}
+.ctlstrip{margin-top:8px;padding:8px 10px;background:#141a24;border-radius:8px;border:1px solid #1f2735;font-size:10.5px;line-height:1.8}
+.sig{color:#4ade80;font-size:9px;font-weight:700}
+
+/* ---- compare card ---- */
+.row-plain{display:block;margin-bottom:10px}
+.row-plain:last-child{margin-bottom:0}
+
+/* ---- L2 disclosures ---- */
+details.l2{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
+details.l2 summary{cursor:pointer;padding:11px 14px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut);list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.l2 summary::-webkit-details-marker{display:none}
+details.l2 summary::after{content:'+ expand';font-size:9px;color:#4a5568;text-transform:none;letter-spacing:0}
+details.l2[open] summary::after{content:'- collapse'}
+details.l2 .body{padding:0 14px 14px}
+
+.matrix{width:100%;border-collapse:collapse;font-size:11px}
+.matrix th,.matrix td{padding:6px 8px;text-align:right;border-bottom:1px solid #232a36;vertical-align:middle}
+.matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
+.matrix td:first-child,.matrix th:first-child,.matrix td:nth-child(2),.matrix th:nth-child(2){text-align:left}
+.tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
+.foot{font-size:9.5px;color:#6b7280;margin-top:10px;line-height:1.6}
+.empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+</style></head><body>
+<div class="wrap">
+  <div class="hd">
+    <div><h1>TCL FIB — GRANT</h1><div class="sub">Two structures, same entries · every exit management scored on every trade</div></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="tg" id="setupTg"><button data-s="two" class="on">TWO-ORDER</button><button data-s="single">SINGLE-ORDER</button></div>
+      <div class="mini" id="status">loading…</div>
+    </div>
+  </div>
+  <details class="primer">
+    <summary>How to read this board</summary>
+    <div class="body">
+      <p><b>What's on this board.</b> A chart-replayed backtest, not live trades. Two fib structures are tested off the same entry criteria: a two-order ladder (Entry + L1, TCL 2.0) and a single-order setup (Super Mario, no L1). Within each structure, several exit managements are scored on every trade at once — they're all hypotheses about the same real trade, not separate strategies to pick between live.</p>
+      <p><b>Full @ 2R / Full @ 3R</b> — the no-partial baseline for either structure. Close the entire position the instant price hits that fixed target; 0 if the trade only got as far as risk-free, −1 if the stop never even cleared. It's the one number that means the same thing on both structures, so the head-to-head card up top uses it.</p>
+      <p><b>The 50%-off managements</b> bank half the position early, move the rest to breakeven, and let it ride toward the target. Two-order gets two flavors — entry-only basis and entry+L1 blended basis (average of Entry and L1, same convention as Craig's board) — and <b>both are always scored, whether or not L1 actually filled.</b> That fill was a live possibility for the whole life of the trade, not a precondition, so it isn't gated behind the fact of it happening. Single-order banks at the TP price (~fib 0.618) instead of a fixed 1R, since that's where its own partial point sits.</p>
+      <p><b>BOS Exit R</b> (two-order only, shown as its own card below the cube) is different in kind from everything else here — it's the realistic result of the break-of-structure trail actually being run, not a fixed-target hypothesis. No 2R/3R variants; it just runs as far as structure allows once the trade is risk-free.</p>
+      <p><b>The curve under each row</b> is that management's cumulative R, trade by trade, in the order the trades actually happened — not dollars, just R stacked on itself. Green and rising means it's ahead net; red and sinking means it's behind.</p>
+      <p><b>Reading a dot-and-line mark</b> (the ranked table below). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
+      <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size.</p>
+      <p><b>Why within-structure comparisons are paired.</b> Every management is computed off the same Max Run, so a delta is only meaningful over rows scored on both sides being compared — that's what "paired" means everywhere on this board except one place: the two-order-vs-single-order card up top compares different trades by definition (a trade is one structure or the other, never both), so that one is shown side by side, not paired, and should be read as a lean rather than a tested result.</p>
+    </div>
+  </details>
+  <div id="board"></div>
+</div>
+<script>
+/* ============================== stats primitives (structure-agnostic) ============================== */
+const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
+const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
+const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
+const cls=x=>x>0.005?'pos':(x<-0.005?'neg':'mut');
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const sd=a=>{if(a.length<2)return 0; const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+const TTAB={2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,9:2.262,10:2.228,11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,17:2.110,18:2.101,19:2.093,20:2.086,21:2.080,22:2.074,23:2.069,24:2.064,25:2.060,26:2.056,27:2.052,28:2.048,29:2.045,30:2.042};
+const tCrit=df=>df<2?12.7:df>30?1.96:TTAB[df];
+function ci95(series){
+  const a=series.filter(x=>x!=null), n=a.length;
+  if(!n) return {n:0,mean:null,se:null,lo:null,hi:null};
+  const m=mean(a), s=sd(a), se=n>1?s/Math.sqrt(n):0, t=tCrit(n-1);
+  return {n, mean:m, se, lo:m-t*se, hi:m+t*se};
+}
+function maxDD(series){let c=0,p=0,m=0; for(const r of series){c+=r; if(c>p)p=c; const d=p-c; if(d>m)m=d;} return m;}
+function maxLossStreak(series){let c=0,m=0; for(const r of series){ if(r<-0.005){ c++; if(c>m)m=c; } else c=0; } return m;}
+function maxWinStreak(series){let c=0,m=0; for(const r of series){ if(r>0.005){ c++; if(c>m)m=c; } else c=0; } return m;}
+function fullStats(series){
+  const ci=ci95(series);
+  const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length;
+  const scratches=series.length-wins-losses;
+  return {...ci, wins, losses, scratches, winRate:(wins+losses)?wins/(wins+losses):0, total:series.reduce((a,b)=>a+b,0), dd:maxDD(series), streak:maxLossStreak(series), winStreak:maxWinStreak(series)};
+}
+
+/* ============================== equity curve (identical to Craig's board) ============================== */
+let _eqSeq=0;
+function equityCurveSVG(series, w, h){
+  w=w||300; h=h||44;
+  if(!series.length) return `<svg viewBox="0 0 ${w} ${h}"><line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="var(--zero)" stroke-width="1"/><text x="4" y="${h/2+4}" fill="#3d4553" font-size="10">no data</text></svg>`;
+  const cum=[0]; series.forEach(r=>cum.push(cum[cum.length-1]+r));
+  const minV=Math.min(0,...cum), maxV=Math.max(0,...cum);
+  const range=(maxV-minV)||1, n=cum.length-1;
+  const pad=3;
+  const px=i=>(i/n)*w;
+  const py=v=>pad+(1-(v-minV)/range)*(h-2*pad);
+  const base=py(0);
+  const pts=cum.map((v,i)=>({x:px(i), y:py(v), v}));
+  const segs=[];
+  let seg=[pts[0]], segSign=pts[0].v<0?'neg':'pos';
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1], b=pts[i];
+    if((a.v<0&&b.v>0)||(a.v>0&&b.v<0)){
+      const t=a.v/(a.v-b.v);
+      const cross={x:a.x+(b.x-a.x)*t, y:base, v:0};
+      seg.push(cross);
+      segs.push({pts:seg, sign:segSign});
+      segSign=b.v<0?'neg':'pos';
+      seg=[cross,b];
+    } else {
+      seg.push(b);
+      if(b.v<0) segSign='neg'; else if(b.v>0) segSign='pos';
+    }
+  }
+  segs.push({pts:seg, sign:segSign});
+  const COL={pos:'#3fb950', neg:'var(--neg)'};
+  const gid='eqg'+(_eqSeq++);
+  const defs=`<defs>
+    <linearGradient id="${gid}p" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.pos}" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="${COL.pos}" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="${gid}n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.neg}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${COL.neg}" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>`;
+  let body='';
+  segs.forEach(s=>{
+    if(s.pts.length<2) return;
+    const line=s.pts.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const first=s.pts[0], last=s.pts[s.pts.length-1];
+    const area=`${line} L${last.x.toFixed(1)},${base.toFixed(1)} L${first.x.toFixed(1)},${base.toFixed(1)} Z`;
+    body += `<path d="${area}" fill="url(#${gid}${s.sign==='pos'?'p':'n'})" stroke="none"/><path d="${line}" fill="none" stroke="${COL[s.sign]}" stroke-width="1.5"/>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}">
+    ${defs}
+    <line x1="0" y1="${base.toFixed(1)}" x2="${w}" y2="${base.toFixed(1)}" stroke="var(--zero)" stroke-width="1"/>
+    ${body}
+  </svg>`;
+}
+
+/* ============================== Grant's schema ============================== */
+const SETUPVAL={two:'Two-order (TCL 2.0)', single:'Single-order (Super Mario)'};
+const SETUPNAME={two:'Two-order (TCL 2.0)', single:'Single-order (Super Mario)'};
+const MGMT = {
+  two: [
+    {k:'full', name:'Full send · no partial', short:'Full',
+     desc:'Close the entire position the instant price hits the target. No partial, no de-risking along the way.',
+     props:{'2R':'full2R','3R':'full3R'}},
+    {k:'entry', name:'50% @ 1R · entry-only basis', short:'50%·Entry',
+     desc:'Treats the position as the entry leg alone. Bank half at the 1R price, move the rest to breakeven, let it ride to target.',
+     props:{'2R':'entry1r2R','3R':'entry1r3R'}},
+    {k:'entryl1', name:'50% @ 1R · entry+L1 blended', short:'50%·E+L1',
+     desc:'Blended average-cost basis of Entry and L1 (same convention as Craig’s board). Bank half at the 1R price, move the rest to breakeven, let it ride to target. Scored off L1’s known fib price whether or not it actually filled.',
+     props:{'2R':'entryL11r2R','3R':'entryL11r3R'}},
+  ],
+  single: [
+    {k:'full', name:'Full send · no partial', short:'Full',
+     desc:'Close the entire position the instant price hits the target.',
+     props:{'2R':'full2R','3R':'full3R'}},
+    {k:'tp', name:'50% @ TP', short:'50%·TP',
+     desc:'Bank half the position at the TP price (~fib 0.618), move the rest to breakeven, let it ride to target.',
+     props:{'2R':'tp2R','3R':'tp3R'}},
+  ],
+};
+const TGTS=['2R','3R'];
+
+let TRADES=[], ALL=[], SETUP='two', firstLoad=true, lastOk=null;
+const OPEN=new Set();
+
+/* ============================== series / stats over Grant's precomputed R fields ============================== */
+function seriesFor(prop, pool){ return pool.map(t=>num(t[prop])).filter(x=>x!=null); }
+function statsFor(prop, pool){ return fullStats(seriesFor(prop,pool)); }
+function paired(propA, propB, pool){
+  const d=[]; pool.forEach(t=>{const a=num(t[propA]),b=num(t[propB]); if(a!=null&&b!=null) d.push(b-a);});
+  return ci95(d);
+}
+
+/* ============================== filters ============================== */
+const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
+const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
+  ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
+function applyFilters(){
+  TRADES = ALL.filter(t => t.SetupType===SETUPVAL[SETUP]).sort(chrono);
+}
+
+/* ============================== L0 — top performer within the toggled structure ============================== */
+function bestCandidate(setup, pool){
+  const all=[];
+  MGMT[setup].forEach(m=>TGTS.forEach(t=>{
+    const prop=m.props[t], s=statsFor(prop,pool);
+    if(s.n) all.push({m,t,prop,s});
+  }));
+  all.sort((a,b)=>b.s.mean-a.s.mean);
+  return all;
+}
+function answerBlock(setup, pool){
+  const ranked=bestCandidate(setup,pool);
+  if(!ranked.length) return `<div class="card answer"><div class="empty-note">No trades match this filter yet.</div></div>`;
+  const best=ranked[0], runnerUp=ranked[1];
+  const s=best.s;
+  const sig = s.lo>0;
+  const margin = runnerUp ? paired(runnerUp.prop,best.prop,pool) : null;
+  const marginSig = margin && margin.n>0 && margin.lo>0;
+  const rivals=[];
+  MGMT[setup].forEach(m=>TGTS.forEach(t=>{
+    if(m.k===best.m.k && t===best.t) return;
+    const p=paired(best.prop,m.props[t],pool);
+    if(p.n>0 && !(p.hi<0)) rivals.push(`${m.short} → ${t}`);
+  }));
+  return `<div class="card answer">
+    <div class="eyebrow">Top performer — ${SETUPNAME[setup]}</div>
+    <div class="policy">${best.m.name} → ${best.t}</div>
+    <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
+      <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
+    <div class="curve">${equityCurveSVG(seriesFor(best.prop,pool),600,70)}</div>
+    <div class="fsub">${best.m.desc}</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
+      <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
+      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak} trade${s.streak===1?'':'s'}</div></div>
+      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak} trade${s.winStreak===1?'':'s'}</div></div>
+      <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(s.n/4.6))} days</div></div>
+    </div>
+    ${runnerUp ? `<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${runnerUp.m.name} → ${runnerUp.t}</b> at ${fR(runnerUp.s.mean)} (n${runnerUp.s.n}) — leads by <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${margin.n?(marginSig?' <span class="sig">sig</span>':' · not yet significant'):''}.</div>` : ''}
+    ${sig ? '' : `<div class="caveat" style="margin-top:9px">
+      ${rivals.length ? 'Statistically tied with: '+rivals.join(', ')+'. ' : ''}
+      With ${s.n} trades this board can reliably tell managements apart only when they differ by roughly a full R — most of the gaps here are smaller than that.</div>`}
+  </div>`;
+}
+
+/* ============================== L1 — cube: management × target, paired on identical trades ============================== */
+function cubeBlock(setup, pool){
+  const mgmts=MGMT[setup];
+  let facets='';
+  mgmts.forEach(m=>{
+    let rows='';
+    TGTS.forEach(t=>{
+      const prop=m.props[t], s=statsFor(prop,pool);
+      rows+=`<div class="row">
+        <div class="rowlbl"><span>→ ${t} · ${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>${fR(s.mean??0)} n${s.n} · Σ ${s.n?fR(s.total):'—'}</span></div>
+        ${equityCurveSVG(seriesFor(prop,pool),300,44)}
+      </div>`;
+    });
+    const d=paired(m.props['2R'],m.props['3R'],pool);
+    facets+=`<div class="facet">
+      <div class="fname">${m.name}</div>
+      <div class="fsub">${m.desc}</div>
+      ${rows}
+      <div class="marginrow"><span>3R − 2R, paired</span><b class="${d.n?cls(d.mean):''}">${d.n?fR(d.mean)+(d.lo>0?' ':d.hi<0?' ':' · ns'):'—'}</b></div>
+    </div>`;
+  });
+  const mgmtDeltas=[];
+  for(let i=0;i<mgmts.length;i++)for(let j=i+1;j<mgmts.length;j++){
+    TGTS.forEach(t=>{
+      const p=paired(mgmts[i].props[t], mgmts[j].props[t], pool);
+      if(p.n) mgmtDeltas.push(`${mgmts[j].short}−${mgmts[i].short} @${t}: <b class="${p.lo>0?'pos':p.hi<0?'neg':'mut'}">${fR(p.mean)}</b>${p.lo>0||p.hi<0?' <span class="sig">sig</span>':''}`);
+    });
+  }
+  return `<div class="cubewrap">
+    <div class="lbl">Which management, which target — paired on identical trades</div>
+    <div class="facets" style="grid-template-columns:repeat(${mgmts.length},1fr)">${facets}</div>
+    ${mgmtDeltas.length?`<div class="ctlstrip"><b style="color:var(--ink)">Management vs. management, paired</b> (green = 95% CI clears zero): ${mgmtDeltas.join(' &nbsp;·&nbsp; ')}</div>`:''}
+  </div>`;
+}
+
+/* ============================== L1 — BOS trail exit, the realistic result (two-order only) ============================== */
+function bosExitBlock(pool){
+  const s=statsFor('bosExitR',pool);
+  if(!s.n) return `<div class="card"><div class="lbl">BOS trail exit — the realistic result</div><div class="empty-note">No Trailing BOS Exit logged yet for this filter.</div></div>`;
+  return `<div class="card">
+    <div class="lbl">BOS trail exit — the realistic result</div>
+    <div class="fsub" style="margin-bottom:8px">What the break-of-structure trail actually captured once the trade was risk-free — no fixed target, runs as far as structure allows. This is the real exit for two-order trades; Full @ 2R/3R and the 50%-off managements above are hypotheses to test it against.</div>
+    <div class="row-plain"><div class="rowlbl" style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-bottom:2px"><span>${Math.round(s.winRate*100)}% win · n${s.n}</span><span>${fR(s.mean)} · Σ ${fR(s.total)}</span></div>${equityCurveSVG(seriesFor('bosExitR',pool),600,50)}</div>
+  </div>`;
+}
+
+/* ============================== top — two-order vs. single-order, which fib wins ============================== */
+function setupCompareBlock(all){
+  const twoPool=all.filter(t=>t.SetupType===SETUPVAL.two).sort(chrono);
+  const singlePool=all.filter(t=>t.SetupType===SETUPVAL.single).sort(chrono);
+  const cell=(pool,prop)=>{
+    const s=statsFor(prop,pool);
+    return s.n?`<span class="${cls(s.mean)}" style="font-weight:700">${fR(s.mean)}</span> <span class="mini">[${fR(s.lo)}, ${fR(s.hi)}] n${s.n}</span>`:'<span class="mut">— no data</span>';
+  };
+  return `<div class="card" style="margin-bottom:10px">
+    <div class="lbl">Two-order vs. single-order — which fib wins</div>
+    <div class="fsub" style="margin-bottom:8px">Full-send outcome — the one comparison that means the same thing on both structures. Not paired: different trades, not the same trade scored two ways, so read the gap as a lean.</div>
+    <table class="matrix"><thead><tr><th></th><th>Full @ 2R</th><th>Full @ 3R</th><th>n</th></tr></thead><tbody>
+      <tr><td>${SETUPNAME.two}</td><td>${cell(twoPool,'full2R')}</td><td>${cell(twoPool,'full3R')}</td><td class="mut">${twoPool.length}</td></tr>
+      <tr><td>${SETUPNAME.single}</td><td>${cell(singlePool,'full2R')}</td><td>${cell(singlePool,'full3R')}</td><td class="mut">${singlePool.length}</td></tr>
+    </tbody></table>
+  </div>`;
+}
+
+/* ============================== L2 — all, ranked ============================== */
+function rankedTable(setup, pool){
+  const rows=[];
+  MGMT[setup].forEach(m=>TGTS.forEach(t=>{ rows.push({m,t,prop:m.props[t],s:statsFor(m.props[t],pool)}); }));
+  rows.sort((a,b)=>(b.s.n?b.s.mean:-99)-(a.s.n?a.s.mean:-99));
+  let h='';
+  rows.forEach(r=>{
+    const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
+    h+=`<tr><td><span class="tag">${r.m.short}</span> → ${r.t}<div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
+      <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.prop,pool),140,32):'<span class="na">no data</span>'}</td>
+      <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
+      <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
+      <td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>
+      <td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>
+      <td class="${s.n&&s.streak?'neg':'mut'}">${s.n?s.streak:'—'}</td>
+      <td class="${s.n&&s.winStreak?'pos':'mut'}">${s.n?s.winStreak:'—'}</td>
+      <td class="mut">${s.n||'—'}</td></tr>`;
+  });
+  return `<div class="fsub">If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence — if not, read the expectancy as a lean, not a proven winner.</div>
+    <table class="matrix"><thead><tr><th>Management · target</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+}
+
+/* ============================== render ============================== */
+function disclosure(id,title,bodyHtml){
+  const open=OPEN.has(id);
+  return `<details class="l2" id="${id}" ${open?'open':''}><summary>${title}</summary><div class="body">${bodyHtml}</div></details>`;
+}
+function render(){
+  const pool=TRADES, board=document.getElementById('board');
+  const headCompare=setupCompareBlock(ALL);
+  if(!pool.length){ board.innerHTML=headCompare+'<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
+  board.innerHTML = headCompare +
+    answerBlock(SETUP,pool) +
+    disclosure('d-all','All, ranked', rankedTable(SETUP,pool)) +
+    cubeBlock(SETUP,pool) +
+    (SETUP==='two' ? bosExitBlock(pool) : '') +
+    `<div class="foot">Every within-structure comparison on this board is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
+  document.querySelectorAll('#board details, .primer').forEach(d=>{
+    if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
+  });
+}
+
+/* ============================== data + wiring ============================== */
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=grant';
+async function poll(){
+  const st=document.getElementById('status');
+  try{
+    const res=await fetch(WORKER+'&t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('worker '+res.status);
+    const j=await res.json();
+    ALL=(j&&j.trades)||[];
+    applyFilters(); render();
+    lastOk=Date.now();
+    st.textContent=`${SETUPNAME[SETUP]} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    firstLoad=false;
+  }catch(e){
+    if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker.</div></div>'; }
+    else{ const age=Math.round((Date.now()-lastOk)/1000);
+      st.innerHTML=`<span class="err">STALE — worker unreachable, figures are ${age}s old</span>`; }
+  }
+}
+function wire(id,attr,set){
+  document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
+      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
+      set(v); applyFilters(); render();
+      document.getElementById('status').textContent=`${SETUPNAME[SETUP]} · ${TRADES.length} trades · switched`; };});
+}
+wire('setupTg','s', v=>{ if(v===undefined) return SETUP; SETUP=v; });
+poll(); setInterval(poll,5000);
+</script>
+</body></html>

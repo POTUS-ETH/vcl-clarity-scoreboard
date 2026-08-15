@@ -357,6 +357,66 @@ async function computeCraig(token) {
   };
 }
 
+// ── Grant's TCL fib backtest tracker ────────────────────────────────
+// Own database, own data source — nothing shared with Craig's board. Every R
+// field is a Notion formula already (see the tracker's own schema comments);
+// this just reads them straight through, same as Craig's O1-O18.
+const GRANT_DATA_SOURCE = '60340af5-26f9-4dff-94c6-87f1bd61ac24'; // database: 799c95fa12044ca49acc0f8d90de29d3
+
+async function computeGrant(token) {
+  const trades = await queryAllDataSource(GRANT_DATA_SOURCE, token);
+  const rows = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (title.toUpperCase().startsWith('TEST')) continue;
+    // an empty "+ New" row has no Entry Price at all — distinct from a real trade with blank
+    // outcomes, which must never be skipped.
+    if (getProp(t, 'Entry Price') == null) continue;
+    rows.push({
+      id:        t.id,
+      created:   t.created_time,
+      Trade:     title,
+      SetupType: getProp(t, 'Setup Type'),
+      Direction: getProp(t, 'Direction'),
+      Timeframe: getProp(t, 'Timeframe'),
+      Session:   getProp(t, 'Session'),
+      Pair:      getProp(t, 'Pair'),
+      date:      getProp(t, 'Date'),
+      // raw geometry, so a consumer can check a published R against its own reading
+      entry:     getProp(t, 'Entry Price'),
+      l1:        getProp(t, 'L1 Price'),
+      stop:      getProp(t, 'Stop Price'),
+      tp:        getProp(t, 'TP Price'),
+      anchor:    getProp(t, '1 of Fib Price'),
+      maxRun:    getProp(t, 'Max Run'),
+      bosExit:   getProp(t, 'Trailing BOS Exit'),
+      l1Filled:  getProp(t, 'L1 Filled'),
+      l1FillTiming: getProp(t, 'L1 Fill Timing'),
+      rangePct:  getProp(t, 'Range %'),
+      notes:     getProp(t, 'Notes'),
+      // computed R fields, read straight off the Notion formulas — single source of truth
+      oneR:        getProp(t, '1R (price)'),
+      maxRunR:     getProp(t, 'Max Run R'),
+      bosExitR:    getProp(t, 'BOS Exit R'),
+      full2R:      getProp(t, 'Full @ 2R'),
+      full3R:      getProp(t, 'Full @ 3R'),
+      entry1r2R:   getProp(t, '50% @ 1R . Entry -> 2R'),
+      entry1r3R:   getProp(t, '50% @ 1R . Entry -> 3R'),
+      entryL11r2R: getProp(t, '50% @ 1R . Entry+L1 -> 2R'),
+      entryL11r3R: getProp(t, '50% @ 1R . Entry+L1 -> 3R'),
+      tp2R:        getProp(t, '50% @ TP -> 2R'),
+      tp3R:        getProp(t, '50% @ TP -> 3R'),
+    });
+  }
+  return {
+    updated: new Date().toISOString(),
+    tradeCount: rows.length,
+    queriedCount: trades.length,
+    skipped: trades.length - rows.length,
+    trades: rows,
+  };
+}
+
 async function computeV3Raw(token, dbId) {
   const trades = await queryAll(dbId, token);
   const rows = [];
@@ -685,6 +745,7 @@ export default {
         v3:          () => computeV3Raw(env.NOTION_TOKEN, V3_DB),
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
+        grant:       () => computeGrant(env.NOTION_TOKEN),
         prop:        () => computePropData(env.NOTION_TOKEN),
         scoreboard:  () => computeScoreboard(env.NOTION_TOKEN),
       };
