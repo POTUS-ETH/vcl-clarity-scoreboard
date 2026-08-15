@@ -246,6 +246,7 @@ function whiskerSVG(ci,w,h){
 // cumulative-R equity curve for a trade series, walked in the same chrono order the
 // pool is already sorted in. Area-filled line, zero baseline always drawn so a curve
 // that dips below zero and recovers is legible, not just "line went up".
+let _eqSeq=0; // guarantees unique gradient ids across every curve on the page — the old id was derived from (final,n), which two different curves can share
 function equityCurveSVG(series, w, h){
   w=w||300; h=h||44;
   if(!series.length) return `<svg viewBox="0 0 ${w} ${h}"><line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="var(--zero)" stroke-width="1"/><text x="4" y="${h/2+4}" fill="#3d4553" font-size="10">no data</text></svg>`;
@@ -255,21 +256,54 @@ function equityCurveSVG(series, w, h){
   const pad=3;
   const px=i=>(i/n)*w;
   const py=v=>pad+(1-(v-minV)/range)*(h-2*pad);
-  const pts=cum.map((v,i)=>[px(i),py(v)]);
-  const line=pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
-  const base=py(0).toFixed(1);
-  const area=`${line} L${px(n).toFixed(1)},${base} L${px(0).toFixed(1)},${base} Z`;
-  const final=cum[cum.length-1];
-  const col = final>0.005?'var(--pos)':(final<-0.005?'var(--neg)':'#6b7280');
-  const gid='eq'+Math.abs(final*1000|0)+'_'+n;
+  const base=py(0);
+  const pts=cum.map((v,i)=>({x:px(i), y:py(v), v}));
+
+  // split into contiguous above/below-zero runs, interpolating the exact zero-crossing
+  // x so each run's area closes cleanly on the baseline instead of cutting through it
+  const segs=[];
+  let seg=[pts[0]], segSign=pts[0].v<0?'neg':'pos';
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1], b=pts[i];
+    if((a.v<0&&b.v>0)||(a.v>0&&b.v<0)){
+      const t=a.v/(a.v-b.v);
+      const cross={x:a.x+(b.x-a.x)*t, y:base, v:0};
+      seg.push(cross);
+      segs.push({pts:seg, sign:segSign});
+      segSign=b.v<0?'neg':'pos';
+      seg=[cross,b];
+    } else {
+      seg.push(b);
+      if(b.v<0) segSign='neg'; else if(b.v>0) segSign='pos';
+    }
+  }
+  segs.push({pts:seg, sign:segSign});
+
+  const COL={pos:'#3fb950', neg:'var(--neg)'};
+  const gid='eqg'+(_eqSeq++);
+  const defs=`<defs>
+    <linearGradient id="${gid}p" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.pos}" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="${COL.pos}" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="${gid}n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.neg}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${COL.neg}" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>`;
+  let body='';
+  segs.forEach(s=>{
+    if(s.pts.length<2) return;
+    const line=s.pts.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const first=s.pts[0], last=s.pts[s.pts.length-1];
+    const area=`${line} L${last.x.toFixed(1)},${base.toFixed(1)} L${first.x.toFixed(1)},${base.toFixed(1)} Z`;
+    body += `<path d="${area}" fill="url(#${gid}${s.sign==='pos'?'p':'n'})" stroke="none"/><path d="${line}" fill="none" stroke="${COL[s.sign]}" stroke-width="1.5"/>`;
+  });
+
   return `<svg viewBox="0 0 ${w} ${h}">
-    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${col}" stop-opacity="0.32"/>
-      <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
-    </linearGradient></defs>
-    <line x1="0" y1="${base}" x2="${w}" y2="${base}" stroke="var(--zero)" stroke-width="1"/>
-    <path d="${area}" fill="url(#${gid})" stroke="none"/>
-    <path d="${line}" fill="none" stroke="${col}" stroke-width="1.5"/>
+    ${defs}
+    <line x1="0" y1="${base.toFixed(1)}" x2="${w}" y2="${base.toFixed(1)}" stroke="var(--zero)" stroke-width="1"/>
+    ${body}
   </svg>`;
 }
 
