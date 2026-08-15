@@ -43,6 +43,8 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .answer .band{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .answer .bandnum{font-size:22px;font-weight:700}
 .answer .bandci{font-size:11px;color:var(--mut)}
+.answer .curve{margin-bottom:8px}
+.answer .curve svg{display:block;width:100%;height:70px}
 .answer .caveat{font-size:11px;color:#e0b341;background:#1d1a10;border:1px solid #4a3d18;border-radius:6px;padding:7px 9px;line-height:1.5}
 .answer .stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
 .answer .stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
@@ -300,6 +302,7 @@ function answerBlock(pool){
     <div class="policy">${nameOf(best.m)}${best.mode==='sc'?' <span class="tag sc">50% off</span>':''}</div>
     <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
       <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
+    <div class="curve">${equityCurveSVG(seriesFor(best.m,pool,best.mode),600,70)}</div>
     <div class="fsub">${mechDesc(best.m.mg, best.mode)}</div>
     <div class="stats">
       <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
@@ -425,7 +428,7 @@ function rankedTable(pool){
     const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
     const mech=MECHSHORT[r.m.mg]+(r.mode==='sc'?' · half banks on retrace to entry':'');
     h+=`<tr><td><span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${r.mode==='sc'?' <span class="tag sc">50% off</span>':''}<div class="mini" style="font-weight:400;margin-top:2px">${mech}</div></td>
-      <td style="width:150px">${s.n?whiskerSVG(s,140,22):'<span class="na">no data</span>'}</td>
+      <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.m,pool,r.mode),140,32):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
       <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
       <td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>
