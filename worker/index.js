@@ -400,10 +400,8 @@ async function computeGrant(token) {
       bosExitR:    getProp(t, 'BOS Exit R'),
       full2R:      getProp(t, 'Full @ 2R'),
       full3R:      getProp(t, 'Full @ 3R'),
-      entry1r2R:   getProp(t, '50% @ 1R . Entry -> 2R'),
-      entry1r3R:   getProp(t, '50% @ 1R . Entry -> 3R'),
-      entryL11r2R: getProp(t, '50% @ 1R . Entry+L1 -> 2R'),
-      entryL11r3R: getProp(t, '50% @ 1R . Entry+L1 -> 3R'),
+      half1r2R:    getProp(t, '50% @ 1R -> 2R'),
+      half1r3R:    getProp(t, '50% @ 1R -> 3R'),
       tp2R:        getProp(t, '50% @ TP -> 2R'),
       tp3R:        getProp(t, '50% @ TP -> 3R'),
     });

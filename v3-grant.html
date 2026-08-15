@@ -102,7 +102,7 @@ details.l2 .body{padding:0 14px 14px}
       <p><b>What's on this board.</b> A chart-replayed backtest, not live trades. Two fib structures are tested off the same entry criteria: a two-order ladder (Entry + L1, TCL 2.0) and a single-order setup (Super Mario, no L1). Within each structure, several exit managements are scored on every trade at once — they're all hypotheses about the same real trade, not separate strategies to pick between live. Both structures show together on this page, one section after the other — there's nothing to toggle between.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below — the head-to-head card, both structures' sections — reflects only that timeframe's trades.</p>
       <p><b>Full @ 2R / Full @ 3R</b> — the no-partial baseline for either structure. Close the entire position the instant price hits that fixed target; 0 if the trade only got as far as risk-free, −1 if the stop never even cleared. It's the one number that means the same thing on both structures, so the head-to-head card up top uses it.</p>
-      <p><b>The 50%-off managements</b> bank half the position early, move the rest to breakeven, and let it ride toward the target. Two-order gets two flavors — entry-only basis and entry+L1 blended basis (average of Entry and L1, same convention as Craig's board) — and <b>both are always scored, whether or not L1 actually filled.</b> That fill was a live possibility for the whole life of the trade, not a precondition, so it isn't gated behind the fact of it happening. Single-order banks at the TP price (~fib 0.618) instead of a fixed 1R, since that's where its own partial point sits.</p>
+      <p><b>The 50%-off managements</b> bank half the position early, move the rest to breakeven, and let it ride toward the target. <b>Fill isn't a choice, so it isn't split into competing cards.</b> Two-order's single "50% @ 1R" card scores each trade off whatever was actually on — entry-only basis if L1 never filled, blended average of Entry and L1 if it did (same convention as Craig's board) — pooled into one statistic, the same way Craig's board blends solo vs. laddered fills per trade rather than showing them as separate strategies. Single-order banks at the TP price (~fib 0.618) instead of a fixed 1R, since that's where its own partial point sits.</p>
       <p><b>BOS Exit R</b> (two-order only, leads its section) is different in kind from everything else here — it's the realistic result of the break-of-structure trail actually being run, not a fixed-target hypothesis. No 2R/3R variants; it just runs as far as structure allows once the trade is risk-free. Everything else in that section is a hypothesis being tested against it.</p>
       <p><b>The curve under each row</b> is that management's cumulative R, trade by trade, in the order the trades actually happened — not dollars, just R stacked on itself. Green and rising means it's ahead net; red and sinking means it's behind.</p>
       <p><b>Reading a dot-and-line mark</b> (the ranked table below). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
@@ -203,12 +203,9 @@ const MGMT = {
     {k:'full', name:'Full send · no partial', short:'Full',
      desc:'Close the entire position the instant price hits the target. No partial, no de-risking along the way.',
      props:{'2R':'full2R','3R':'full3R'}},
-    {k:'entry', name:'50% @ 1R · entry-only basis', short:'50%·Entry',
-     desc:'Treats the position as the entry leg alone. Bank half at the 1R price, move the rest to breakeven, let it ride to target.',
-     props:{'2R':'entry1r2R','3R':'entry1r3R'}},
-    {k:'entryl1', name:'50% @ 1R · entry+L1 blended', short:'50%·E+L1',
-     desc:'Blended average-cost basis of Entry and L1 (same convention as Craig’s board). Bank half at the 1R price, move the rest to breakeven, let it ride to target. Scored off L1’s known fib price whether or not it actually filled.',
-     props:{'2R':'entryL11r2R','3R':'entryL11r3R'}},
+    {k:'half', name:'50% @ 1R', short:'50%·1R',
+     desc:'Bank half the position at the 1R price, move the rest to breakeven, let it ride to target. Fill isn’t a choice, so this isn’t split into an “entry-only” card and an “entry+L1” card — each trade uses whatever was actually on (entry-only basis if L1 never filled, blended avg(Entry,L1) if it did), pooled into one statistic. Same principle as Craig’s board: the market decides, not you.',
+     props:{'2R':'half1r2R','3R':'half1r3R'}},
   ],
   single: [
     {k:'full', name:'Full send · no partial', short:'Full',
