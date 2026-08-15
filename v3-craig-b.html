@@ -119,7 +119,7 @@ details.l2 .body{padding:0 14px 14px}
       <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
       <p><b>Reading a mark.</b> Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
-      <p><b>Max drawdown and LIS are not the same thing.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) counts the longest run of consecutive losing trades regardless of size — five -0.2R losses in a row is a 5-trade streak but barely dents cumulative R. Both matter for different reasons: drawdown is what your equity curve actually lived through, LIS is what your discipline has to survive trade-to-trade.</p>
+      <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size — five -0.2R losses in a row is a 5-trade LIS but barely dents cumulative R. All three matter for different reasons: drawdown is what your equity curve actually lived through; LIS is what your discipline has to survive trade-to-trade; WIS is how long a hot streak can run before mean reversion — useful context for not oversizing off a run that was never going to last.</p>
       <p><b>Why every comparison is paired.</b> Outcomes here differ by only 0.1–0.4R, and the trail methodologies (EVS/PVS) have fewer logged trades than BE — they need chart-read evidence BE doesn't. Averaging each side over whatever trades happen to be scored can flip a ranking that a fair, same-trades comparison would not. So every delta on this board — stop vs. stop, 50%-off vs. full ladder, runner-up vs. leader — is computed only over rows scored on both sides being compared.</p>
       <p><b>Break-even move card.</b> Tracks how the BE rule actually landed: what fraction of trades cleared the 1 of fib and fired the move, and of those, what fraction then closed flat exactly at break-even instead of running further.</p>
       <p><b>"Closeable" in the data-integrity strip</b> means price cleared the trail anchor but no exit was ever logged for it — the only kind of blank on this board. It closes the moment Craig reads that trade's chart; nothing else is missing or estimated.</p>
@@ -174,6 +174,7 @@ function maxDD(series){let c=0,p=0,m=0; for(const r of series){c+=r; if(c>p)p=c;
 // distinct from Max DD: a losing streak counts consecutive losing TRADES, not R lost from a peak.
 // A big win followed by five small losses can be a shallow drawdown but still a 5-trade streak.
 function maxLossStreak(series){let c=0,m=0; for(const r of series){ if(r<-0.005){ c++; if(c>m)m=c; } else c=0; } return m;}
+function maxWinStreak(series){let c=0,m=0; for(const r of series){ if(r>0.005){ c++; if(c>m)m=c; } else c=0; } return m;}
 
 /* per-trade blended R — fill is what the market did, not a choice, so each trade
    gets exactly one score per methodology: solo-R if L1 never filled, lad-R if it did.
@@ -197,7 +198,7 @@ function fullStats(series){
   const ci=ci95(series);
   const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length;
   const scratches=series.length-wins-losses;
-  return {...ci, wins, losses, scratches, winRate:(wins+losses)?wins/(wins+losses):0, total:series.reduce((a,b)=>a+b,0), dd:maxDD(series), streak:maxLossStreak(series)};
+  return {...ci, wins, losses, scratches, winRate:(wins+losses)?wins/(wins+losses):0, total:series.reduce((a,b)=>a+b,0), dd:maxDD(series), streak:maxLossStreak(series), winStreak:maxWinStreak(series)};
 }
 function statsFor(m, pool, mode){ return fullStats(seriesFor(m,pool,mode)); }
 function paired(mA,modeA,mB,modeB,pool){
@@ -274,6 +275,7 @@ function answerBlock(pool){
       <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
       <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
       <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak} trade${s.streak===1?'':'s'}</div></div>
+      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak} trade${s.winStreak===1?'':'s'}</div></div>
       <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(s.n/4.6))} days</div></div>
     </div>
     ${runnerUp ? `<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${nameOf(runnerUp.m)}${runnerUp.mode==='sc'?' 50% off':''}</b> at ${fR(runnerUp.s.mean)} (n${runnerUp.s.n}) — leads by <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${margin.n?(marginSig?' <span class="sig">sig</span>':' · not yet significant'):''}.</div>` : ''}
@@ -398,10 +400,11 @@ function rankedTable(pool){
       <td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>
       <td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>
       <td class="${s.n&&s.streak?'neg':'mut'}">${s.n?s.streak:'—'}</td>
+      <td class="${s.n&&s.winStreak?'pos':'mut'}">${s.n?s.winStreak:'—'}</td>
       <td class="mut">${s.n||'—'}</td></tr>`;
   });
-  return `<div class="fsub">If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence — if not, read the expectancy as a lean, not a proven winner. Max DD and LIS are different things: max DD is the worst dip in cumulative R from a peak, LIS is the longest run of consecutive losing trades — a big win followed by several small losses can be a shallow drawdown and still a long streak.</div>
-    <table class="matrix"><thead><tr><th>Stop · target · variant</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return `<div class="fsub">If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence — if not, read the expectancy as a lean, not a proven winner. Max DD, LIS, and WIS are three different things: max DD is the worst dip in cumulative R from a peak; LIS/WIS are the longest runs of consecutive losing/winning trades regardless of size — a big win followed by several small losses can be a shallow drawdown and still a long LIS.</div>
+    <table class="matrix"><thead><tr><th>Stop · target · variant</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
 /* ============================== L2 — trail reach ============================== */
