@@ -106,7 +106,7 @@ details.l2 .body{padding:0 14px 14px}
     <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies, each scored on every trade · paired on identical rows</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
-      <div class="tg" id="tfTg"><button data-t="all" class="on">ALL TF</button><button data-t="1m">1m</button><button data-t="15s">15s</button></div>
+      <div class="tg" id="tfTg"><button data-t="1m" class="on">1m</button><button data-t="15s">15s</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -151,7 +151,7 @@ const TGTS=['1.618','2.272'];
 const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 const findM=(mg,tgt)=>METH.find(m=>m.mg===mg&&m.tgt===tgt);
 
-let TRADES=[], ALL=[], ASSET='all', TF='all', firstLoad=true, lastOk=null;
+let TRADES=[], ALL=[], ASSET='all', TF='1m', firstLoad=true, lastOk=null;
 const OPEN=new Set();
 
 /* ============================== stats primitives ============================== */
@@ -206,7 +206,7 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => (ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET) && (TF==='all'||t.Timeframe===TF)).sort(chrono);
+  TRADES = ALL.filter(t => (ASSET==='all'||String(t.Pair||'').toLowerCase()===ASSET) && t.Timeframe===TF).sort(chrono);
 }
 // display-only row numbers, computed fresh each poll from chrono order (date, then session, then
 // created — no ties). Not a Notion property: nothing reads or depends on this but this UI, so
