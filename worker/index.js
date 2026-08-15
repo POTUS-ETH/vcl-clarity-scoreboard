@@ -10,6 +10,14 @@
 const MTL_DB = '5057e541-46b5-82f2-be48-015ef5718571'; // Trade Log v3 database ID
 const NOTION_API = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
+// Craig's database has since been split into multiple data sources server-side (the MCP tools
+// address it as collection://f8aaa471-...  — a different ID from the database ID below). Querying
+// it through the legacy /databases/{id}/query endpoint under the pre-split API version silently
+// returns only one data source's rows with has_more:false, not an error — so it can't share
+// queryAll()/NOTION_VERSION with the other (still single-source) boards. This path is scoped to
+// Craig only; leave the rest on the old endpoint, which is working correctly for them.
+const CRAIG_DATA_SOURCE = 'f8aaa471-18bb-4436-a1ae-8def2dc1033c'; // database: 72f82a1bf61a4a56ab81e61b6b2aabdf
+const NOTION_VERSION_DS = '2025-09-03';
 
 const METHODOLOGIES = [
   { label: '10m HA Trail',                 rCol: '10m HA Trail: R Outcome',                 exitCol: '10m HA Trail: Exit Price' },
@@ -42,6 +50,28 @@ async function queryAll(dbId, token) {
       method: 'POST', headers, body: JSON.stringify(body),
     });
     if (!r.ok) throw new Error(`Query ${dbId} failed: ${r.status} ${await r.text()}`);
+    const j = await r.json();
+    rows.push(...j.results);
+    cursor = j.has_more ? j.next_cursor : undefined;
+  } while (cursor);
+  return rows;
+}
+
+async function queryAllDataSource(dataSourceId, token) {
+  const rows = [];
+  let cursor;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Notion-Version': NOTION_VERSION_DS,
+    'Content-Type': 'application/json',
+  };
+  do {
+    const body = { page_size: 100, sorts: [{ timestamp: 'created_time', direction: 'ascending' }] };
+    if (cursor) body.start_cursor = cursor;
+    const r = await fetch(`${NOTION_API}/data_sources/${dataSourceId}/query`, {
+      method: 'POST', headers, body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`Query data source ${dataSourceId} failed: ${r.status} ${await r.text()}`);
     const j = await r.json();
     rows.push(...j.results);
     cursor = j.has_more ? j.next_cursor : undefined;
@@ -260,7 +290,6 @@ const CORS = {
 // corrected full-ladder model (single source of truth in v3.html).
 const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
-const V3_CRAIG_DB  = '72f82a1bf61a4a56ab81e61b6b2aabdf';     // Craig's own crypto log — separate board, own widget
 
 // Craig's 12 outcome columns, in order. Read straight off the Notion formulas so
 // there is exactly one place the R math lives.
@@ -276,8 +305,8 @@ const CRAIG_OUTCOMES = [
   'O16 · PVS 2.272 · Entry', 'O17 · PVS 2.272 · Entry+L1', 'O18 · PVS 2.272 · 50%',
 ];
 
-async function computeCraig(token, dbId) {
-  const trades = await queryAll(dbId, token);
+async function computeCraig(token) {
+  const trades = await queryAllDataSource(CRAIG_DATA_SOURCE, token);
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -655,7 +684,7 @@ export default {
         calendar:    () => computeCalendarData(env.NOTION_TOKEN),
         v3:          () => computeV3Raw(env.NOTION_TOKEN, V3_DB),
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
-        'v3-craig':  () => computeCraig(env.NOTION_TOKEN, V3_CRAIG_DB),
+        'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         prop:        () => computePropData(env.NOTION_TOKEN),
         scoreboard:  () => computeScoreboard(env.NOTION_TOKEN),
       };
