@@ -41,9 +41,78 @@ rule in one file is how you end up backtesting neither.
 - `[VERIFIED]` **Sessions: Asia, London, NY AM, NY PM.**
 - `[VERIFIED]` **History available: SOLUSDT perp launched 2021-10-15.** ~4.8 years.
 
-## 2. Geometry
+## 2. Trend — read first, before anything else
 
-`[VERIFIED]` The fib is drawn on an impulse leg. Six levels matter:
+> **STATUS: being taught 2026-08-16. INCOMPLETE — more coming from Craig.**
+> Do not start building a detector off this section yet.
+
+- `[CRAIG]` **Trend is identified top-down across three timeframes: daily → 1 hour →
+  15 minute.** The high timeframe is read first and the lower ones refine it.
+- `[CRAIG]` **Trade with the trend, not against it.** "Try not to fight the trend."
+
+## 3. The two setup archetypes
+
+`[CRAIG]` There are two triggers, and they differ in where the **1-of-fib** is anchored:
+
+**A — Change of character after a correction.**
+Price is trending, puts in a corrective move against that trend, and a CHoCH marks the
+correction ending. The system capitalises on the resumption.
+
+**B — Trend continuation off a break of structure.**
+The 1-of-fib is anchored to the **break-of-structure high**.
+
+Both anchor the fib to a structural extreme, which is what makes the claim testable —
+`anchors.js` checks whether every logged anchor sits on a swing high (long) or swing low
+(short) formed before the entry bar. *Not yet run — waiting for the teaching to finish.*
+
+### Still open on this section
+
+- Where does **fib 0** go in each archetype? Craig has specified the 1; the 0 (the stop,
+  and the other end of the leg) is not yet stated.
+- For archetype A, is the anchor the swing the CHoCH broke, or the extreme of the
+  corrective move itself?
+- Which timeframe is the fib drawn on — the trade timeframe (1m/15s), or the 15m?
+- Must all three timeframes agree, or does the daily set bias while 15m only times it?
+
+## 4. Geometry
+
+### How the fib is CONSTRUCTED — the order matters
+
+`[CRAIG]` The fib is **not** drawn low-to-high with the entry falling out of it. It is
+pinned by two points and the rest is solved:
+
+1. **The 1-of-fib** goes on structure — the CHoCH, or the break-of-structure high (§3).
+2. **The entry** goes **one tick beyond the selected AVWAP** (above it on a long).
+3. **The 0 is then derived**, because the entry must land on 0.382 of the 0→1 range.
+
+```
+zero = (entry - 0.382 * anchor) / 0.618
+```
+
+`[VERIFIED]` **32 of 32 rows, every one within a single tick** (mean absolute error
+0.0049 — precisely two-decimal rounding of a computed level, not a judgement call). With
+0 and 1 pinned, L1, 1.618 and 2.272 are all forced within a tick as well: the six levels
+are one linear family. Test: `fibsolve.js`.
+
+**What this collapses.** The geometry has exactly **two** discretionary inputs — the
+structural anchor, and which AVWAP is selected. The stop, L1 and both targets are
+arithmetic. This retires the earlier belief that fib-0 was a chosen swing low: it never
+was, which is why it sat 26c off the window low on the trade that first raised the
+question.
+
+**Consequence for risk.** Since `entry - zero = 0.382(a-z)` and `L1 - zero = 0.17(a-z)`:
+
+```
+1R = 0.552 * (anchor - zero)  =  0.893 * (anchor - entry)
+```
+
+So position risk is set entirely by the gap between the AVWAP and the structure. A wide
+AVWAP-to-structure distance is a wide stop, and there is no separate sizing decision.
+
+`[OPEN]` **Which AVWAP is "the selected" one** — anchored to what event? This is now the
+single remaining unknown in the geometry.
+
+Six levels:
 
 | Level | Role |
 |---|---|
@@ -66,9 +135,9 @@ was read straight off Craig's own chart (73.84 / 73.89 / 73.94 / 74.10 / 74.26 /
   touches a level to the exact tick does not trigger it — price must trade through.
   Strict agrees with the log on 30 of 31 rows against inclusive's 28. Test: `tick.js`.
   This is why a real stop sits a few ticks beyond the drawn fib-0.
-- `[OPEN]` **How the leg is chosen.** ← *the blocker for autonomous backtesting.* Fib
-  placement is discretionary: on one trade the anchor sat exactly on a tape high while
-  fib-0 was 26c off the window low. No algorithm recovers that without the rule.
+- `[OPEN]` **Where exactly the structural anchor lands** in each archetype (§3). Half of
+  what used to be "the blocker" is gone — fib-0 is solved, not chosen — so what remains is
+  the anchor and the AVWAP selection, nothing else.
 
 ## 3. Risk
 
@@ -120,9 +189,10 @@ Four methodologies × the fill dispatch = the twelve scored columns.
 Answer by number; each answer updates this file and, where possible, gets a test that
 replays it against the 32 logged trades.
 
-1. **Leg selection.** What defines the swing the fib is drawn on? The screenshots show
-   `CHoCH` labels — is change-of-character the trigger? Is there a minimum leg size, a
-   lookback, a required BoS first?
+1. ~~**Leg selection.**~~ **PARTLY ANSWERED 2026-08-16.** The 0 is solved from the entry
+   and the 1, not chosen (§4). Still open: exactly where the structural anchor lands in
+   each archetype, and **which AVWAP the entry is set a tick beyond** — that is now the
+   only free input left in the geometry.
 2. **The filter.** What makes a setup takeable vs skippable? The screenshots show a
    `TT Transition / EMA lineup / 5m 15m 1H 4H → BULLISH/BEARISH` panel — is that a gate?
 3. **The indicators.** The chart legend is collapsed to "⌄5" in every screenshot. What
