@@ -235,6 +235,26 @@ give at those win rates; the SOP attributes the gap to the 50%-partial + BoS-tra
 - `#23` entry logged 73.70; that minute traded 73.71–73.74 and 73.70 never printed.
 - 92 stray cells: entry-only columns populated on L1-filled rows. Never read by the board.
 
+## 9b. Detector status — FAILING, and not to be tuned into working
+
+`detect.js` implements §3a literally. Across a full sweep of the two parameters I had to
+invent (minimum FVG size, reaction window) it finds **1–2 of Craig's 32 trades**. It is
+wrong, and it is recorded as wrong.
+
+I could reach a high match rate by tuning. That would be fitting the detector to the
+answer key and then grading with the answer key, and it would fall apart on 2022 data.
+The parameters stay exposed as CLI arguments and unset by default for that reason.
+
+What the failure most likely means — none of these are assumed, they are the questions:
+
+- **The BoS level is mine, not Craig's.** I used "the most recent 5-bar pivot within 90
+  bars". Craig specified how a BoS is *confirmed* (a full 1m close beyond) but never what
+  level it must close beyond. This is the biggest suspect.
+- **"External structure" (SOP, crypto-only) is unimplemented** — my pivot is internal.
+- **Minimum FVG size is unspecified.** The median 5m gap on this tape is 4 ticks; at a
+  0.08 floor the detector finds nothing at all. Somewhere between is a real number that
+  is Craig's to give.
+
 ## 10. OPEN QUESTIONS
 
 1. **Targets** — §7. Which is live: the SOP's 2R, or the board's 1.618/2.272?
