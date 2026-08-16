@@ -47,9 +47,15 @@ function simulate(t, bars, i) {
 
   for (let k = i; k < bars.length; k++) {
     const b = bars[k];
-    // adverse side first within a bar: if both the stop and a target are inside the
-    // same bar we cannot know which came first, so assume the stop (conservative).
-    const stopHit = d === 1 ? b.l <= t.sl : b.h >= t.sl;
+    // The ACTIVE stop follows the system's universal rule: it sits at the original SL
+    // until price clears the 1-of-fib anchor, and moves to break-even (entry) the moment
+    // it does. So the position's life ends at the original stop OR, once risk-free, on a
+    // return to entry. Running to the original SL regardless would stretch the window for
+    // hours past the point the trade was actually closed and inflate Max Run.
+    const activeStop = clearedAnchor ? t.entry : t.sl;
+    // adverse side first within a bar: if both the stop and a target sit inside the same
+    // bar we cannot know which came first, so assume the stop (conservative).
+    const stopHit = d === 1 ? b.l <= activeStop : b.h >= activeStop;
 
     if (t.l1 != null && !l1Filled && touched(b, t.l1)) { l1Filled = true; l1FillIdx = k; }
     if (l1Filled && k >= l1FillIdx && touched(b, t.entry) && k > l1FillIdx) retracedAfterL1 = true;
@@ -60,8 +66,11 @@ function simulate(t, bars, i) {
     if (t.t1618 != null && beyond(t, fav, t.t1618)) hit1618 = true;
     if (t.t2272 != null && beyond(t, fav, t.t2272)) hit2272 = true;
 
+    // Do NOT stop tracking when a target is touched. Max Run gates EVERY methodology's
+    // outcome, so truncating it at one methodology's exit is circular — you would need
+    // the exit to compute Max Run while Max Run is what decides the exit. The excursion
+    // runs until the original stop takes the position out (or the window caps).
     if (stopHit) { exitIdx = k; exitReason = 'stop'; break; }
-    if (hit2272) { exitIdx = k; exitReason = '2.272'; break; }
     if (k - i > 720) { exitIdx = k; exitReason = 'timeout-12h'; break; }
   }
   return { entryIdx: i, entryTime: new Date(bars[i].t).toISOString(),
@@ -91,45 +100,70 @@ function candidates(t, bars) {
   return out;
 }
 
-// Craig's TradingView charts render UTC-4 (New York). He enters Entry Time exactly as
-// the chart shows it, so shift to UTC before matching against Bybit's UTC-stamped bars.
-// If he ever re-timezones the chart, this constant is the single thing to change.
-const CHART_UTC_OFFSET_HOURS = -4;
+// Craig reads the clock off a TradingView chart rendered in New York time.
+const CHART_TZ = 'America/New_York';
 
-function barIndexForEntryTime(entryTimeISO, bars) {
-  // Notion hands back e.g. "2026-08-03T10:28:00.000-04:00" or a naive "...T10:28:00".
-  // A naive string carries no zone, so apply the chart offset explicitly rather than
-  // letting Date.parse guess (it would silently read it as local or UTC).
-  const naive = /[Zz]|[+-]\d\d:?\d\d$/.test(entryTimeISO) === false;
-  const ms = naive
-    ? Date.parse(entryTimeISO + 'Z') - CHART_UTC_OFFSET_HOURS * 3600_000
-    : Date.parse(entryTimeISO);
+// Offset of CHART_TZ, in minutes, on a given UTC instant — derived from the IANA
+// database rather than hardcoded, so DST is handled and this keeps working in winter.
+function tzOffsetMinutes(utcMs, tz) {
+  const d = new Date(utcMs);
+  const s = d.toLocaleString('en-US', { timeZone: tz, hour12: false,
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const m = s.match(/(\d+)\/(\d+)\/(\d+),?\s+(\d+):(\d+):(\d+)/);
+  const asUTC = Date.UTC(+m[3], +m[1] - 1, +m[2], +m[4] % 24, +m[5], +m[6]);
+  return Math.round((asUTC - utcMs) / 60000);
+}
+
+// Convert a wall-clock time in `tz` to a UTC instant (two passes settles DST edges).
+function wallClockToUTC(y, mo, d, hh, mm, tz) {
+  let guess = Date.UTC(y, mo - 1, d, hh, mm, 0);
+  for (let k = 0; k < 2; k++) guess = Date.UTC(y, mo - 1, d, hh, mm, 0) - tzOffsetMinutes(guess, tz) * 60000;
+  return guess;
+}
+
+/**
+ * Anchor a trade to a bar.
+ *
+ * The DAY comes from the Date column and the TIME-OF-DAY from Entry Time. That split
+ * is deliberate: Notion's date picker defaults to TODAY when you click the field, so
+ * the date attached to Entry Time is unreliable while the clock time — the part Craig
+ * actually reads off the chart — is exactly what he typed. Date is already correct on
+ * every row, so trusting it removes a whole class of silent error instead of asking
+ * him to retype the date and hoping.
+ */
+function barIndexForEntryTime(entryTimeISO, tradeDate, bars) {
+  // Read the wall-clock characters as stored; Notion writes local time plus its offset,
+  // so "…T09:46:00.000-04:00" means the operator saw and typed 09:46.
+  const wall = entryTimeISO.match(/T(\d{2}):(\d{2})/);
+  if (!wall) return { i: -1, why: `unparseable Entry Time: ${entryTimeISO}` };
+  const [y, mo, d] = tradeDate.split('-').map(Number);
+  const ms = wallClockToUTC(y, mo, d, +wall[1], +wall[2], CHART_TZ);
   const floored = Math.floor(ms / 60_000) * 60_000;
   const i = bars.findIndex(b => b.t === floored);
-  return { i, ms, floored };
+  return { i, ms, floored, wallHHMM: `${wall[1]}:${wall[2]}` };
 }
 
 function verify(t, bars) {
   // EXACT PATH: an entry timestamp removes the fingerprinting problem entirely.
-  if (t.entryTime) {
-    // Notion's date picker defaults to TODAY when you click the field without setting a
-    // date, which yields the right time on the wrong day and would silently anchor the
-    // trade to unrelated bars. Cross-check against the Date column before trusting it.
-    const stampDay = t.entryTime.slice(0, 10);
-    if (t.date && stampDay !== t.date) {
-      return { row: t, status: 'DATE-MISMATCH',
-               why: `Entry Time is dated ${stampDay} but the trade is dated ${t.date} — Notion's picker defaults to today; re-pick the date` };
-    }
-    const { i, floored } = barIndexForEntryTime(t.entryTime, bars);
+  if (t.entryTime && t.date) {
+    const { i, floored, wallHHMM, why } = barIndexForEntryTime(t.entryTime, t.date, bars);
+    if (why) return { row: t, status: 'BAD-TIME', why };
     if (i < 0) return { row: t, status: 'TIME-OUT-OF-RANGE',
-                        why: `no bar at ${new Date(floored).toISOString()} — check the timezone or extend the cached range` };
+                        why: `no bar at ${new Date(floored).toISOString()} (${wallHHMM} ${CHART_TZ} on ${t.date}) — extend the cached range` };
+    // informational only: the date on the stamp is ignored by design, but if it
+    // disagrees with the Date column it's worth surfacing once so nobody is surprised
+    const stampDay = t.entryTime.slice(0, 10);
+    const note = stampDay !== t.date
+      ? `Entry Time's own date (${stampDay}) ignored — day taken from the Date column (${t.date})`
+      : null;
     if (t.Timeframe === '15s') {
-      return { row: t, status: 'UNRESOLVABLE', anchored: true,
+      return { row: t, status: 'UNRESOLVABLE', anchored: true, note,
                why: '15s trade — entry time is known, but 1m bars still cannot order events inside a bar' };
     }
     const s = simulate(t, bars, i);
     return { row: t, status: 'OK', best: s, err: +Math.abs(s.mfe - t.maxRun).toFixed(4),
-             nCandidates: 1, nClose: 1, exact: true };
+             nCandidates: 1, nClose: 1, exact: true, note, wallHHMM };
   }
 
   if (t.Timeframe === '15s') {

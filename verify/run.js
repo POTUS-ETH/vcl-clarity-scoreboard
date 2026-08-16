@@ -32,7 +32,23 @@ const NUM = {1:'3b87e54146b580d0a320fffb77d95b40',2:'3b87e54146b5800aac62f0b4648
     }
     const b = r.best;
     const diffs = [];
-    if (r.err > 0.02) diffs.push(`MaxRun logged ${t.maxRun} vs tape ${b.mfe} (${r.err > 0 ? '+' : ''}${(b.mfe - t.maxRun).toFixed(3)})`);
+    // Max Run is NEVER compared as a magnitude. Every formula that touches it does a
+    // threshold test (cleared anchor / hit target), so its size beyond the furthest
+    // target is immaterial — a peak of 73.33 and one of 74.28 produce identical
+    // outcomes. What must agree are the FLAGS it implies, checked below. A raw diff
+    // here would manufacture failures out of a definitional ambiguity.
+    const dirn = t.Direction === 'Long' ? 1 : -1;
+    const impliesCleared = t.anchor != null && dirn * (t.maxRun - t.anchor) >= 0;
+    if (impliesCleared !== b.clearedAnchor)
+      diffs.push(`cleared-anchor: log implies ${impliesCleared}, tape ${b.clearedAnchor}`);
+    if (t.t1618 != null) {
+      const impl = dirn * (t.maxRun - t.t1618) >= 0;
+      if (impl !== b.hit1618) diffs.push(`reached 1.618: log implies ${impl}, tape ${b.hit1618}`);
+    }
+    if (t.t2272 != null) {
+      const impl = dirn * (t.maxRun - t.t2272) >= 0;
+      if (impl !== b.hit2272) diffs.push(`reached 2.272: log implies ${impl}, tape ${b.hit2272}`);
+    }
     if (!!t.L1Filled !== b.l1Filled) diffs.push(`L1 Filled logged ${!!t.L1Filled} vs tape ${b.l1Filled}`);
     if (t.retracedToEntry != null && !!t.retracedToEntry !== b.retracedAfterL1)
       diffs.push(`Retraced-to-entry logged ${!!t.retracedToEntry} vs tape ${b.retracedAfterL1}`);
