@@ -235,6 +235,48 @@ give at those win rates; the SOP attributes the gap to the 50%-partial + BoS-tra
 - `#23` entry logged 73.70; that minute traded 73.71–73.74 and 73.70 never printed.
 - 92 stray cells: entry-only columns populated on L1-filled rows. Never read by the board.
 
+## 9a. WORKED EXAMPLE — 2026-07-20, and why the detector took the opposite side
+
+`[CRAIG]` Craig marked up the exact window my setup 1 fired in. He went **long**. I went
+short. He won; I would have been run over.
+
+His ladder, `[VERIFIED]` as an exact fib — all six of his marked levels reproduce from
+0 = 75.72 and 1 = 76.04 to the cent:
+
+| level | price |
+|---|---|
+| 0 · stop | 75.72 |
+| 0.17 · L1 | 75.77 |
+| 0.382 · entry | 75.84 |
+| 1 · anchor | 76.04 |
+| 1.618 | 76.24 |
+| 2.272 | 76.45 |
+
+Fib range 0.32, 1R = 0.177. Price ran to 76.71 — **both targets paid.** My short entered
+at 76.07 and price reached 77.22 against it.
+
+**The four things his markup exposes:**
+
+1. **THE TREND FILTER IS NOT IMPLEMENTED, AND IT IS THE WHOLE GAME.** SOP criteria 1 and 2
+   — macro ≥15m bias, micro aligned — were never built. On his 5m chart the macro is
+   clearly UP; the move down into the FVG is the CORRECTION, and the CHoCH ends it. My
+   detector has no trend context whatsoever, so it read the correction as a trend and sold
+   into a bull continuation. **This is the single highest-priority fix and it explains the
+   direction errors, not just this one trade.**
+2. **The anchor was the top of his trade.** My "reaction high" at 04:17 is the 76.42 high
+   of his winning move. His anchor is the reaction LOW at ~75.72, roughly an hour earlier.
+3. **Wrong FVG, wrong side.** He works a BULLISH 5m gap around 75.50–75.55; I used a
+   bearish one at 76.37–76.41.
+4. **The BoS/ChoCh level is the last swing high of the CORRECTIVE move** — the dashed
+   level on his chart at ~75.84 that price closes back above to confirm the change of
+   character. That is a real answer to the open question; my "nearest 5-bar pivot within
+   90 bars" is not it.
+
+`[OPEN]` One detail not yet settled: the session low was 75.46 at 02:37 and the FVG sits
+around 75.50–55, but his anchor is the HIGHER low at ~75.72 around 03:18. So the anchor is
+not the bar that touched the gap — it is the low that immediately preceded the ChoCh.
+Confirm whether the FVG touch and the anchor low are always allowed to be different swings.
+
 ## 9b. Detector status — FAILING, and not to be tuned into working
 
 `detect.js` implements §3a literally. Across a full sweep of the two parameters I had to

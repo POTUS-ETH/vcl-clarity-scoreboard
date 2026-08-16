@@ -149,53 +149,5 @@ function detect(m1, htf, d, minGap = 0, reactWin = 30, minRangePct = 0.25, maxWa
             .filter((s, i, arr) => i === 0 || s.entryIdx > arr[i - 1].entryIdx);
 }
 
-(async () => {
-  const m1 = await load('SOLUSDT', '1', '2026-08-01T00:00:00Z', '2026-08-09T00:00:00Z');
-  const j = await (await fetch('https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig&t=' + Date.now())).json();
-  const logged = j.trades.filter(t => t.entryTime && t.entry != null).map(t => {
-    const { i } = barIndexForEntryTime(t.entryTime, t.date, m1);
-    return { t, i, d: t.Direction === 'Long' ? 1 : -1 };
-  }).filter(x => x.i >= 0);
 
-  const MIN_GAP = +(process.argv[2] ?? 0), REACT_WIN = +(process.argv[3] ?? 30);
-  console.log('=== VCL CRYPTO DETECTOR vs CRAIG\'S 32 LOGGED TRADES ===');
-  console.log(`  min FVG size ${MIN_GAP} | reaction window ${REACT_WIN} bars\n`);
-  console.log(`  window ${hhmmNY(m1[0].t)} to ${hhmmNY(m1[m1.length-1].t)} NY, ${m1.length} 1m bars\n`);
-  console.log('  FVG tf   setups   matched a logged trade   logged trades found   extra setups');
-
-  const detail = {};
-  for (const M of [5, 15]) {
-    const htf = roll(m1, M);
-    const setups = [...detect(m1, htf, 1, MIN_GAP, REACT_WIN), ...detect(m1, htf, -1, MIN_GAP, REACT_WIN)].sort((a, b) => a.entryIdx - b.entryIdx);
-    const used = new Set();
-    let matched = 0;
-    for (const s of setups) {
-      const hit = logged.find((L, li) => !used.has(li) && L.d === s.d && Math.abs(L.i - s.entryIdx) <= 10);
-      if (hit) { matched++; used.add(logged.indexOf(hit)); }
-    }
-    detail[M] = { setups, matched, found: used.size };
-    console.log(`  ${String(M + 'm').padEnd(8)} ${String(setups.length).padStart(6)}   ${String(matched).padStart(21)}   ${String(used.size + '/' + logged.length).padStart(19)}   ${String(setups.length - matched).padStart(12)}`);
-  }
-
-  // does the SOP reading of the 1 (post-BoS extreme) fit the logged anchors better than Craig's?
-  console.log('\n=== where does the fib 1 go — the BoS candle, or the extreme after it? ===\n');
-  for (const M of [5, 15]) {
-    let cr = 0, sop = 0, n = 0;
-    for (const s of detail[M].setups) {
-      const L = logged.find(L => L.d === s.d && Math.abs(L.i - s.entryIdx) <= 10);
-      if (!L || L.t.anchor == null) continue;
-      n++;
-      if (Math.abs(s.anchorCraig - L.t.anchor) <= 0.03) cr++;
-      if (Math.abs(s.anchorSOP  - L.t.anchor) <= 0.03) sop++;
-    }
-    console.log(`  ${M}m FVG — of ${n} matched setups, BoS-candle high fits ${cr}, post-BoS extreme fits ${sop} (within 3c)`);
-  }
-
-  console.log('\n=== volume at the FVG reaction — OBSERVED, NOT GATED ===\n');
-  for (const M of [5, 15]) {
-    const v = detail[M].setups.map(s => s.volRatio).sort((a, b) => a - b);
-    if (!v.length) continue;
-    const q = p => v[Math.floor(v.length * p)];
-    console.log(`  ${M}m FVG — reaction volume / 30-bar median:  p10 ${q(0.1)}   median ${q(0.5)}   p90 ${q(0.9)}   (n=${v.length})`);
-  }
-})();
+module.exports = { roll, fvgs, priorPivot, detect };
