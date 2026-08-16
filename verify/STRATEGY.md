@@ -68,12 +68,53 @@ is too noisy to anchor on.
 
 ## 3. Construction
 
-`[SOP]` **The AVWAP anchor** — the single most important placement:
+### 3a. The AVWAP anchor — CRYPTO USES CRAIG'S VARIANT, NOT THE SOP'S SWEEP
 
-> Drop the Anchored VWAP on the **highest/lowest candle wick that swept the prior
-> low/high, near the end of the consolidation, before the BoS.**
+`[CRAIG]` **We trade Craig's methodology. Most SOP criteria stand, but the sweep step does
+not** — on crypto, price action makes a sweep too hard to identify reliably.
 
-This is VCL's core AVWAP variant, **Sweep + BoS** (drawn as the solid green line).
+**What replaces it:**
+
+> Anchor off a **swing low or high that has reacted to an FVG**. The reaction should carry
+> **increased volume**. Anchor on the **extreme candle that led to the BoS/ChoCh**, and
+> enter at the VWAP anchored there.
+
+`[CRAIG]` **The FVG is found on a higher timeframe — 5m or 15m. The anchor and the
+execution are always on the 1m**, either way, so long as the setup aligns with one of
+those two principles.
+
+`[OPEN]` **5m FVG vs 15m FVG — which works better is not yet known.** This is a defined
+A/B the backtest is meant to settle, not a thing to assume. Treat it as two variants of
+the strategy until the data says otherwise.
+
+`[OPEN]` Craig said "the highest candle that led to a BoS/ChoCh". On a long the anchor
+should be the swing **low** of the FVG reaction. Confirm whether "highest" was generic for
+"the extreme candle in the relevant direction", or whether longs genuinely anchor on a high.
+Not assumed either way.
+
+**Method note — the anchor cannot be recovered from the entry price.** `anchorsolve.js`
+inverted the relationship: since the entry sits a slight gap beyond the AVWAP, and an
+anchored VWAP is fully determined by its anchor bar, scanning candidate anchors should
+recover it. It does not. An AVWAP is nearly flat in its anchor over these windows, so even
+demanding the gap be **within a single tick** leaves a median of 7 viable anchors per trade
+(600 searched). All 32 rows "solve", which is exactly the problem.
+
+The consequence is a build order, not a dead end. Narrowing 600 candidates to ~7 is a
+**98.8% reduction** — a powerful validator, a useless identifier. So:
+
+1. The **structural rule** (FVG reaction + volume + BoS) must pick the anchor.
+2. The **AVWAP-to-entry relationship then checks it** — a detector whose chosen bar falls
+   outside the ~7-candidate set is provably wrong on that row.
+
+That gives any future anchor detector an immediate, independent pass/fail per trade, which
+is a better position than either piece alone. It also means **the FVG-timeframe question
+(5m vs 15m) cannot be settled by inversion** — an earlier attempt scored 29/32 on *both*,
+which is the signature of a test that does not discriminate rather than agreement.
+
+`[SOP]` *(retained for futures, and as the origin of the model)* The SOP anchors instead on
+the **highest/lowest candle wick that swept the prior low/high near the end of the
+consolidation, before the BoS** — VCL's core "Sweep + BoS" variant, the solid green line.
+On crypto this is superseded by the FVG rule above.
 
 `[SOP]` **The fib's 1** — the highest/lowest point *after* the BoS.
 
@@ -212,3 +253,5 @@ give at those win rates; the SOP attributes the gap to the 50%-partial + BoS-tra
 | 2026-08-16 | **AVWAP anchor identified: the sweep candle.** Retired my candidate sweep of session/day opens — none fit (best 12/32, `vwapanchor.js`). | SOP |
 | 2026-08-16 | Retired "the 5 chart indicators may be decision-relevant" — the SOP states there is no indicator filter at all. | SOP |
 | 2026-08-16 | Retired "trend read is daily→1H→15m *only*" as the whole story — the SOP's operative test is macro ≥15m vs micro ≤15m alignment. | SOP |
+| 2026-08-16 | **Crypto anchors on an FVG reaction, not a sweep** — sweeps are unreliable on crypto price action. 5m vs 15m FVG is an open A/B. Anchor and execution stay on 1m. | Craig |
+| 2026-08-16 | Recorded that the anchor is NOT recoverable by inverting the entry price (median 7 candidates even at 1 tick). Reframed as a validator, not an identifier. | `anchorsolve.js` |
