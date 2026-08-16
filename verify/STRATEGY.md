@@ -73,24 +73,32 @@ is too noisy to anchor on.
 `[CRAIG]` **We trade Craig's methodology. Most SOP criteria stand, but the sweep step does
 not** — on crypto, price action makes a sweep too hard to identify reliably.
 
-**What replaces it:**
+**What replaces it — the full sequence** `[CRAIG]`, stated as a long; mirror for shorts:
 
-> Anchor off a **swing low or high that has reacted to an FVG**. The reaction should carry
-> **increased volume**. Anchor on the **extreme candle that led to the BoS/ChoCh**, and
-> enter at the VWAP anchored there.
+1. **Price reacts to an FVG** on the 5m or the 15m.
+2. **It must not CLOSE beyond the gap's midpoint.** A wick through is fine — the close is
+   what invalidates.
+3. **Wait for a BoS or ChoCh** — whichever is present. Validation requires **a full 1m
+   candle close** above (long) or below (short) the level. Not a wick, not an intrabar poke.
+4. **Anchor the AVWAP to that low** — the reaction low where the FVG was validated.
+5. **Anchor the fib's 1 to the high of the BoS/ChoCh.**
+6. **Enter at the VWAP on the retrace**, playing the continuation.
 
 `[CRAIG]` **The FVG is found on a higher timeframe — 5m or 15m. The anchor and the
-execution are always on the 1m**, either way, so long as the setup aligns with one of
-those two principles.
+execution are always on the 1m**, either way.
 
-`[OPEN]` **5m FVG vs 15m FVG — which works better is not yet known.** This is a defined
-A/B the backtest is meant to settle, not a thing to assume. Treat it as two variants of
-the strategy until the data says otherwise.
+`[CRAIG]` **Volume is an OBSERVATION, not a filter — yet.** The FVG reaction should show
+increased volume, but how to measure it, and whether it matters at all, is deliberately
+undecided. Record it per setup and report the distribution; **do not gate on it** until the
+data says it earns its place. Adding a threshold now would be inventing a parameter.
 
-`[OPEN]` Craig said "the highest candle that led to a BoS/ChoCh". On a long the anchor
-should be the swing **low** of the FVG reaction. Confirm whether "highest" was generic for
-"the extreme candle in the relevant direction", or whether longs genuinely anchor on a high.
-Not assumed either way.
+`[OPEN]` **5m FVG vs 15m FVG — which works better is not yet known.** A defined A/B for the
+backtest to settle, not a thing to assume. Treat them as two variants until data decides.
+
+`[OPEN]` Minor tension on where the 1 goes: Craig says "the high of the BoS/ChoCh", the SOP
+says "the highest point **after** the BoS". These differ if price keeps running past the
+BoS candle before retracing. **Testable** — the logged anchor prices can be compared
+against both readings rather than picked between.
 
 **Method note — the anchor cannot be recovered from the entry price.** `anchorsolve.js`
 inverted the relationship: since the entry sits a slight gap beyond the AVWAP, and an
@@ -255,3 +263,5 @@ give at those win rates; the SOP attributes the gap to the 50%-partial + BoS-tra
 | 2026-08-16 | Retired "trend read is daily→1H→15m *only*" as the whole story — the SOP's operative test is macro ≥15m vs micro ≤15m alignment. | SOP |
 | 2026-08-16 | **Crypto anchors on an FVG reaction, not a sweep** — sweeps are unreliable on crypto price action. 5m vs 15m FVG is an open A/B. Anchor and execution stay on 1m. | Craig |
 | 2026-08-16 | Recorded that the anchor is NOT recoverable by inverting the entry price (median 7 candidates even at 1 tick). Reframed as a validator, not an identifier. | `anchorsolve.js` |
+| 2026-08-16 | Full crypto sequence given: react to FVG, no close beyond midpoint, BoS/ChoCh confirmed by a full 1m close, anchor at the reaction low, fib 1 at the BoS high. Resolved the "highest candle" ambiguity. | Craig |
+| 2026-08-16 | Volume demoted from filter to observation — measure and report, do not gate, until it earns a threshold. | Craig |
