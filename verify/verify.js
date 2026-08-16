@@ -182,3 +182,25 @@ function verify(t, bars) {
 }
 
 module.exports = { verify, simulate, candidates, load };
+
+/**
+ * Replay one trade under EVERY scenario the board scores, from tape alone.
+ *
+ * A row is not one path — it is the same trade replayed under BE and PVS, at 1.618 and
+ * 2.272, full-send and 50%-off. Some scenarios close at a target, some at break-even,
+ * some take the full stop, and they can disagree on the SAME trade. So the tape's job is
+ * to establish the facts (did L1 fill, did the anchor clear, how far did price reach) and
+ * let each scenario resolve itself from those. Asking "what was the exit" is malformed.
+ */
+function scenarios(t, bars, i) {
+  const s = simulate(t, bars, i);
+  const out = {};
+  for (const [name, tgt, reached] of [['1.618', t.t1618, s.hit1618], ['2.272', t.t2272, s.hit2272]]) {
+    if (tgt == null) { out[`BE·${name}`] = 'unscoreable — no target price logged'; continue; }
+    out[`BE·${name}`] = !s.clearedAnchor ? 'full stop (−1R): never reached the anchor'
+                      : reached          ? `target ${tgt}`
+                                         : 'break-even (0R): cleared the anchor, missed target';
+  }
+  return { facts: s, scenarios: out };
+}
+module.exports.scenarios = scenarios;
