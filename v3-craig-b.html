@@ -119,7 +119,7 @@ details.l2 .body{padding:0 14px 14px}
       <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
       <p><b>Why EVS is gone.</b> The entry-VWAP trail was retired on 2026-08-16. Across 32 logged 1m trades it returned a value identical to plain BE on every matched row — a paired delta of +0.000R with a zero-width interval. 18 of those trades never cleared the anchor, so no trail could apply; 13 more resolved exactly as BE would have; it changed the answer once. It was costing a chart read on every trade to tell you what BE already said. PVS stays because it is the only trail that has ever diverged.</p>
       <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against or filter for.</p>
-      <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
+      <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: when price reaches the 1 of fib, half the position banks profit right there; the rest follows its methodology's rule to close. It fires off the same anchor-clear that already moves the stop to break-even, so once the partial is banked the runner cannot lose — the outcome is either the banked half plus a flat runner, or the banked half plus target. A trade that never reaches the anchor never banks anything and takes the full −1R.</p>
       <p><b>The curve under each cube row</b> is that methodology's cumulative R, trade by trade, in the order the trades actually happened — not dollars, not equity, just R stacked on itself. Blue and rising means it's ahead net; red and sinking means it's behind. It's the same information as expectancy and LIS/WIS above it, just shown as a shape instead of numbers, so a streak or a slow bleed is visible at a glance instead of implied by a stat.</p>
       <p><b>Reading a dot-and-line mark</b> (the ranked table below, and the paired comparisons). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
@@ -151,7 +151,7 @@ const MGSTOP={none:'stop moves to BE', pvs:'stop trails a VWAP re-anchored at th
 const MGCLOSE={none:'closes either at BE or at target', pvs:'closes at the trail stop or at target'};
 function mechDesc(mg, mode){
   let s=`When entry or entry+L1 fills, stop stays at the 0 of fib until price crosses the 1 of fib — then ${MGSTOP[mg]}, and the trade ${MGCLOSE[mg]}.`;
-  if(mode==='sc') s+=' Half the position banks at entry if price retraces after L1 fills; the rest follows this same rule to close.';
+  if(mode==='sc') s+=' Half the position banks at the 1 of fib the moment price reaches it; the rest follows this same rule to close.';
   return s;
 }
 const MGSHORT={none:'BE', pvs:'PVS'};
@@ -185,18 +185,14 @@ function maxWinStreak(series){let c=0,m=0; for(const r of series){ if(r>0.005){ 
 
 /* per-trade blended R — fill is what the market did, not a choice, so each trade
    gets exactly one score per methodology: solo-R if L1 never filled, lad-R if it did.
-   sc mode is gated by the definitive "Retraced to Entry After L1" checkbox once present:
-   partial never fired -> scores like blend; partial fired -> the real 50%-off formula. */
+   sc mode (50% off) reads its own column directly. Since 2026-08-16 the partial banks
+   at the ANCHOR, not at entry-on-retrace, so the sc formula resolves everything itself:
+   it sizes off L1 Filled internally and needs no "Retraced to Entry" gate — that
+   checkbox made a claim about SEQUENCE (did price come back to entry AFTER L1 filled)
+   that a single Max Run extreme can never settle. The anchor-clear is unambiguous. */
 function tradeR(t, m, mode){
   const o=t.o||{}, l1=!!t.L1Filled;
-  if(mode==='sc'){
-    if(!l1) return num(o[m.solo]);
-    if('retracedToEntry' in t){
-      if(!t.retracedToEntry) return num(o[m.lad]);
-      return num(o[m.sc]);
-    }
-    return num(o[m.sc]);
-  }
+  if(mode==='sc') return num(o[m.sc]);
   return num(o[l1 ? m.lad : m.solo]);
 }
 function seriesFor(m, pool, mode){ return pool.map(t=>tradeR(t,m,mode)).filter(x=>x!=null); }
@@ -393,19 +389,20 @@ function cubeBlock(pool){
 
 /* ============================== L1 — 50%-off vs full ladder, insurance test ============================== */
 function insuranceBlock(pool){
-  const l1Pool = pool.filter(t=>t.L1Filled);
-  if(!l1Pool.length) return `<div class="card"><div class="lbl">50% off vs. full ladder</div><div class="empty-note">No L1-filled trades in this filter yet.</div></div>`;
+  // no L1-filled restriction anymore: the partial fires off the anchor-clear, which is
+  // independent of whether L1 filled. Fill only decides the sizing inside the formula.
+  if(!pool.length) return `<div class="card"><div class="lbl">50% off vs. full ladder</div><div class="empty-note">No trades in this filter yet.</div></div>`;
   let rows='', anySig=false;
   METH.forEach(m=>{
-    const p=paired(m,'blend',m,'sc',l1Pool);
+    const p=paired(m,'blend',m,'sc',pool);
     const sig = p.n && (p.lo>0||p.hi<0);
     if(sig) anySig=true;
     rows+=`<div class="insrow"><span>${nameOf(m)}</span><span class="${p.n?cls(p.mean):'na'}">${p.n?fR(p.mean):'—'}${sig?' <span class="sig">sig</span>':''} <span class="mini">n${p.n||0}</span></span></div>`;
   });
-  return `<div class="card"><div class="lbl">50% off vs. full ladder — paired, L1-filled trades only</div>
-    <div class="fsub" style="margin-bottom:8px">Scenario: half the position banks profit at entry when price retraces after L1 fills; the other half keeps riding to target under that row's stop. Delta = 50%-off minus the full ladder, same trades.</div>
+  return `<div class="card"><div class="lbl">50% off at the 1 of fib vs. full ladder — paired</div>
+    <div class="fsub" style="margin-bottom:8px">Scenario: half the position banks the moment price reaches the 1 of fib; the other half keeps riding to target under that row's stop. Delta = 50%-off minus the full ladder, same trades. Scored on every trade — a trade that never reaches the anchor banks nothing and is a full loss under both.</div>
     <div class="inslist">${rows}</div>
-    <div class="mini" style="margin-top:8px">Positive = banking the partial helped on average, on the exact same trades. ${anySig?'':`Every interval here still crosses zero — on ${l1Pool.length} L1-filled trades, this log can't yet say the partial helps or hurts either methodology.`}</div>
+    <div class="mini" style="margin-top:8px">Positive = banking at the anchor helped on average, on the exact same trades. ${anySig?'':`Every interval here still crosses zero — on ${pool.length} trades, this log can't yet say the partial helps or hurts either methodology.`}</div>
   </div>`;
 }
 
@@ -462,7 +459,7 @@ function rankedTable(pool){
   let h='';
   rows.forEach(r=>{
     const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
-    const mech=MECHSHORT[r.m.mg]+(r.mode==='sc'?' · half banks on retrace to entry':'');
+    const mech=MECHSHORT[r.m.mg]+(r.mode==='sc'?' · half banks at the 1 of fib':'');
     h+=`<tr><td><span class="tag">${MGSHORT[r.m.mg]}</span> ${r.m.tgt}${r.mode==='sc'?' <span class="tag sc">50% off</span>':''}<div class="mini" style="font-weight:400;margin-top:2px">${mech}</div></td>
       <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.m,pool,r.mode),140,32):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
