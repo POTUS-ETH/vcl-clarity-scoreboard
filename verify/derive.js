@@ -4,12 +4,22 @@
 // swing HE picks (verified: the anchor matches a tape high exactly, but the fib-0 sits
 // 26c off the window low, so it is a judgement call no algorithm can recover).
 //
-// PVS IS AN INTERPRETATION, NOT A READING. The schema says the position VWAP is
-// "anchored at the peak swing after fills". That admits more than one reading, and the
-// one implemented here — re-anchor on every new extreme — is a choice. It is therefore
-// checked against the rows where Craig already did the read by hand (validatePVS below)
-// before any of it is trusted or written back. If those disagree, the interpretation is
-// wrong and gets changed; it does not get shipped on the strength of looking reasonable.
+// PVS IS AN INTERPRETATION, NOT A READING — and reading Craig's screenshots settled what
+// it looks like without settling how to compute it. On his charts PVS and EVS are drawn
+// levels: an anchored-VWAP curve (magenta for PVS, cyan for EVS) runs forward from its
+// anchor, and where price gives it up a horizontal ray carries that value across the
+// chart, labelled and tagged on the price axis. So the number in the log is a level he
+// read off a line, and the screenshots are a direct, auditable source for it.
+//
+// That audit has been done on all four rows carrying a hand-read PVS Price: #13 (74.11),
+// #14 (73.50) and #20 (74.57) match the chart exactly; #9 does not — its ray sits below
+// the 0.618 line at ~73.81 while the log says 73.92, which is above it.
+//
+// What it did NOT settle is the anchor. None of the three candidates tried here — peak,
+// entry, or leg start — reproduces all four rays, and with four points and a free
+// lookback any rule can be bent to fit. So pvsTrail below remains UNVALIDATED and its
+// output is never written back. The screenshots are the source of truth for PVS; this
+// code is a hypothesis about them.
 const { load } = require('./bars');
 const { simulate } = require('./verify');
 
@@ -117,14 +127,43 @@ function derive(t, bars, entryIdx) {
  * An Entry Time is only real if someone typed it. Notion's picker seeds the field with
  * today's date and a fixed clock time, so an untouched row still carries a timestamp —
  * one that is syntactically valid, lands on a real bar, and is completely fictional.
- * Two independent tells, and BOTH must hold before a row counts as entered:
- *   - the clock time is shared with other rows (real fills do not collide across days)
- *   - the stamp's own date is not the trade's date
- * The second alone is normal (the picker defaults the date even on a genuine entry), so
- * it is the collision that convicts. Rows failing this are skipped, never diffed —
- * scoring them produces plausible-looking findings out of a placeholder.
+ * Scoring such a row yields a full, confident reconstruction of a trade that never
+ * happened, indistinguishable by eye from a genuine finding.
+ *
+ * THE TEST: the entry PRICE is an independent witness to the entry TIME. Craig read the
+ * clock off the chart and typed it; he read the fill off the same chart and typed that
+ * too. If the bar at that minute never traded that price, the two disagree and the row is
+ * not scoreable. Pass `bars` to get this check — it is the reliable one.
+ *
+ * Without `bars` this falls back to a collision heuristic (a clock time shared across
+ * rows whose stamp dates differ from their trade dates). That fallback is weaker and
+ * demonstrably misses cases: #31 and #32 both carried the default 09:46, which collides
+ * with #1's GENUINE 09:46, and only two rows had the date tell — under the collision
+ * threshold. The price test caught both immediately, at 81c and 87c off their own entries.
+ *
+ * The tolerance is deliberately loose. Logged prices are drawn fib levels, not fill
+ * prices, so a real entry can miss its bar's range by a cent (#23 does, by exactly that).
+ * A placeholder misses by most of a dollar. Nothing lives in between.
  */
-function enteredTimestamps(trades) {
+const ENTRY_PRICE_TOLERANCE = 0.02;
+
+function enteredTimestamps(trades, bars) {
+  if (bars) {
+    const { barIndexForEntryTime } = require('./verify');
+    const good = t => {
+      if (!t.entryTime || !t.date || t.entry == null) return false;
+      const { i } = barIndexForEntryTime(t.entryTime, t.date, bars);
+      if (i < 0) return false;
+      const b = bars[i];
+      if (b.l <= t.entry && t.entry <= b.h) return true;
+      return Math.min(Math.abs(b.l - t.entry), Math.abs(b.h - t.entry)) <= ENTRY_PRICE_TOLERANCE;
+    };
+    return {
+      entered: trades.filter(t => t.entryTime && good(t)),
+      placeholder: trades.filter(t => t.entryTime && !good(t)),
+    };
+  }
+
   const byHM = {};
   trades.filter(t => t.entryTime).forEach(t => {
     const hm = t.entryTime.slice(11, 16);
@@ -145,7 +184,7 @@ function validatePVS(trades, bars) {
   const { barIndexForEntryTime } = require('./verify');
   // Both conditions are required. Without Entry Time the trade cannot be anchored, and
   // without a hand-read PVS Price there is nothing to check the interpretation against.
-  const { entered } = enteredTimestamps(trades);
+  const { entered } = enteredTimestamps(trades, bars);
   const usable = entered.filter(t => t.date && t.pvsPrice != null && t.Timeframe === '1m');
   const rows = [];
   for (const t of usable) {

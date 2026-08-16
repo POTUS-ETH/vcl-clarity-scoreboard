@@ -1,6 +1,7 @@
 // Runs the tape reconstruction against every logged trade and prints a diff.
 const { load } = require('./bars');
 const { verify } = require('./verify');
+const { enteredTimestamps } = require('./derive');
 
 const WORKER = 'https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3-craig';
 
@@ -19,10 +20,20 @@ const NUM = {1:'3b87e54146b580d0a320fffb77d95b40',2:'3b87e54146b5800aac62f0b4648
     .filter(r => r.t && (!only || only.includes(r.n)))
     .sort((a, b) => a.n - b.n);
 
-  const tally = { ok: 0, mismatch: 0, unresolvable: 0, nocand: 0, ambiguous: 0 };
+  // Rows still carrying Notion's default timestamp must not be scored. The picker seeds a
+  // real-looking time on an untouched field, and verify() will happily anchor to it and
+  // print a full, confident reconstruction of a trade that never happened. Those findings
+  // are indistinguishable from genuine ones by eye, so they are excluded here rather than
+  // footnoted — a diff nobody can trust is worse than no diff.
+  const { placeholder } = enteredTimestamps(j.trades, bars);
+  const notYet = new Set(placeholder.map(t => t.id));
+
+  const tally = { ok: 0, mismatch: 0, unresolvable: 0, nocand: 0, ambiguous: 0, pending: 0 };
   const findings = [];
+  const pendingRows = [];
 
   for (const { n, t } of rows) {
+    if (notYet.has(t.id)) { tally.pending++; pendingRows.push(n); continue; }
     const r = verify(t, bars);
     if (r.status === 'UNRESOLVABLE') { tally.unresolvable++; continue; }
     if (r.status === 'NO-CANDIDATE') {
@@ -71,6 +82,8 @@ const NUM = {1:'3b87e54146b580d0a320fffb77d95b40',2:'3b87e54146b5800aac62f0b4648
   console.log(`  MISMATCHED      : ${tally.mismatch}`);
   console.log(`  no candidate    : ${tally.nocand}`);
   console.log(`  15s unresolvable: ${tally.unresolvable}`);
-  console.log(`  ambiguous window: ${tally.ambiguous}\n`);
+  console.log(`  ambiguous window: ${tally.ambiguous}`);
+  console.log(`  awaiting a real Entry Time (not scored): ${tally.pending}` +
+              (pendingRows.length ? `  — #${pendingRows.join(', #')}` : '') + '\n');
   findings.forEach(f => console.log('  ' + f + '\n'));
 })();

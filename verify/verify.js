@@ -55,7 +55,15 @@ function simulate(t, bars, i) {
     const activeStop = clearedAnchor ? t.entry : t.sl;
     // adverse side first within a bar: if both the stop and a target sit inside the same
     // bar we cannot know which came first, so assume the stop (conservative).
-    const stopHit = d === 1 ? b.l <= activeStop : b.h >= activeStop;
+    //
+    // STRICT, not inclusive: a wick that reaches the level to the exact tick does NOT end
+    // the trade — price has to trade THROUGH it. The logged SL is the fib-0 level Craig
+    // drew, not the price his stop order sits at; a real stop goes a few ticks beyond the
+    // level precisely so a wick to it doesn't lift the position. Two rows turn on this one
+    // tick (#20 and #24) and Craig logged both as surviving; strict agrees with the log on
+    // 23 of 24 rows against inclusive's 21, and reproduces #20's Max Run of 74.81 exactly.
+    // See tick.js — this is a measured choice, not a rounding preference.
+    const stopHit = d === 1 ? b.l < activeStop : b.h > activeStop;
 
     if (t.l1 != null && !l1Filled && touched(b, t.l1)) { l1Filled = true; l1FillIdx = k; }
     if (l1Filled && k >= l1FillIdx && touched(b, t.entry) && k > l1FillIdx) retracedAfterL1 = true;
