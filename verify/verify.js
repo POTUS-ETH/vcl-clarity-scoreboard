@@ -65,8 +65,25 @@ function simulate(t, bars, i) {
     // See tick.js — this is a measured choice, not a rounding preference.
     const stopHit = d === 1 ? b.l < activeStop : b.h > activeStop;
 
-    if (t.l1 != null && !l1Filled && touched(b, t.l1)) { l1Filled = true; l1FillIdx = k; }
-    if (l1Filled && k >= l1FillIdx && touched(b, t.entry) && k > l1FillIdx) retracedAfterL1 = true;
+    // INTRA-BAR ORDER. L1 normally sits between entry and the original SL, so on the way
+    // down it fills long before any stop can. But once the stop moves to break-even it
+    // sits BETWEEN entry and L1 — and on the bar that finally breaks it, price crosses
+    // the stop FIRST and the position is closed before L1 could ever fill. Price reaches
+    // whichever level is nearer the entry side first, so on a bar that stops the trade
+    // out, L1 only fills if it lies beyond the active stop. #13 is the case: L1 73.89 is
+    // first traded on 20:17Z, the very bar whose low of 73.88 breaks the BE stop at
+    // 73.94 — Craig logged no L1 fill and the tape, read in order, agrees.
+    const l1BeforeStop = t.l1 != null && d * (t.l1 - activeStop) > 0;
+    if (t.l1 != null && !l1Filled && touched(b, t.l1) && (!stopHit || l1BeforeStop)) {
+      l1Filled = true; l1FillIdx = k;
+    }
+    // Retracing to entry means price came BACK UP to entry after L1 filled (back DOWN on
+    // a short) — L1 sits beyond entry, so the fill leaves price on the far side of it.
+    // Fitted against all 32 logged rows (retrace.js): this reading scores 30, the
+    // "came back down to entry after moving in favour" reading only 16, so the direction
+    // is settled. Unlike the stop, a TOUCH counts — this is an observation about where
+    // price went, not an order that has to fill, and touch beats strict 30 to 29.
+    if (l1Filled && k > l1FillIdx && d * ((d === 1 ? b.h : b.l) - t.entry) >= 0) retracedAfterL1 = true;
 
     const fav = d === 1 ? b.h : b.l;
     if (d * (fav - mfe) > 0) mfe = fav;
