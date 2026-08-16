@@ -303,6 +303,41 @@ around 75.50–55, but his anchor is the HIGHER low at ~75.72 around 03:18. So t
 not the bar that touched the gap — it is the low that immediately preceded the ChoCh.
 Confirm whether the FVG touch and the anchor low are always allowed to be different swings.
 
+## 9a2. Things measured and found NOT to discriminate
+
+Kept deliberately, so none of them gets rebuilt and rediscovered. Each fires correctly on
+the validated 2026-07-20 long; none separates Craig's 20 winning longs from his losing ones.
+
+| read | winners | losers | verdict |
+|---|---|---|---|
+| 1H binary bias agrees | 2/10 | 3/10 | no signal |
+| sweep lands in a 5m FVG | 10/10 | 10/10 | fires on everything |
+| sweep lands in a 15m FVG | 10/10 | 10/10 | fires on everything |
+| 1H range rejection (`rejectedBottom`) | 7/7 | 13/13 | fires on everything |
+| volume exhaustion confirmed | 5/7 | 7/13 | 71% vs 54%, noise at this n |
+| sweep volume ≥1.5x median | 5/7 | 8/13 | no signal |
+| 1H position in range | 73% | 83% | small, right direction, unproven |
+
+`[INFERRED]` The range reads fail for a diagnosable reason rather than a mysterious one:
+`context()` builds its range from the last swing high and last swing low, which are often
+not an enclosing range at all — positions of 139%, 247%, 496% appear in the output, meaning
+price sits outside "the range" routinely. Vorwald selects a *significant* range by eye on
+the weekly and daily. A two-pivot mechanical substitute is a different object, and
+`rejectedBottom` firing on 20 of 20 is the same defect showing up as a constant.
+
+**The broader result, stated plainly.** Across binary bias, 1H bias, range position, edge
+rejection, FVG confluence, sweep volume and volume exhaustion, **nothing computable at
+entry time separates Craig's winning longs from his losing ones on this sample.** The one
+strong separator — whether L1 fills — is unknowable at entry and is a management signal,
+not a filter. Three explanations remain open and they are not equivalent:
+
+1. n=20 longs over six days in one regime is too small and too homogeneous to show an edge.
+2. The edge really is in the discretion Craig described, and is not reducible to these reads.
+3. The right features have not been measured yet.
+
+Nothing here justifies picking one. It does justify not shipping a filter that has shown
+no discriminating power, however sensible its rationale.
+
 ## 9b. Detector status — FAILING, and not to be tuned into working
 
 `detect.js` implements §3a literally. Across a full sweep of the two parameters I had to
