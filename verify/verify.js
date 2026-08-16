@@ -181,7 +181,7 @@ function verify(t, bars) {
            nCandidates: cands.length, nClose: close };
 }
 
-module.exports = { verify, simulate, candidates, load };
+module.exports = { verify, simulate, candidates, load, barIndexForEntryTime, CHART_TZ };
 
 /**
  * Replay one trade under EVERY scenario the board scores, from tape alone.
