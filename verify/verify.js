@@ -91,7 +91,47 @@ function candidates(t, bars) {
   return out;
 }
 
+// Craig's TradingView charts render UTC-4 (New York). He enters Entry Time exactly as
+// the chart shows it, so shift to UTC before matching against Bybit's UTC-stamped bars.
+// If he ever re-timezones the chart, this constant is the single thing to change.
+const CHART_UTC_OFFSET_HOURS = -4;
+
+function barIndexForEntryTime(entryTimeISO, bars) {
+  // Notion hands back e.g. "2026-08-03T10:28:00.000-04:00" or a naive "...T10:28:00".
+  // A naive string carries no zone, so apply the chart offset explicitly rather than
+  // letting Date.parse guess (it would silently read it as local or UTC).
+  const naive = /[Zz]|[+-]\d\d:?\d\d$/.test(entryTimeISO) === false;
+  const ms = naive
+    ? Date.parse(entryTimeISO + 'Z') - CHART_UTC_OFFSET_HOURS * 3600_000
+    : Date.parse(entryTimeISO);
+  const floored = Math.floor(ms / 60_000) * 60_000;
+  const i = bars.findIndex(b => b.t === floored);
+  return { i, ms, floored };
+}
+
 function verify(t, bars) {
+  // EXACT PATH: an entry timestamp removes the fingerprinting problem entirely.
+  if (t.entryTime) {
+    // Notion's date picker defaults to TODAY when you click the field without setting a
+    // date, which yields the right time on the wrong day and would silently anchor the
+    // trade to unrelated bars. Cross-check against the Date column before trusting it.
+    const stampDay = t.entryTime.slice(0, 10);
+    if (t.date && stampDay !== t.date) {
+      return { row: t, status: 'DATE-MISMATCH',
+               why: `Entry Time is dated ${stampDay} but the trade is dated ${t.date} — Notion's picker defaults to today; re-pick the date` };
+    }
+    const { i, floored } = barIndexForEntryTime(t.entryTime, bars);
+    if (i < 0) return { row: t, status: 'TIME-OUT-OF-RANGE',
+                        why: `no bar at ${new Date(floored).toISOString()} — check the timezone or extend the cached range` };
+    if (t.Timeframe === '15s') {
+      return { row: t, status: 'UNRESOLVABLE', anchored: true,
+               why: '15s trade — entry time is known, but 1m bars still cannot order events inside a bar' };
+    }
+    const s = simulate(t, bars, i);
+    return { row: t, status: 'OK', best: s, err: +Math.abs(s.mfe - t.maxRun).toFixed(4),
+             nCandidates: 1, nClose: 1, exact: true };
+  }
+
   if (t.Timeframe === '15s') {
     return { row: t, status: 'UNRESOLVABLE', why: '15s trade — 1m bars cannot order events inside a bar' };
   }

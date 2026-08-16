@@ -330,6 +330,9 @@ async function computeCraig(token) {
       L1Filled:  getProp(t, 'L1 Filled'),
       RangePct:  getProp(t, 'Range %'),
       date:      getProp(t, 'Date'),
+      entryTime: getProp(t, 'Entry Time'),  // chart-clock timestamp of the entry fill;
+                                            // the key that makes a row machine-verifiable
+                                            // against exchange tape. See verify/verify.js.
       // EVS Hit / EVS Price retired 2026-08-16 — the Notion fields are kept so the 8 rows
       // Craig already chart-read aren't destroyed, but nothing consumes them anymore.
       pvsHit1:   getProp(t, 'PVS Hit 1.618'),
