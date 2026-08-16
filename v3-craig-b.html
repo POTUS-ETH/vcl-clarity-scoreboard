@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VCL v3 — Craig · six methodologies, paired</title>
+<title>VCL v3 — Craig · four methodologies, paired</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -105,7 +105,7 @@ details.l2 .body{padding:0 14px 14px}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>VCL v3 — CRAIG</h1><div class="sub">Six methodologies, each scored on every trade · paired on identical rows</div></div>
+    <div><h1>VCL v3 — CRAIG</h1><div class="sub">Four methodologies, each scored on every trade · paired on identical rows</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="assetTg"><button data-a="all" class="on">ALL</button><button data-a="eth">ETH</button><button data-a="sol">SOL</button><button data-a="btc">BTC</button></div>
       <div class="tg" id="tfTg"><button data-t="1m" class="on">1m</button><button data-t="15s">15s</button></div>
@@ -115,15 +115,16 @@ details.l2 .body{padding:0 14px 14px}
   <details class="primer">
     <summary>How to read this board</summary>
     <div class="body">
-      <p><b>What's on this board.</b> Every logged trade is replayed under 6 stop/target rules — BE, EVS-trail, or PVS-trail, each aimed at either the 1.618 or 2.272 fib target — plus a 50%-off variant. That's up to 12 hypothetical scores per trade, all describing the same real trade.</p>
-      <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; EVS trails a VWAP anchored at entry; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
+      <p><b>What's on this board.</b> Every logged trade is replayed under 4 stop/target rules — BE or PVS-trail, each aimed at either the 1.618 or 2.272 fib target — plus a 50%-off variant. That's up to 8 hypothetical scores per trade, all describing the same real trade.</p>
+      <p><b>The rule every methodology shares.</b> Stop starts at the 0 of fib (the original stop-loss). Once price crosses the 1 of fib (the swing anchor), that methodology's rule kicks in: BE moves the stop to break-even and waits; PVS trails a VWAP re-anchored at the post-fill peak. The trade then closes at BE, at the trail stop, or at target.</p>
+      <p><b>Why EVS is gone.</b> The entry-VWAP trail was retired on 2026-08-16. Across 32 logged 1m trades it returned a value identical to plain BE on every matched row — a paired delta of +0.000R with a zero-width interval. 18 of those trades never cleared the anchor, so no trail could apply; 13 more resolved exactly as BE would have; it changed the answer once. It was costing a chart read on every trade to tell you what BE already said. PVS stays because it is the only trail that has ever diverged.</p>
       <p><b>Fill isn't a choice.</b> Entry and L1 orders are both always live; whether L1 fills is the market's decision, not yours. Every score already reflects whatever happened on that trade — there's no separate "entry-only strategy" to compare against or filter for.</p>
       <p><b>The 50%-off variant</b> is a different rule, not a fill outcome: if L1 fills and price retraces back to entry, half the position banks profit there; the rest still follows its methodology's rule to close.</p>
       <p><b>The curve under each cube row</b> is that methodology's cumulative R, trade by trade, in the order the trades actually happened — not dollars, not equity, just R stacked on itself. Blue and rising means it's ahead net; red and sinking means it's behind. It's the same information as expectancy and LIS/WIS above it, just shown as a shape instead of numbers, so a streak or a slow bleed is visible at a glance instead of implied by a stat.</p>
       <p><b>Reading a dot-and-line mark</b> (the ranked table below, and the paired comparisons). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>The numbers next to each mark.</b> Win rate counts wins ÷ (wins + losses) — a 0R scratch counts as neither. Total R sums every trade in that methodology; expectancy is the same total divided by n. Effective sample derates the trade count for day-clustering (several trades on one day aren't fully independent evidence) — treat it as the honest, conservative n.</p>
       <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size — five -0.2R losses in a row is a 5-trade LIS but barely dents cumulative R. All three matter for different reasons: drawdown is what your equity curve actually lived through; LIS is what your discipline has to survive trade-to-trade; WIS is how long a hot streak can run before mean reversion — useful context for not oversizing off a run that was never going to last.</p>
-      <p><b>Why every comparison is paired.</b> Outcomes here differ by only 0.1–0.4R, and the trail methodologies (EVS/PVS) have fewer logged trades than BE — they need chart-read evidence BE doesn't. Averaging each side over whatever trades happen to be scored can flip a ranking that a fair, same-trades comparison would not. So every delta on this board — stop vs. stop, 50%-off vs. full ladder, runner-up vs. leader — is computed only over rows scored on both sides being compared.</p>
+      <p><b>Why every comparison is paired.</b> Outcomes here differ by only 0.1–0.4R, and the PVS trail has fewer logged trades than BE — it needs chart-read evidence BE doesn't. Averaging each side over whatever trades happen to be scored can flip a ranking that a fair, same-trades comparison would not. So every delta on this board — stop vs. stop, 50%-off vs. full ladder, runner-up vs. leader — is computed only over rows scored on both sides being compared.</p>
       <p><b>Break-even move card.</b> Tracks how the BE rule actually landed: what fraction of trades cleared the 1 of fib and fired the move, and of those, what fraction then closed flat exactly at break-even instead of running further.</p>
       <p><b>"Closeable" in the data-integrity strip</b> means price cleared the trail anchor but no exit was ever logged for it — the only kind of blank on this board. It closes the moment Craig reads that trade's chart; nothing else is missing or estimated.</p>
     </div>
@@ -132,25 +133,28 @@ details.l2 .body{padding:0 14px 14px}
 </div>
 <script>
 /* ============================== metadata ============================== */
+// EVS (entry-VWAP trail) retired 2026-08-16: across 32 logged 1m trades it produced a
+// value identical to plain BE on every matched row (paired delta +0.000R, zero-width CI).
+// 18 trades never cleared the anchor so the trail was moot; 13 more resolved the same as BE;
+// it changed the answer once. Not worth a chart read per trade. PVS kept — it is the only
+// trail that ever diverged. O7-O12 dropped in Notion; raw EVS inputs retained but retired.
 const METH=[
  {k:'BE-1.618',  mg:'none', tgt:'1.618', solo:'O1',  lad:'O2',  sc:'O3'},
  {k:'BE-2.272',  mg:'none', tgt:'2.272', solo:'O4',  lad:'O5',  sc:'O6'},
- {k:'EVS-1.618', mg:'evs',  tgt:'1.618', solo:'O7',  lad:'O8',  sc:'O9'},
- {k:'EVS-2.272', mg:'evs',  tgt:'2.272', solo:'O10', lad:'O11', sc:'O12'},
  {k:'PVS-1.618', mg:'pvs',  tgt:'1.618', solo:'O13', lad:'O14', sc:'O15'},
  {k:'PVS-2.272', mg:'pvs',  tgt:'2.272', solo:'O16', lad:'O17', sc:'O18'},
 ];
-const MGS=['none','evs','pvs'];
-const MGNAME={none:'BE · no trail', evs:'EVS · entry-VWAP trail', pvs:'PVS · peak-VWAP trail'};
+const MGS=['none','pvs'];
+const MGNAME={none:'BE · no trail', pvs:'PVS · peak-VWAP trail'};
 // the actual rule, stated as a sequence of what happens — not a stats caveat
-const MGSTOP={none:'stop moves to BE', evs:'stop trails the entry-anchored VWAP', pvs:'stop trails a VWAP re-anchored at the peak swing after fill'};
-const MGCLOSE={none:'closes either at BE or at target', evs:'closes at the trail stop or at target', pvs:'closes at the trail stop or at target'};
+const MGSTOP={none:'stop moves to BE', pvs:'stop trails a VWAP re-anchored at the peak swing after fill'};
+const MGCLOSE={none:'closes either at BE or at target', pvs:'closes at the trail stop or at target'};
 function mechDesc(mg, mode){
   let s=`When entry or entry+L1 fills, stop stays at the 0 of fib until price crosses the 1 of fib — then ${MGSTOP[mg]}, and the trade ${MGCLOSE[mg]}.`;
   if(mode==='sc') s+=' Half the position banks at entry if price retraces after L1 fills; the rest follows this same rule to close.';
   return s;
 }
-const MGSHORT={none:'BE', evs:'EVS', pvs:'PVS'};
+const MGSHORT={none:'BE', pvs:'PVS'};
 const TGTS=['1.618','2.272'];
 const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 const findM=(mg,tgt)=>METH.find(m=>m.mg===mg&&m.tgt===tgt);
@@ -446,10 +450,9 @@ function integrityStrip(pool){
   </div>`;
 }
 
-/* ============================== L2 — all 12, ranked ============================== */
+/* ============================== L2 — all 8, ranked ============================== */
 const MECHSHORT={
   none: '0 → 1 of fib, then stop to BE — closes at BE or target',
-  evs:  '0 → 1 of fib, then stop trails entry-VWAP — closes at trail or target',
   pvs:  '0 → 1 of fib, then stop trails peak-VWAP — closes at trail or target',
 };
 function rankedTable(pool){
@@ -476,7 +479,7 @@ function rankedTable(pool){
 
 /* ============================== L2 — trail reach ============================== */
 function trailReach(pool){
-  const defs=[['Entry-VWAP trail','evsHit1','evsHit2','evs'],['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
+  const defs=[['Position-VWAP trail','pvsHit1','pvsHit2','pvs']];
   let h='';
   defs.forEach(([lbl,h1,h2,mg])=>{
     const m=findM(mg,'2.272');
@@ -502,8 +505,8 @@ function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
   board.innerHTML = answerBlock(pool) +
-    disclosure('d-all','All 12, ranked', rankedTable(pool)) +
-    disclosure('d-trail','How far the trails ran', trailReach(pool)) +
+    disclosure('d-all','All 8, ranked', rankedTable(pool)) +
+    disclosure('d-trail','How far the PVS trail ran', trailReach(pool)) +
     cubeBlock(pool) +
     `<div class="twocol">${insuranceBlock(pool)}${beMoveBlock(pool)}</div>` +
     integrityStrip(pool) +

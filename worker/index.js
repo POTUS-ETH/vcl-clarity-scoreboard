@@ -291,19 +291,22 @@ const CORS = {
 const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
 
-// Craig's 12 outcome columns, in order. Read straight off the Notion formulas so
-// there is exactly one place the R math lives.
-// 18 outcomes = stop management (BE / EVS trail / PVS trail) x target (1.618 / 2.272)
+// Craig's outcome columns. Read straight off the Notion formulas so there is exactly
+// one place the R math lives.
+// Remaining set = stop management (BE / PVS trail) x target (1.618 / 2.272)
 // x fill scheme (Entry only / Entry+L1 / Entry+L1 with 50% off at the lock).
-// Order matters: index i maps to key 'O(i+1)'.
-const CRAIG_OUTCOMES = [
-  'O1 · BE 1.618 · Entry',   'O2 · BE 1.618 · Entry+L1',   'O3 · BE 1.618 · 50%',
-  'O4 · BE 2.272 · Entry',   'O5 · BE 2.272 · Entry+L1',   'O6 · BE 2.272 · 50%',
-  'O7 · EVS 1.618 · Entry',  'O8 · EVS 1.618 · Entry+L1',  'O9 · EVS 1.618 · 50%',
-  'O10 · EVS 2.272 · Entry', 'O11 · EVS 2.272 · Entry+L1', 'O12 · EVS 2.272 · 50%',
-  'O13 · PVS 1.618 · Entry', 'O14 · PVS 1.618 · Entry+L1', 'O15 · PVS 1.618 · 50%',
-  'O16 · PVS 2.272 · Entry', 'O17 · PVS 2.272 · Entry+L1', 'O18 · PVS 2.272 · 50%',
-];
+//
+// EVS (O7-O12) retired 2026-08-16 — over 32 logged 1m trades the entry-VWAP trail
+// returned a value identical to plain BE on every matched row (paired delta +0.000R).
+// The O-numbers are deliberately NOT renumbered: this is an explicit key->column map,
+// not a positional list, so retiring a methodology can never silently shift the others
+// onto the wrong Notion column.
+const CRAIG_OUTCOMES = {
+  O1:  'O1 · BE 1.618 · Entry',   O2:  'O2 · BE 1.618 · Entry+L1',   O3:  'O3 · BE 1.618 · 50%',
+  O4:  'O4 · BE 2.272 · Entry',   O5:  'O5 · BE 2.272 · Entry+L1',   O6:  'O6 · BE 2.272 · 50%',
+  O13: 'O13 · PVS 1.618 · Entry', O14: 'O14 · PVS 1.618 · Entry+L1', O15: 'O15 · PVS 1.618 · 50%',
+  O16: 'O16 · PVS 2.272 · Entry', O17: 'O17 · PVS 2.272 · Entry+L1', O18: 'O18 · PVS 2.272 · 50%',
+};
 
 async function computeCraig(token) {
   const trades = await queryAllDataSource(CRAIG_DATA_SOURCE, token);
@@ -315,7 +318,7 @@ async function computeCraig(token) {
     // outcomes, which must never be skipped. This is the one field every logged attempt has.
     if (getProp(t, 'Entry Price') == null) continue;
     const o = {};
-    CRAIG_OUTCOMES.forEach((name, i) => { o['O' + (i + 1)] = getProp(t, name); });
+    for (const [key, name] of Object.entries(CRAIG_OUTCOMES)) o[key] = getProp(t, name);
     rows.push({
       id:        t.id,            // stable row identity — lets a board figure be traced to a trade
       created:   t.created_time,  // the only reliable ordering key; Date has no time component
@@ -327,11 +330,10 @@ async function computeCraig(token) {
       L1Filled:  getProp(t, 'L1 Filled'),
       RangePct:  getProp(t, 'Range %'),
       date:      getProp(t, 'Date'),
-      evsHit1:   getProp(t, 'EVS Hit 1.618'),
-      evsHit2:   getProp(t, 'EVS Hit 2.272'),
+      // EVS Hit / EVS Price retired 2026-08-16 — the Notion fields are kept so the 8 rows
+      // Craig already chart-read aren't destroyed, but nothing consumes them anymore.
       pvsHit1:   getProp(t, 'PVS Hit 1.618'),
       pvsHit2:   getProp(t, 'PVS Hit 2.272'),
-      evsPrice:  getProp(t, 'EVS Price'),
       pvsPrice:  getProp(t, 'PVS Price'),
       retracedToEntry: getProp(t, 'Retraced to Entry After L1'), // definitive gate for the 50%-off partial firing
       movedStopToBE:   getProp(t, 'Moved Stop to BE'),
