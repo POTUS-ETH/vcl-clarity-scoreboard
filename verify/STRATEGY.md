@@ -68,10 +68,36 @@ is too noisy to anchor on.
 
 ## 3. Construction
 
-### 3a. The AVWAP anchor — CRYPTO USES CRAIG'S VARIANT, NOT THE SOP'S SWEEP
+### 3a. The AVWAP anchor — SWEEP **INTO** AN FVG
 
-`[CRAIG]` **We trade Craig's methodology. Most SOP criteria stand, but the sweep step does
-not** — on crypto, price action makes a sweep too hard to identify reliably.
+`[CRAIG]` The sweep and the FVG are **not alternatives — they are one condition.** Craig's
+earlier framing ("sweeps are hard to identify on crypto, use an FVG instead") is refined by
+his markup of 2026-07-20: *"it sweeps and confirms the FVG."* The sweep is still the event;
+the FVG is what makes it trustworthy on crypto, where a bare sweep is too noisy to trade.
+Neither alone is the setup.
+
+`[CRAIG]` **This requires discretion.** Craig says so directly. Treat any mechanisation as
+an approximation of a judgement call, not a replacement for one.
+
+`[VERIFIED]` **WORKED END TO END on 2026-07-20** — the first complete reproduction of one
+of his trades from tape alone:
+
+| step | tape |
+|---|---|
+| prior swing low | 75.54 at 02:53 |
+| **sweep** | 03:17–03:18 trades to **75.49**, taking that low out by 5c, and reverses |
+| the sweep lands in | the 5m FVG at ~75.50–75.55 — the gap *confirms* the sweep |
+| **AVWAP anchored** | the 03:18 candle, the lowest wick of the sweep |
+| run | price rallies to 76.04 by 03:30 — this becomes fib 1 |
+| **entry** | 03:40, AVWAP reads 75.833, entry one tick above = **75.84** (he marked 75.84) |
+| **0 solved** | `(75.84 − 0.382×76.04)/0.618` = **75.716** (he marked 75.72) |
+| outcome | 1.618 and 2.272 both paid; price ran to 76.71 |
+
+Every level reproduces to the cent. Test: the chain above is exact, not fitted.
+
+Note the stop lands **23c ABOVE the sweep low** (75.72 vs 75.49). The SOP's "the 0 sits at
+or just beyond the AVWAP anchor candle" is loose — the 0 is solved, and on this trade it
+came out well inside the anchor candle's wick.
 
 **What replaces it — the full sequence** `[CRAIG]`, stated as a long; mirror for shorts:
 
