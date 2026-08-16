@@ -333,7 +333,34 @@ What the failure most likely means — none of these are assumed, they are the q
    FVG requirement apply to the BoS as well?
 4. **The other four AVWAP types** in the VCL Clarity testing hub — what are they, and is
    the board meant to compare them?
-5. **Macro/micro trend** — how is "market structure still intact" determined mechanically?
+5. **Macro/micro trend.** `[CRAIG]` **Structure = higher highs AND higher lows** (mirrored
+   for down). `[CRAIG]` **The 15m matters more than the 1H** — but note his 2026-07-20 long
+   has a 15m bias of DOWN, so the 15m is critical as *the structure whose break is the
+   signal*, not one that must agree. Not yet resolved into a rule.
+
+   **Reference — Tom Vorwald, "The Ultimate Multi-Timeframe Strategy for Perfect Entries"**
+   ([12:20](https://youtu.be/HySZZSjMxF8)), sent by Craig. Same doctrine, and it names two
+   things this spec has open:
+
+   - **The disturbance level.** He draws, explicitly, the level *"if we go above this, the
+     trend structure is disturbed for now"* — the last lower high in a downtrend. That is
+     the ChoCh level, and it is the same answer Craig's markup gave for what a BoS must
+     close through. Two independent sources now agree on it.
+   - **Volume at the reversal.** *"When a reversal occurs, the volume also increases…
+     and when it then trades back down from that increased volume, I've had exhaustion at
+     the top. But if it doesn't trade below this volume, I have to wait."* That is a
+     concrete, testable form of Craig's "increased volume on the FVG reaction", which is
+     currently recorded as observe-don't-gate.
+   - **Closing prices.** *"Always keep an eye on the closing prices"* — consistent with the
+     full-1m-close rule for confirming a BoS/ChoCh.
+   - Sequence: weekly range → daily market phase and rejection → 1H bias → **15m to define
+     risk**. Craig's daily → 1H → 15m, with the 15m as the execution/risk frame.
+
+   **The lesson for my `bias()` function.** Vorwald does not compute a binary trend flag.
+   He locates *where price sits inside a larger range* and *whether a breakout was
+   rejected*. My implementation asks a yes/no question of a market that is usually
+   sideways, which is why it returns "none" on ~18 of Craig's 32 trades. A range-position
+   read is likely the right shape, not a stricter pivot rule.
 6. **Rejected setups** — still zero logged. Every row is a trade he took, so there is
    nothing to learn the skip-filter from.
 
