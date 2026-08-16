@@ -338,6 +338,35 @@ not a filter. Three explanations remain open and they are not equivalent:
 Nothing here justifies picking one. It does justify not shipping a filter that has shown
 no discriminating power, however sensible its rationale.
 
+## 9a3. The crypto question, answered by measurement
+
+`[VERIFIED]` **First scored run.** 50 long setups, 20 days, sweep + FVG + ladder-ordered +
+0.25 range floor, trend and session gates off (both showed no discriminating power):
+
+| methodology | expectancy | win | 95% CI |
+|---|---|---|---|
+| BE 1.618 | +0.295R | 26% | −0.19 to 0.78 |
+| BE 2.272 | −0.162R | 6% | −0.57 to 0.25 |
+
+Both cross zero, and both are **gross** — fees run 20–60% of 1R at these ranges, so BE
+1.618 nets to approximately nothing.
+
+`[VERIFIED]` **The fragmentation hypothesis is FALSE.** Craig's "Why Futures, Not Crypto"
+page names the mechanism: *"one venue's partial, liquidation-distorted volume sample. The
+AVWAP is an average of noise."* That is testable, and the numbers do quantify the premise —
+a Bybit-only AVWAP weights just **26% of the consolidated tape**, Binance alone trading 2.8x
+Bybit, with closes agreeing to a median cent.
+
+But consolidating does not help. Identical setups, identical maths, only the volume basis
+changing: Bybit +0.295R, Binance +0.183R, both together +0.220R. Indistinguishable.
+
+**So the verdict stands, and the stated reason is not the binding one.** The AVWAP is not
+failing because it is built from an incomplete sample — a complete sample performs the
+same. Whatever is wrong is among the other items on his page (liquidation cascades that
+run through the invalidation, funding paying a class to fade structure breaks, fake BoS on
+thin books, no session clock), or the edge simply is not present on perps at this
+timeframe. This closes the fixable-by-engineering path rather than the whole question.
+
 ## 9b. Detector status — FAILING, and not to be tuned into working
 
 `detect.js` implements §3a literally. Across a full sweep of the two parameters I had to

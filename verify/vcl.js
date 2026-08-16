@@ -136,7 +136,7 @@ function detect(m1, htfList, d, opts) {
     // archetype A, where the ChoCh IS the moment the correction ends. The 15m down-move is
     // the correction; the 1H is the trend it is correcting against, and it reads UP. That
     // matches his own words: daily, then 1 hour, then 15 minute.
-    if (bias(biasBars, m1[i].t) !== d) continue;
+    if (!opts.noTrend && bias(biasBars, m1[i].t) !== d) continue;
 
     // STAGE 3 — the sweep must land in a higher-timeframe gap.
     let fvgTf = null;
