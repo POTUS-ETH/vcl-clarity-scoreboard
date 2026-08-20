@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Super Mario Fib — Grant · six outcomes, one fib</title>
+<title>Super Mario Fib — Grant · eight outcomes, one fib</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -29,7 +29,8 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .primer{border:1px solid #2a3140;margin-bottom:10px}
 .primer summary{cursor:pointer;padding:11px 14px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#8fb4e8;list-style:none;display:flex;justify-content:space-between}
 .primer summary::-webkit-details-marker{display:none}
-.primer summary::after{content:'hide';font-size:9px;color:#4a5568;text-transform:none;letter-spacing:0}
+.primer summary::after{content:'hide';font-size:10px;color:#8fb4e8;text-transform:none;letter-spacing:0}
+.primer summary:focus-visible{outline:2px solid #8fb4e8;outline-offset:-2px}
 .primer:not([open]) summary::after{content:'show'}
 .primer .body{padding:0 14px 13px;font-size:11.5px;line-height:1.65;color:#c3c9d4}
 .primer .body p{margin-bottom:7px}
@@ -68,6 +69,25 @@ details.l2 .body{padding:0 14px 14px}
 .tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
 .foot{font-size:9.5px;color:#6b7280;margin-top:10px;line-height:1.6}
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.sectionhd{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink);margin:16px 0 4px}
+.tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px}
+.matrix{margin-bottom:0}
+
+/* ---- responsive: the board had zero media queries and overflowed at 375px ---- */
+.wrap{overflow-x:hidden}
+.tg button{position:relative;min-height:26px;transition:background-color 160ms ease-out}
+.tg button::after{content:'';position:absolute;inset:-11px -7px}  /* 44px touch target, visual size unchanged */
+.tg button:active{transform:scale(.97)}
+@media (max-width:640px){
+  body{padding:10px;font-size:12px}
+  .hd h1{font-size:15px}
+  .answer .policy{font-size:16px}
+  .answer .bandnum{font-size:19px}
+  .answer .stats{gap:11px}
+  .matrix{font-size:10px}
+  .matrix th,.matrix td{padding:5px 4px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
@@ -80,10 +100,10 @@ details.l2 .body{padding:0 14px 14px}
   <details class="primer">
     <summary>How to read this board</summary>
     <div class="body">
-      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Seven exit outcomes are scored on <em>every</em> trade at once. They are not seven strategies competing on separate samples; they are seven ways of pricing the same set of real trades.</p>
+      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Eight exit outcomes are scored on <em>every</em> trade at once. They are not eight strategies competing on separate samples; they are eight ways of pricing the same set of real trades.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
       <p><b>The fib is fixed, so every level is forced.</b> Stop 0.085, entry 0.382, TP 0.68. That makes 1R = 0.297 in fib units, and the whole board hangs off four levels: <b>1R = fib 0.679</b> (the TP itself), <b>2R = 0.976</b>, <b>3R = 1.272</b>, <b>5R = 1.866</b>.</p>
-      <p><b>Family 1 — full position, no partial.</b> Everything off at one fixed target. Binary by construction: +NR if Max Run reached it, −1R if not. Note this means <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1.</p>
+      <p><b>Family 1 — full position, no partial.</b> Four fixed targets, binary by construction: +NR if Max Run reached it, −1R if not. <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1. The fifth row, <b>Full size → BE + trail</b>, is the no-partial control: same full size, but no ceiling — it takes whatever structure gives.</p>
       <p><b>Family 2 — 50% off at the 0.68, then the runner.</b> Banking half at the TP locks <b>0.5R</b> (the TP is 1R away, at half size). The remaining half then carries everything. Because it's half size it must make <b>2R to move the position 1R</b> — so the runner needs 3R for a 2R trade (fib 1.272) and 5R for a 3R trade (fib 1.866).</p>
       <p><b>That's why the two families share price levels.</b> "Full TP @ 3R" and "runner capped at 1.272" are the <em>same line on the chart</em> — they differ only in how much size is still on when price gets there. Same for 5R and 1.866.</p>
       <p><b>The uncapped trail is the incumbent, kept as a baseline.</b> It's what Grant is running now: half off, then let BOS run with no ceiling. The two capped variants are being tested against it, not against each other.</p>
@@ -200,6 +220,8 @@ const MGMT=[
    desc:'Whole position off at 3R, the 1.272 extension.'},
   {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.866',
    desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
+  {key:'bosExitR', fam:'full', name:'Full size -> BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
+   desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.68.'},
   {key:'smCap1272', fam:'part', name:'50% -> cap 1.272', short:'C1.272', lvl:'runner 3R = 2R net',
    desc:'Half off at 0.68, runner trails on BOS but full-closes at fib 1.272. Caps the trade at +2R; if 1.272 never prints the runner is scored at the real BOS exit.'},
   {key:'smCap1866', fam:'part', name:'50% -> cap 1.866', short:'C1.866', lvl:'runner 5R = 3R net',
@@ -289,7 +311,7 @@ function familyBlock(fam, pool){
       <td><span class="tag">${m.short}</span> ${m.name}${m.baseline?' <span class="mini">· baseline</span>':''}
         <div class="mini" style="font-weight:400;margin-top:2px">${m.lvl} — ${m.desc}</div></td>
       <td style="width:140px">${st.n?equityCurveSVG(seriesFor(m.key,pool),130,30):'<span class="na">no data</span>'}</td>
-      <td class="${st.n?cls(st.mean):'na'}">${st.n?fR(st.mean):'—'}${st.n&&!(st.lo<0&&st.hi>0)?' <span class="sig">sig</span>':''}</td>
+      <td class="${st.n?cls(st.mean):'na'}">${st.n?fR(st.mean):'—'}${st.n&&st.lo>0?' <span class="sig">sig</span>':''}</td>
       <td>${st.n?Math.round(st.winRate*100)+'%':'<span class="na">—</span>'}</td>
       <td class="${st.n?cls(st.total):'na'}">${st.n?fR(st.total):'—'}</td>
       <td class="${st.n?'neg':'na'}">${st.n?fDD(st.dd):'—'}</td>
@@ -297,7 +319,7 @@ function familyBlock(fam, pool){
   }).join('');
   return `<div class="sectionhd">${f.label}</div>
     <div class="fsub">${f.blurb}</div>
-    <table class="matrix"><thead><tr><th>Outcome</th><th>curve</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>n</th></tr></thead><tbody>${rows}</tbody></table>`;
+    <div class="tblwrap"><table class="matrix"><thead><tr><th>Outcome</th><th>curve</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>n</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 /* ============================== L2 — both, ranked ============================== */
@@ -306,10 +328,11 @@ function rankedTable(pool){
   rows.sort((a,b)=>(b.s.n?b.s.mean:-99)-(a.s.n?a.s.mean:-99));
   let h='';
   rows.forEach(r=>{
-    const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
+    const s=r.s, sig=s.n && s.lo>0;
     h+=`<tr><td><span class="tag">${r.m.short}</span> ${r.m.name}<div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
       <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.prop,pool),140,32):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
+      <td class="mut" style="white-space:nowrap">${s.n?`[${fR(s.lo)}, ${fR(s.hi)}]`:'—'}</td>
       <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
       <td class="${s.n?cls(s.total):'na'}">${s.n?fR(s.total):'—'}</td>
       <td class="${s.n?'neg':'na'}">${s.n?fDD(s.dd):'—'}</td>
@@ -317,8 +340,8 @@ function rankedTable(pool){
       <td class="${s.n&&s.winStreak?'pos':'mut'}">${s.n?s.winStreak:'—'}</td>
       <td class="mut">${s.n||'—'}</td></tr>`;
   });
-  return `<div class="fsub">Every row is the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not seven separate samples — do not add the n column up. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own.</div>
-    <table class="matrix"><thead><tr><th>Management</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return `<div class="fsub">Every row is the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not eight separate samples — do not add the n column up. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own.</div>
+    <div class="tblwrap"><table class="matrix"><thead><tr><th>Outcome</th><th>curve</th><th>expectancy</th><th>95% CI</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table></div>`;
 }
 
 /* ============================== render ============================== */
@@ -333,7 +356,7 @@ function render(){
     reachStrip(pool) +
     familyBlock('full',pool) +
     familyBlock('part',pool) +
-    disclosure('d-all','All seven, ranked head to head', rankedTable(pool)) +
+    disclosure('d-all','All eight, ranked head to head', rankedTable(pool)) +
     `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
