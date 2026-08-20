@@ -82,8 +82,10 @@ details.l2 .body{padding:0 14px 14px}
     <div class="body">
       <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Two exit managements are scored on the same trades at once: closing the whole position at TP with no partial, versus banking half at TP and trailing the rest on break-of-structure. They're both hypotheses about the same real trade, not separate strategies to pick between live.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
-      <p><b>Full @ TP — no partial.</b> Close the entire position the instant price hits TP (~fib 0.68). No partial, no de-risking along the way. −1 if TP never clears.</p>
-      <p><b>50% @ TP → trail BOS.</b> Bank half at TP (~fib 0.68), move the rest to breakeven, and trail the remainder on break-of-structure. That second half isn't a fixed-target hypothesis — it's scored at wherever the trail actually exited, so this management is part realized result, part hypothesis. −1 if TP never clears.</p>
+      <p><b>The fib is fixed, so the payoff is too.</b> Stop sits at 0.085, entry at 0.382, TP at 0.68. That spacing puts the TP almost exactly <b>1R</b> from entry by construction — reward 0.68−0.382 = 0.298 against risk 0.382−0.085 = 0.297. It isn't a property of any one trade; it falls out of the layout.</p>
+      <p><b>Full @ TP — no partial.</b> Close the entire position the instant price hits TP. Because of the geometry above this is a <b>1:1 bet — always +1R or −1R, never anything else</b>, so its expectancy is nothing more than its win rate: 2 × win% − 1. It breaks even at exactly 50% and has no upside tail at all.</p>
+      <p><b>50% @ TP → trail BOS.</b> Bank half at TP, move the rest to breakeven, trail the remainder on break-of-structure. Scored at wherever the trail actually exited, so it's part realized result, part hypothesis. −1 if TP never clears.</p>
+      <p><b>So the whole comparison reduces to one question: does the runner beat 1R?</b> On a winner this management returns 0.5 + 0.5 × (whatever the trail got). It beats Full @ TP only when the trail exceeds 1R, and it <em>costs</em> half an R whenever the runner retraces to breakeven. Every bit of the gap between the two rows is the runner — nothing else can move it.</p>
       <p><b>The curve under each row</b> is that management's cumulative R, trade by trade, in the order the trades actually happened — not dollars, just R stacked on itself. Green and rising means it's ahead net; red and sinking means it's behind.</p>
       <p><b>Reading a dot-and-line mark</b> (the ranked table below). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size.</p>
@@ -237,6 +239,27 @@ function answerBlock(pool){
   </div>`;
 }
 
+/* ============================== runner scorecard ==============================
+   Full @ TP is pinned at +/-1R by the fib layout (stop .085 / entry .382 / TP .68),
+   so it has no upside tail. Every bit of the gap between the two managements is the
+   runner. This counts what the runner actually did rather than leaving that buried
+   in an aggregate mean — on a small sample the count IS the story. */
+function runnerStrip(pool){
+  const rows=pool.map(t=>({full:num(t.fullTP), trail:num(t.tpTrailBOS)}))
+                 .filter(r=>r.full!=null&&r.trail!=null);
+  const winners=rows.filter(r=>r.full>0);
+  if(!winners.length) return '';
+  const ran=winners.filter(r=>r.trail>r.full).length;
+  const died=winners.filter(r=>r.trail<r.full).length;
+  const flat=winners.length-ran-died;
+  const gain=winners.filter(r=>r.trail>r.full).reduce((a,r)=>a+(r.trail-r.full),0);
+  const cost=winners.filter(r=>r.trail<r.full).reduce((a,r)=>a+(r.full-r.trail),0);
+  return `<div class="ctlstrip"><b style="color:var(--ink)">What the runner did</b> — on the ${winners.length} trade${winners.length===1?'':'s'} where TP cleared (losers are identical either way, so they can't separate these):
+    <span class="pos">${ran} ran past 1R</span> for <span class="pos">+${gain.toFixed(2)}R</span> of extra gain &nbsp;·&nbsp;
+    <span class="neg">${died} retraced</span>, giving back <span class="neg">−${cost.toFixed(2)}R</span> versus just closing at TP${flat?` &nbsp;·&nbsp; <span class="mut">${flat} identical</span>`:''}.
+    <span class="mut">Net ${fR(gain-cost)} across ${winners.length}, i.e. ${fR((gain-cost)/rows.length)} per trade — that is the entire margin between the two rows above.</span></div>`;
+}
+
 /* ============================== L2 — both, ranked ============================== */
 function rankedTable(pool){
   const rows=MGMT.map(m=>({m,prop:m.key,s:statsFor(m.key,pool)}));
@@ -267,6 +290,7 @@ function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this timeframe yet.</div></div>'; return; }
   board.innerHTML = answerBlock(pool) +
+    runnerStrip(pool) +
     disclosure('d-all','All, ranked', rankedTable(pool)) +
     `<div class="foot">Both managements are paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
