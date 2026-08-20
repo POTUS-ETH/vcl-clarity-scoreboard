@@ -374,12 +374,11 @@ async function computeGrant(token) {
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
-    // Deliberately seeded test rows DO come through — the board renders a hazard banner
-    // over them. The title-prefix rule stays only for legacy scaffolding that predates the
-    // explicit flag; without this split, seeded rows named TEST-* silently vanished and the
-    // board read "no trades" while 60 rows sat in the log.
-    const isTest = !!getProp(t, 'Test Data');
-    if (!isTest && title.toUpperCase().startsWith('TEST')) continue;
+    // A TEST-prefixed title IS the test marker — the separate checkbox was redundant with
+    // it. These rows come through rather than being skipped, because the board needs to
+    // render its hazard banner over them; suppressing them here would just make a log full
+    // of fake rows look like an empty one, which is how this bit went wrong before.
+    const isTest = title.toUpperCase().startsWith('TEST');
     // an empty "+ New" row has no Entry Price at all — distinct from a real trade with blank
     // outcomes, which must never be skipped.
     if (getProp(t, 'Entry Price') == null) continue;
@@ -387,9 +386,8 @@ async function computeGrant(token) {
       id:        t.id,
       created:   t.created_time,
       num:       getProp(t, '#'),
-      isTest:    !!getProp(t, 'Test Data'),   // synthetic row, never a real chart read
+      isTest,                                 // synthetic row, never a real chart read
       Trade:     title,
-      SetupType: getProp(t, 'Setup Type'),
       Direction: getProp(t, 'Direction'),
       Timeframe: getProp(t, 'Timeframe'),
       Session:   getProp(t, 'Session'),

@@ -203,15 +203,13 @@ function equityCurveSVG(series, w, h){
 }
 
 /* ============================== VCL V5 schema — single-order fib only ==============================
-   NOTE: SETUP_SINGLE below is the literal Notion select value, not a label. It still reads
-   "Super Mario" because that is the stored option name and eight formulas gate on it; renaming
-   it means editing the option and every formula together, so it stays until that is worth doing.
+   Setup Type is gone from the log: there is only one structure now, so a column that always
+   held the same value was pure overhead. The formulas no longer gate on it either.
    Six outcomes, two families, off ONE fib. Only four chart levels drive all of them:
    1R = fib 0.679 (the 0.68 TP) · 2R = 0.976 · 3R = 1.272 · 5R = 1.866.
    The families share the upper two levels at different position sizes — a half-size
    runner must make 2R to move the position 1R, so "runner capped at 1.272" (3R on half)
    and "full TP at 3R" are the same price, scored on different size. */
-const SETUP_SINGLE='Single-order (Super Mario)';
 const FAMILIES=[
   {k:'full', label:'Full position · no partial',
    blurb:'Close everything at one fixed target. Binary by construction: +NR if Max Run reached it, -1R if not. No partial, no trail, no breakeven tier.'},
@@ -255,8 +253,7 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => t.Timeframe===TF && t.SetupType===SETUP_SINGLE
-                          && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
+  TRADES = ALL.filter(t => t.Timeframe===TF && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
 }
 
 /* ============================== L0 — the verdict ==============================
@@ -511,7 +508,7 @@ function testBanner(pool){
   return `<div class="testbanner">
     <div class="t">⚠ SYNTHETIC TEST DATA — ${all?'every number on this board is fake':`${n} of ${pool.length} rows are fake`}</div>
     <div class="d">Generated to check the board renders at scale. These are not chart reads and carry no information about the strategy.
-    Delete every row with <b>Test Data</b> ticked in Notion before reading a single figure here.</div></div>`;
+    Delete every row whose name starts with <b>TEST-</b> in Notion before reading a single figure here.</div></div>`;
 }
 
 function render(){
