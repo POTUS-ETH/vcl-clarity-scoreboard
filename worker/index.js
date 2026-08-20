@@ -290,6 +290,7 @@ const CORS = {
 // corrected full-ladder model (single source of truth in v3.html).
 const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
+const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 
 // Craig's outcome columns. Read straight off the Notion formulas so there is exactly
 // one place the R math lives.
@@ -393,6 +394,8 @@ async function computeGrant(token) {
       stop:      getProp(t, 'Stop Price'),
       tp:        getProp(t, 'TP Price'),
       anchor:    getProp(t, '1 of Fib Price'),
+      p618:      getProp(t, '0.618 Price'),
+      p1272:     getProp(t, '1.272 Price'),
       maxRun:    getProp(t, 'Max Run'),
       bosExit:   getProp(t, 'Trailing BOS Exit'),
       l1Filled:  getProp(t, 'L1 Filled'),
@@ -409,6 +412,12 @@ async function computeGrant(token) {
       half1r3R:    getProp(t, '50% @ 1R -> 3R'),
       tp2R:        getProp(t, '50% @ TP -> 2R'),
       tp3R:        getProp(t, '50% @ TP -> 3R'),
+      // Grant's actual current plan (2026-08) — replaces the 2R/3R ceilings above for his
+      // real trading: TCL 2.0 branches on L1 Filled (0.618/1.272 vs 0.382/0.618/stop-to-L1),
+      // Super Mario picks one of two live exit methods.
+      tclPlanR:    getProp(t, 'TCL 2.0 Plan R'),
+      fullTP:      getProp(t, 'Full @ TP'),
+      tpTrailBOS:  getProp(t, '50% @ TP -> Trail BOS'),
     });
   }
   return {
@@ -441,6 +450,48 @@ async function computeV3Raw(token, dbId) {
       L1after:    getProp(t, 'L1 after Max Run'),
       RangePct:   getProp(t, 'Range %'),
       date:       getProp(t, 'Date'),
+    });
+  }
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+}
+
+// ── VCL v4 (Sweep+BoS, futures) ──────────────────────────────────────
+// Same raw-inputs-only contract as v3: Notion holds geometry + hand-read outcomes,
+// the widget (v4-futures.html) is the single place R gets computed. New here is
+// the multi-source data model (queryAllDataSource, not queryAll) and two additions
+// the log carries but this view does not yet consume: Taken/Skip Reason (so a
+// rejected setup is on record instead of silently absent) and four timestamps
+// (Entry Time, AVWAP Anchor Time, BoS Confirm Time, Exit Time) kept for future
+// tape-verification the way Entry Time already works for Craig's crypto board.
+async function computeV4Futures(token) {
+  const trades = await queryAllDataSource(V4_FUTURES_DATA_SOURCE, token);
+  const rows = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (title.toUpperCase().startsWith('TEST')) continue; // ignore scaffolding rows
+    if (!getProp(t, 'Taken')) continue;                   // a passed-on setup carries no R
+    if (getProp(t, 'Entry Price') == null) continue;      // an empty "+ New" row, not a trade
+    rows.push({
+      Trade:      title,
+      Direction:  getProp(t, 'Direction'),
+      Timeframe:  getProp(t, 'Timeframe'),
+      Session:    getProp(t, 'Session'),
+      Pair:       getProp(t, 'Pair'),
+      EntryPrice: getProp(t, 'Entry Price'),
+      L1Price:    getProp(t, 'L1 Price'),
+      SLPrice:    getProp(t, 'SL Price'),
+      MaxRun:     getProp(t, 'Max Run'),
+      BoSExit:    getProp(t, 'BoS Exit'),
+      L1before:   getProp(t, 'L1 before Max Run'),
+      L1after:    getProp(t, 'L1 after Max Run'),
+      RangePct:   getProp(t, 'Range %'),
+      date:       getProp(t, 'Date'),
+      // sim/backtest params — not read by the current widget, kept for reconstruction
+      entryTime:      getProp(t, 'Entry Time'),
+      avwapAnchorTime: getProp(t, 'AVWAP Anchor Time'),
+      bosConfirmTime:  getProp(t, 'BoS Confirm Time'),
+      exitTime:        getProp(t, 'Exit Time'),
+      anchor:     getProp(t, '1 of Fib Price'),
     });
   }
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
@@ -747,6 +798,7 @@ export default {
         calendar:    () => computeCalendarData(env.NOTION_TOKEN),
         v3:          () => computeV3Raw(env.NOTION_TOKEN, V3_DB),
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
+        'v4-futures': () => computeV4Futures(env.NOTION_TOKEN),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         grant:       () => computeGrant(env.NOTION_TOKEN),
         prop:        () => computePropData(env.NOTION_TOKEN),
