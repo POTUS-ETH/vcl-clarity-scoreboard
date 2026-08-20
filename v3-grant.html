@@ -69,6 +69,10 @@ details.l2 .body{padding:0 14px 14px}
 .tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
 .foot{font-size:9.5px;color:#6b7280;margin-top:10px;line-height:1.6}
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
+.testbanner{background:repeating-linear-gradient(45deg,#3a1414,#3a1414 12px,#2c0f0f 12px,#2c0f0f 24px);
+  border:2px solid #e66767;border-radius:8px;padding:10px 13px;margin-bottom:11px}
+.testbanner .t{font-size:13px;font-weight:700;color:#ff9b9b;letter-spacing:.6px}
+.testbanner .d{font-size:11px;color:#e8b4b4;line-height:1.5;margin-top:3px}
 .sectionhd{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:var(--ink);margin:16px 0 4px}
 .tblwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:10px}
 .matrix{margin-bottom:0}
@@ -451,10 +455,23 @@ function disclosure(id,title,bodyHtml){
   const open=OPEN.has(id);
   return `<details class="l2" id="${id}" ${open?'open':''}><summary>${title}</summary><div class="body">${bodyHtml}</div></details>`;
 }
+/* A synthetic row must never be mistakable for a real chart read. This is deliberately
+   the loudest element on the page, and it counts rows rather than trusting a flag set
+   once -- if even one fake row is in the pool, every number above it is fiction. */
+function testBanner(pool){
+  const n=pool.filter(t=>t.isTest).length;
+  if(!n) return '';
+  const all=n===pool.length;
+  return `<div class="testbanner">
+    <div class="t">⚠ SYNTHETIC TEST DATA — ${all?'every number on this board is fake':`${n} of ${pool.length} rows are fake`}</div>
+    <div class="d">Generated to check the board renders at scale. These are not chart reads and carry no information about the strategy.
+    Delete every row with <b>Test Data</b> ticked in Notion before reading a single figure here.</div></div>`;
+}
+
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this pair yet.</div></div>'; return; }
-  board.innerHTML = verdictLine(pool) +
+  if(!pool.length){ board.innerHTML=testBanner(ALL)+'<div class="card"><div class="empty-note">No Super Mario trades logged for this pair yet.</div></div>'; return; }
+  board.innerHTML = testBanner(pool) + verdictLine(pool) +
     reachLadderSVG(pool) +
     intervalStripSVG(pool) +
     disclosure('d-all','Full numbers — win rate, total R, drawdown, streaks', rankedTable(pool)) +

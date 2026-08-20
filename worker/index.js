@@ -382,6 +382,7 @@ async function computeGrant(token) {
       id:        t.id,
       created:   t.created_time,
       num:       getProp(t, '#'),
+      isTest:    !!getProp(t, 'Test Data'),   // synthetic row, never a real chart read
       Trade:     title,
       SetupType: getProp(t, 'Setup Type'),
       Direction: getProp(t, 'Direction'),
