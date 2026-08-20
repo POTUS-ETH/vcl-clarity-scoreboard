@@ -480,7 +480,11 @@ async function computeV4Futures(token) {
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
     if (title.toUpperCase().startsWith('TEST')) continue; // ignore scaffolding rows
-    if (!getProp(t, 'Taken')) continue;                   // a passed-on setup carries no R
+    // Skip only a setup EXPLICITLY marked as passed on. `Taken` was never actually added
+    // to this log's schema, so getProp returns null for every row — and `!null` was
+    // skipping all 11 logged trades, leaving the v4 board silently empty rather than
+    // erroring. Absence of the field must mean "taken", not "not taken".
+    if (getProp(t, 'Taken') === false) continue;
     if (getProp(t, 'Entry Price') == null) continue;      // an empty "+ New" row, not a trade
     rows.push({
       Trade:      title,
