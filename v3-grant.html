@@ -280,6 +280,49 @@ function verdictLine(pool){
     <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-top:2px">${body}</div></div>`;
 }
 
+/* ============================== L0 — the winner card ==============================
+   Names a leader, but the card grades its own claim. The lead is only called a result
+   when the leader's own interval clears zero AND its paired margin over the runner-up
+   clears zero too -- those are different questions and both have to pass. Otherwise it
+   still shows the leader (that is what a scoreboard is for) and says outright that the
+   gap has not separated, so the headline can never outrun the evidence under it. */
+function winnerCard(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return '';
+  rows.sort((a,b)=>b.s.mean-a.s.mean);
+  const best=rows[0], up=rows[1], s=best.s;
+  const beatsZero = s.lo>0;
+  const margin = up ? paired(up.m.key,best.m.key,pool) : null;
+  const beatsNext = margin && margin.n>0 && margin.lo>0;
+  const solid = beatsZero && beatsNext;
+  const ties = rows.slice(1).filter(r=>{
+    const p=paired(best.m.key,r.m.key,pool); return p.n>0 && !(p.lo>0);
+  });
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  return `<div class="card answer">
+    <div class="eyebrow">${solid?'Leader — clears zero and beats the runner-up':'Leading so far — not yet a separation'}</div>
+    <div class="policy">${best.m.name} <span class="mut" style="font-size:12px;font-weight:400">${best.m.lvl}</span></div>
+    <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
+      <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n} over ${days} day${days===1?'':'s'}
+      ${beatsZero?'<span class="sig">clears zero</span>':'<span class="mut">· interval still crosses zero</span>'}</div></div>
+    <div class="curve">${equityCurveSVG(seriesFor(best.m.key,pool),600,70)}</div>
+    <div class="fsub">${best.m.desc}</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
+      <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
+      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak}</div></div>
+      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak}</div></div>
+      <div class="stat"><div class="k">Trading days</div><div class="v mut">${days}</div></div>
+    </div>
+    ${up?`<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${up.m.name}</b> at ${fR(up.s.mean)} — leader is ahead by
+      <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${beatsNext?' <span class="sig">significant</span>':' · not significant'}.</div>`:''}
+    ${solid?'':`<div class="caveat" style="margin-top:9px">
+      <b>Read this as a lean, not a verdict.</b> ${ties.length?`Statistically tied with: ${ties.map(t=>t.m.name).join(', ')}. `:''}
+      ${beatsZero?'The leader clears zero on its own, but its margin over the runner-up does not — those are different claims.':'The leader\'s own interval still includes zero.'}</div>`}
+  </div>`;
+}
+
 /* ============================== L1 — the reach ladder ==============================
    The most honest object available: the six trades themselves, with the four decision
    levels drawn across them. Every strategy on this board is just "which horizontal line
@@ -471,10 +514,12 @@ function testBanner(pool){
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML=testBanner(ALL)+'<div class="card"><div class="empty-note">No Super Mario trades logged for this pair yet.</div></div>'; return; }
-  board.innerHTML = testBanner(pool) + verdictLine(pool) +
+  board.innerHTML = testBanner(pool) +
+    verdictLine(pool) +
+    winnerCard(pool) +
+    `<div class="sectionhd">Full numbers — every outcome, ranked</div>` + rankedTable(pool) +
     reachLadderSVG(pool) +
     intervalStripSVG(pool) +
-    disclosure('d-all','Full numbers — win rate, total R, drawdown, streaks', rankedTable(pool)) +
     `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
