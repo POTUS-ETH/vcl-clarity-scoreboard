@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VCL v3 Scoreboard</title>
+<title>VCL v4 Scoreboard — Futures</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
@@ -17,13 +17,11 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:16px}
 .top{border:2px solid #3b82f6;margin-bottom:12px}
 .top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
-.top .combo{font-size:26px;font-weight:700}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px}
 .daysbadge-row{display:flex;justify-content:center;margin-bottom:10px}
 .daysbadge{display:inline-flex;align-items:baseline;gap:8px;padding:6px 16px;border-color:#3b82f6}
 .daysbadge .midval{font-size:16px;font-weight:700}
-.matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px}
+.matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
 .matrix th,.matrix td{padding:7px 9px;text-align:right;border-bottom:1px solid #232a36}
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
 .matrix td:first-child,.matrix th:first-child{text-align:left}
@@ -62,30 +60,27 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>VCL v3 SCOREBOARD</h1><div class="sub">Sweep+BoS · BoS trail · combo = timeframe × methodology</div></div>
+    <div><h1>VCL v4 SCOREBOARD — FUTURES</h1><div class="sub">Sweep+BoS · 15s only · MNQ / MES / MGC · combo = methodology</div></div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="MNQ">MNQ</button><button data-p="MES">MES</button></div>
+      <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="MNQ">MNQ</button><button data-p="MES">MES</button><button data-p="MGC">MGC</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
   <div id="board"></div>
   <div class="foot">
-    R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R/2R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @NR closes the whole position at NR; 50% @NR banks half at NR and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled → 50% @1R + runner, entry-only → Full @1R (the live default — outperforms on the sample). Hybrid B is the inverse: L1 filled → Full @1R, entry-only → 50% @1R + runner.
+    R math: 1R = full-ladder risk |avg(entry,L1) − SL|. Losses are full −1R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> — roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled → 50% @1R + runner, entry-only → Full @1R (the V3 live default). Hybrid B is the inverse. 2R targets are excluded — V3 already retired them.
   </div>
 </div>
 <script>
 const MGMTS=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'}];
-const TFS=['15s','1m'];
-const COMBOS=[];
-TFS.forEach(tf=>MGMTS.forEach(m=>COMBOS.push({key:tf+'·'+m.k,tf,mgmt:m.k,label:tf+' · '+m.label})));
 const RANGE_REF='f1';
-let CAL_MGMT='f1', CAL_TF='all', CAL_SESS='all', ALL_TRADES=[], TRADES=[], CAL_MONTH=null, calDefaulted=false;
+let CAL_MGMT='f1', CAL_SESS='all', ALL_TRADES=[], TRADES=[], CAL_MONTH=null, calDefaulted=false;
 let PAIR='all';
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
 function computeR(row){
-  const dir=row.Direction, tf=row.Timeframe;
+  const dir=row.Direction;
   const E=num(row.EntryPrice), L1=num(row.L1Price), SL=num(row.SLPrice),
         MR=num(row.MaxRun), BX=num(row.BoSExit);
   const b=!!row.L1before, a=!!row.L1after, l1=b||a;
@@ -94,66 +89,56 @@ function computeR(row){
   const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
   const basisPeak = b?avg:E, posMpeak = b?1:0.5;
   const basisExit = l1?avg:E, posMexit = l1?1:0.5;
-  let r={f1:null,f2:null,p1:null,p2:null,hyA:null,hyB:null};
+  let r={f1:null,p1:null,hyA:null,hyB:null};
   if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avg!=null){
     const peakR   = posMpeak*(MR-basisPeak)*dirM/iniR;
     const posExit = posMexit*(BX-basisExit)*dirM/iniR;
     r.f1 = peakR>=1 ? 1 : posExit;
-    r.f2 = peakR>=2 ? 2 : posExit;
     r.p1 = peakR>=1 ? 0.5 + 0.5*posExit : posExit;
-    r.p2 = peakR>=2 ? 1   + 0.5*posExit : posExit;
     r.hyA = l1 ? r.p1 : r.f1;
     r.hyB = l1 ? r.f1 : r.p1;
   }
-  return {tf, pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
+  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
 }
 
 function applyPairFilter(){ TRADES = PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR); }
 
-function seriesFor(tf,mgmt,pool){ return pool.filter(t=>t.tf===tf).map(t=>t.r[mgmt]).filter(r=>r!=null); }
+function serFor(mgmt,pool){ return pool.map(t=>t.r[mgmt]).filter(r=>r!=null); }
 function stats(series){ const n=series.length; if(!n) return {n:0};
   const wins=series.filter(r=>r>0).length, total=series.reduce((a,b)=>a+b,0);
   return {n, wins, wr:wins/n, exp:total/n, total}; }
 function maxLossStreak(series){ let run=0,len=0,worst=0,worstLen=0;
   for(const r of series){ if(r<0){run+=r;len++;if(run<worst){worst=run;worstLen=len;}} else {run=0;len=0;} }
   return {dd:Math.abs(worst), len:worstLen}; }
-function comboStat(c,pool){ const s=stats(seriesFor(c.tf,c.mgmt,pool)); s.combo=c; s.mls=maxLossStreak(seriesFor(c.tf,c.mgmt,pool)); return s; }
+function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
+function mgmtStat(mk,pool){ const s=stats(serFor(mk,pool)); s.mk=mk; s.mls=maxLossStreak(serFor(mk,pool)); return s; }
 function bestOf(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.exp-a.exp)[0]; }
 function bestByTotal(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.total-a.total)[0]; }
-function mStat(rows,mk){ return stats(rows.map(t=>t.r[mk]).filter(x=>x!=null)); }
-function bestMethod(rows){ let best=null; MGMTS.forEach(m=>{ const s=mStat(rows,m.k); if(s.n>0 && (!best||s.exp>best.exp)) best={mk:m.k,label:m.label,n:s.n,exp:s.exp,tot:s.total,wr:s.wr}; }); return best; }
+function bestMethod(rows){ let best=null; MGMTS.forEach(m=>{ const s=stats(rows.map(t=>t.r[m.k]).filter(x=>x!=null)); if(s.n>0 && (!best||s.exp>best.exp)) best={mk:m.k,label:m.label,n:s.n,exp:s.exp,tot:s.total,wr:s.wr}; }); return best; }
 const SESS_ORDER=['Asia','Frankfurt','London','NY AM','NY','NY PM','Late'];
 function sessRank(s){ const i=SESS_ORDER.indexOf(s); return i<0?99:i; }
-function bestCombo(rows){ let best=null;
-  TFS.forEach(tf=>{ MGMTS.forEach(m=>{ const ser=rows.filter(t=>t.tf===tf).map(t=>t.r[m.k]).filter(x=>x!=null); const s=stats(ser);
-    if(s.n>0 && (!best || s.exp>best.exp)) best={tf, mk:m.k, label:m.label, exp:s.exp, wr:s.wr, tot:s.total, n:s.n}; }); });
-  return best; }
-function bestExitTF(rows, tf){ let best=null;
-  MGMTS.forEach(m=>{ const ser=rows.filter(t=>t.tf===tf).map(t=>t.r[m.k]).filter(x=>x!=null); const s=stats(ser);
-    if(s.n>0 && (!best || s.exp>best.exp)) best={tf, mk:m.k, label:m.label, exp:s.exp, wr:s.wr, tot:s.total, n:s.n}; });
-  return best; }
-function recoMap(pool, tf){ const map={};
-  [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{ const rows=pool.filter(t=>t.session===se);
-    const b=(tf&&tf!=='all')?bestExitTF(rows,tf):bestCombo(rows); if(b) map[se]={tf:b.tf, mk:b.mk}; });
+function recoMap(pool){ const map={};
+  [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{ const b=bestMethod(pool.filter(t=>t.session===se)); if(b) map[se]={mk:b.mk}; });
   return map; }
-function recoSeries(pool, tf){ const m=recoMap(pool, tf); return pool.map(t=>{ const p=m[t.session]; return (p && t.tf===p.tf)?t.r[p.mk]:null; }).filter(x=>x!=null); }
-function recoCardTF(tf, pool){
-  const sessions=[...new Set(pool.filter(t=>t.tf===tf).map(t=>t.session).filter(Boolean))];
-  const rx=sessions.map(se=>({se,b:bestExitTF(pool.filter(t=>t.session===se), tf)})).filter(x=>x.b).sort((a,b)=>sessRank(a.se)-sessRank(b.se));
-  const rser=recoSeries(pool, tf), rs=stats(rser), rdd=maxDrawdown(rser), rmls=maxLossStreak(rser);
-  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 ${tf} prescription</div><div class="empty-note">No ${tf} trades yet.</div></div>`;
+function recoSeries(pool){ const m=recoMap(pool); return pool.map(t=>{ const p=m[t.session]; return p?t.r[p.mk]:null; }).filter(x=>x!=null); }
+function recoCard(pool){
+  const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
+  const rx=sessions.map(se=>({se,b:bestMethod(pool.filter(t=>t.session===se))})).filter(x=>x.b).sort((a,b)=>sessRank(a.se)-sessRank(b.se));
+  const rser=recoSeries(pool), rs=stats(rser), rdd=maxDrawdown(rser), rmls=maxLossStreak(rser);
+  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 Session prescription</div><div class="empty-note">No trades yet.</div></div>`;
   let sess='';
   rx.forEach(x=>{ const weak=x.b.exp<0.2, thin=x.b.n<5;
     sess+=`<div class="rowline"><span><span class="pill">${x.se}</span> → <b>${x.b.label}</b>${weak?' <span class="mini" style="color:#e0b341">· weak</span>':''}${thin?' <span class="mini">· thin</span>':''}</span><span class="${cls(x.b.exp)}">${fR(x.b.exp)} <span class="mini">${Math.round(x.b.wr*100)}% · n${x.b.n}</span></span></div>`; });
-  const L=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Long'),'hyA'), S=mStat(pool.filter(t=>t.tf===tf&&t.dir==='Short'),'hyA');
+  const L=stats(pool.filter(t=>t.dir==='Long').map(t=>t.r.hyA).filter(x=>x!=null));
+  const S=stats(pool.filter(t=>t.dir==='Short').map(t=>t.r.hyA).filter(x=>x!=null));
   let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="lbl" style="margin:14px 0 6px">Tilt</div><div class="rowline"><span>Direction</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
   const recoStats=`<div class="stats" style="margin:6px 0 2px">
     <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(rs.exp)}">${fR(rs.exp)}</div></div>
     <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(rs.wr*100)}%</div></div>
     <div class="stat"><div class="k">Total R</div><div class="v ${cls(rs.total)}">${fR(rs.total)}</div></div>
     <div class="stat"><div class="k">Risk of ruin</div><div class="v neg">-${rdd.toFixed(2)}R <span class="mini">${rmls.len}× streak</span></div></div>
-  </div><div class="mini" style="margin-bottom:4px">If you traded only ${tf} — each session its prescribed exit, exclusively · n${rs.n}</div>`;
-  return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 ${tf} prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 6px">By session, in order</div>${sess}${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
+  </div><div class="mini" style="margin-bottom:4px">If each session ran its prescribed exit exclusively · n${rs.n}</div>`;
+  return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 6px">By session, in order</div>${sess}${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -167,15 +152,8 @@ function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades ye
     <div class="stat"><div class="k">Trades</div><div class="v">${s.n}</div></div>
   </div>`; }
 
-function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
-function sharedTradingDays(pool){
-  const days1m=new Set(pool.filter(t=>t.tf==='1m'&&t.date).map(t=>t.date));
-  const days15s=new Set(pool.filter(t=>t.tf==='15s'&&t.date).map(t=>t.date));
-  let n=0; days1m.forEach(d=>{ if(days15s.has(d)) n++; });
-  return n;
-}
-function matrixTableTF(tf,pool){
-  const rows=MGMTS.map(m=>({label:m.label, s:stats(seriesFor(tf,m.k,pool))}));
+function matrixTable(pool){
+  const rows=MGMTS.map(m=>({label:m.label, s:stats(serFor(m.k,pool))}));
   rows.sort((a,b)=> ((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
   let html='';
   rows.forEach((row,i)=>{ const s=row.s; const isBest=i===0&&s.n>0;
@@ -184,43 +162,34 @@ function matrixTableTF(tf,pool){
           `<td>${s.n?Math.round(s.wr*100)+'%':'—'}</td>`+
           `<td class="${s.n?cls(s.total):'mut'}">${s.n?fR(s.total):'—'}</td>`+
           `<td class="mut">${s.n||'—'}</td></tr>`; });
-  return `<div class="lbl" style="margin-bottom:6px">${tf}</div><table class="matrix"><thead><tr><th>Method</th><th>Exp</th><th>Win%</th><th>Tot</th><th>n</th></tr></thead><tbody>${html}</tbody></table>`;
+  return `<table class="matrix"><thead><tr><th>Method</th><th>Exp</th><th>Win%</th><th>Tot</th><th>n</th></tr></thead><tbody>${html}</tbody></table>`;
 }
-function riskListTF(tf,pool){
-  const rows=MGMTS.map(m=>{ const ser=seriesFor(tf,m.k,pool); return {label:m.label, dd:maxDrawdown(ser), mls:maxLossStreak(ser), n:ser.length}; });
+function riskList(pool){
+  const rows=MGMTS.map(m=>{ const ser=serFor(m.k,pool); return {label:m.label, dd:maxDrawdown(ser), mls:maxLossStreak(ser), n:ser.length}; });
   rows.sort((a,b)=> ((a.n?0:1)-(b.n?0:1)) || (a.dd-b.dd));
-  let html=`<div class="lbl" style="margin-bottom:6px">${tf}</div>`;
+  let html='';
   rows.forEach(r=>{ html+=`<div class="rowline"><span>${r.label}</span><span>${r.n?'<span class="neg">-'+r.dd.toFixed(2)+'R</span>':'<span class="mut">—</span>'} <span class="mini">${r.n?'DD · '+r.mls.len+'× in a row':''}</span></span></div>`; });
   return html;
 }
 
-function graveCard(pool){
-  let rows='';
-  [['f2','Full @2R'],['p2','50% @2R']].forEach(([k,lbl])=>{
-    const ser=pool.map(t=>t.r[k]).filter(x=>x!=null); const s=stats(ser); if(!s.n) return;
-    const dd=maxDrawdown(ser), mls=maxLossStreak(ser);
-    rows+=`<div class="rowline"><span>${lbl} <span class="mini">n${s.n}</span></span><span><span class="${cls(s.exp)}">${fR(s.exp)}</span> <span class="mini">${Math.round(s.wr*100)}% · tot ${fR(s.total)} · DD <span class="neg">-${dd.toFixed(2)}R</span> · ${mls.len}× streak</span></span></div>`;
-  });
-  if(!rows) return '';
-  return `<div class="card" style="margin-bottom:12px;opacity:.72"><div class="lbl">⚰️ Graveyard — retired methods</div><div class="mini" style="margin:4px 0 8px">Cut: <b>2R targets</b>. Held to 2R the L1 book turns net-negative and half-size runners rarely travel the ~4× risk distance needed to reach it — the longer hold roughly doubled drawdown for lower expectancy than the 1R exits. Excluded from the calendar, matrix, and recommendations; kept here for the record.</div>${rows}</div>`;
-}
 function pairMixCard(){
   const c={}; ALL_TRADES.forEach(t=>{ const p=t.pair||'—'; c[p]=(c[p]||0)+1; });
   const keys=Object.keys(c).sort();
   if(keys.length<=1) return '';
   let rows='';
   keys.forEach(p=>{ const pct=Math.round(c[p]/ALL_TRADES.length*100); rows+=`<div class="rowline"><span>${p}</span><span><b>${c[p]}</b> <span class="mini">${pct}%</span></span></div>`; });
-  return `<div class="card" style="margin-bottom:12px"><div class="lbl">Pair mix (whole log)</div>${rows}<div class="mini" style="margin-top:6px">Use the PAIR toggle in the header to filter the board to one instrument.</div></div>`;
+  return `<div class="card" style="margin-bottom:12px"><div class="lbl">Pair mix (whole log)</div>${rows}<div class="mini" style="margin-top:6px">Use the PAIR toggle in the header to filter to one instrument.</div></div>`;
 }
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log v3.</div></div>'; renderCalendar(); return; }
-  const all=COMBOS.map(c=>comboStat(c,pool));
-  const overall=bestOf(all), best1m=bestOf(all.filter(s=>s.combo.tf==='1m')), best15=bestOf(all.filter(s=>s.combo.tf==='15s'));
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — Futures.</div></div>'; renderCalendar(); return; }
+  const mstats=MGMTS.map(m=>mgmtStat(m.k,pool));
+  const best=bestOf(mstats);
   const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
   let sessRows = sessions.length ? '' : '<div class="empty-note">No Session tagged yet.</div>';
-  sessions.forEach(se=>{ const sub=pool.filter(t=>t.session===se); const b=bestByTotal(COMBOS.map(c=>comboStat(c,sub)));
-    sessRows+=`<div class="rowline"><span><span class="pill">${se}</span> ${b?b.combo.label:'—'}</span><span class="${b?cls(b.total):'mut'}">${b?fR(b.total):'—'}</span></div>`; });
+  sessions.forEach(se=>{ const sub=pool.filter(t=>t.session===se); const b=bestByTotal(MGMTS.map(m=>mgmtStat(m.k,sub)));
+    const lbl=b?(MGMTS.find(m=>m.k===b.mk)||{}).label||b.mk:'—';
+    sessRows+=`<div class="rowline"><span><span class="pill">${se}</span> ${lbl}</span><span class="${b?cls(b.total):'mut'}">${b?fR(b.total):'—'}</span></div>`; });
   let rangeRows=''; const rp=pool.filter(t=>t.rangePct!=null);
   if(!rp.length){ rangeRows='<div class="empty-note">No Range % logged yet.</div>'; }
   else { const groups={}; rp.forEach(t=>{ const k=(t.session||'—'); (groups[k]=groups[k]||[]).push(t); });
@@ -229,40 +198,29 @@ function render(){
       const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
       const band = mn===mx ? mn+'%' : mn+'–'+mx+'%';
       rangeRows+=`<div class="rowline"><span><span class="pill">${k}</span></span><span><b>${band}</b> <span class="mini">avg ${avg.toFixed(2)}% · ${wins.length?'wins':'all'} n${src.length}</span></span></div>`; }); }
-  const ranked=all.filter(s=>s.n>0).sort((a,b)=>a.mls.dd-b.mls.dd);
-  let ddRows = ranked.length ? '' : '<div class="empty-note">No data.</div>';
-  ranked.slice(0,8).forEach((s,i)=>{ ddRows+=`<div class="rowline"><span>${i===0?'🛡️ ':''}${s.combo.label}</span><span class="neg">-${s.mls.dd.toFixed(2)}R <span class="mini">${s.mls.len} in a row</span></span></div>`; });
   const tdays=ss=>new Set(ss.filter(t=>t.date).map(t=>t.date)).size;
-  let freqTf=''; TFS.forEach(tf=>{ const sub=pool.filter(t=>t.tf===tf); const d=tdays(sub); freqTf+=`<div class="rowline"><span>${tf}</span><span><b>${sub.length}</b> <span class="mini">${d?(sub.length/d).toFixed(1):'0'}/day · ${d}d</span></span></div>`; });
   let freqSess=''; [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{
-    freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span class="mini">${pool.filter(t=>t.session===se).length} total</span></div>`;
-    TFS.forEach(tf=>{ const sub=pool.filter(t=>t.session===se&&t.tf===tf); if(!sub.length) return; const d=tdays(sub); freqSess+=`<div class="rowline" style="border-top:0;padding:2px 0 2px 14px"><span class="mini">${tf}</span><span><b>${sub.length}</b> <span class="mini">· ${d?(sub.length/d).toFixed(1):'0'}/day</span></span></div>`; });
+    const sub=pool.filter(t=>t.session===se); const d=tdays(sub);
+    freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span><b>${sub.length}</b> <span class="mini">${d?(sub.length/d).toFixed(1):'0'}/day · ${d}d</span></span></div>`;
   });
-  const sharedDays=sharedTradingDays(pool);
+  const totDays=tdays(pool);
   const pairBadge = PAIR==='all' ? '' : ` <span class="pill" style="margin-left:6px">${PAIR}</span>`;
   board.innerHTML=`
-    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${sharedDays}</div><div class="mini">trading day${sharedDays===1?'':'s'} with both 1m &amp; 15s logged${pairBadge}</div></div></div>
+    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${totDays}</div><div class="mini">trading day${totDays===1?'':'s'} logged${pairBadge}</div></div></div>
     ${pairMixCard()}
     <div class="grid2">
-      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 1m</div><div class="combo-md">${best1m?best1m.combo.label:'—'}</div>${statBlock(best1m)}</div>${recoCardTF('1m',pool)}</div>
-      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best on 15s</div><div class="combo-md">${best15?best15.combo.label:'—'}</div>${statBlock(best15)}</div>${recoCardTF('15s',pool)}</div>
+      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best methodology</div><div class="combo-md">${best?(MGMTS.find(m=>m.k===best.mk)||{}).label||best.mk:'—'}</div>${statBlock(best)}</div></div>
+      <div>${recoCard(pool)}</div>
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked per timeframe</div>
-      <div class="grid2" style="margin:8px 0 0"><div>${matrixTableTF('1m',pool)}</div><div>${matrixTableTF('15s',pool)}</div></div>
-    </div>
-    ${graveCard(pool)}
-    <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per timeframe</div>
-      <div class="grid2" style="margin:8px 0 0"><div>${riskListTF('1m',pool)}</div><div>${riskListTF('15s',pool)}</div></div>
-      <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R (high-water) · streak = losing trades in a row · safest → riskiest</div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked</div>${matrixTable(pool)}</div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per methodology</div>${riskList(pool)}
+      <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R · streak = losing trades in a row · safest → riskiest</div>
     </div>
     <div class="grid2">
-      <div class="card"><div class="lbl">Best combo by session</div>${sessRows}</div>
+      <div class="card"><div class="lbl">Best method by session</div>${sessRows}</div>
       <div class="card"><div class="lbl">Optimal Range % · by session</div>${rangeRows}</div>
     </div>
-    <div class="grid2">
-      <div class="card"><div class="lbl">Trades by timeframe · avg/day</div>${freqTf}</div>
-      <div class="card"><div class="lbl">Trades by session · avg/day</div>${freqSess}</div>
-    </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Trades by session · avg/day</div>${freqSess}</div>
     <div class="card cal" id="calCard"></div>`;
   renderCalendar();
 }
@@ -270,34 +228,31 @@ function render(){
 function ym(d){ return d? d.slice(0,7):null; }
 function calControls(){
   const mgmtOpts=`<option value="reco" ${CAL_MGMT==='reco'?'selected':''}>★ Strategic Rec</option>`+MGMTS.map(m=>`<option value="${m.k}" ${CAL_MGMT===m.k?'selected':''}>${m.label}</option>`).join('');
-  const tfOpts=['all',...TFS].map(tf=>`<option value="${tf}" ${CAL_TF===tf?'selected':''}>${tf==='all'?'All timeframes':tf}</option>`).join('');
   const sessions=[...new Set(TRADES.map(t=>t.session).filter(Boolean))];
   const sessOpts=['all',...sessions].map(s=>`<option value="${s}" ${CAL_SESS===s?'selected':''}>${s==='all'?'All sessions':s}</option>`).join('');
   return `<div class="calfilters">
     <div class="cf"><span class="cflbl">Method</span><select class="calsel" data-f="mgmt">${mgmtOpts}</select></div>
-    <div class="cf"><span class="cflbl">Timeframe</span><select class="calsel" data-f="tf">${tfOpts}</select></div>
     <div class="cf"><span class="cflbl">Session</span><select class="calsel" data-f="sess">${sessOpts}</select></div>
   </div>`;
 }
 function wireCalControls(){
   document.querySelectorAll('#calCard .calsel').forEach(sel=>{
     sel.onchange=()=>{ const f=sel.dataset.f, v=sel.value;
-      if(f==='mgmt') CAL_MGMT=v; else if(f==='tf') CAL_TF=v; else if(f==='sess') CAL_SESS=v;
+      if(f==='mgmt') CAL_MGMT=v; else if(f==='sess') CAL_SESS=v;
       renderCalendar(); };
   });
 }
 function calTitle(){
   const parts=[mgmtLabel(CAL_MGMT)];
-  if(CAL_TF!=='all') parts.push(CAL_TF);
   if(CAL_SESS!=='all') parts.push(CAL_SESS);
   if(PAIR!=='all') parts.push(PAIR);
   return parts.join(' · ');
 }
 function renderCalendar(){
   const card=document.getElementById('calCard'); if(!card) return;
-  if(!calDefaulted && TRADES.length){ CAL_MGMT='reco'; CAL_SESS='all'; CAL_TF='all'; calDefaulted=true; }
+  if(!calDefaulted && TRADES.length){ CAL_MGMT='reco'; CAL_SESS='all'; calDefaulted=true; }
   const controls=calControls();
-  const filtered=TRADES.filter(t=>(CAL_TF==='all'||t.tf===CAL_TF) && (CAL_SESS==='all'||t.session===CAL_SESS));
+  const filtered=TRADES.filter(t=>(CAL_SESS==='all'||t.session===CAL_SESS));
   const dated=filtered.filter(t=>t.date);
   const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
   if(!months.length){
@@ -307,8 +262,8 @@ function renderCalendar(){
   if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
   const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
   const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
-  const byDay={}; const rmap=CAL_MGMT==='reco'?recoMap(TRADES, CAL_TF):null;
-  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{ const d=Number(t.date.slice(8,10)); const rp=rmap?rmap[t.session]:null; const r=rmap?((rp && t.tf===rp.tf)?t.r[rp.mk]:null):t.r[CAL_MGMT];
+  const byDay={}; const rmap=CAL_MGMT==='reco'?recoMap(TRADES):null;
+  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{ const d=Number(t.date.slice(8,10)); const rp=rmap?rmap[t.session]:null; const r=rmap?(rp?t.r[rp.mk]:null):t.r[CAL_MGMT];
     if(r==null) return; (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
   const monthName=first.toLocaleString('en-US',{month:'long',year:'numeric'});
   let cells=''; for(let i=0;i<start;i++) cells+='<div class="day empty"></div>';
@@ -334,7 +289,7 @@ function wirePairTg(){
   });
 }
 
-const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v3';
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v4-futures';
 let firstLoad=true;
 async function fetchTrades(){
   try{
@@ -344,7 +299,7 @@ async function fetchTrades(){
     if(j.error) throw new Error(j.error);
     return {j, src:'live'};
   }catch(e){
-    const res=await fetch('v3-data.json?t='+Date.now(),{cache:'no-store'});
+    const res=await fetch('v4-futures-data.json?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('data '+res.status);
     return {j:await res.json(), src:'cached'};
   }
@@ -362,7 +317,7 @@ async function poll(){
   }catch(e){
     if(firstLoad){
       st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
-      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker (or first Action refresh).</div></div>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker.</div></div>';
       renderCalendar();
     }
   }
