@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TCL Fib — Grant · two structures, every management scored</title>
+<title>Super Mario Fib — Grant · Full TP vs 50% + trail BOS</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -49,26 +49,9 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .answer .stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
 .answer .stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
 .answer .stat .v{font-size:14px;font-weight:700}
-
-/* ---- L1 cube ---- */
-.cubewrap{margin-bottom:10px}
-.facets{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,320px));gap:10px}
-@media (max-width:520px){.facets{grid-template-columns:1fr}}
-.facet{background:#141a24;border:1px solid #1f2735;border-radius:8px;padding:10px}
-.facet .fname{font-size:11px;font-weight:700;margin-bottom:2px}
 .fsub{font-size:9.5px;color:var(--mut);margin-bottom:9px;line-height:1.5}
-.facet .row{margin-bottom:10px}
-.facet .row:last-child{margin-bottom:0}
-.facet .rowlbl{font-size:10px;color:var(--mut);margin-bottom:2px;display:flex;justify-content:space-between}
-.facet svg{display:block;width:100%;height:44px}
-.marginrow{display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid #232a36;font-size:10px;color:var(--mut)}
-.marginrow b{color:var(--ink)}
 .ctlstrip{margin-top:8px;padding:8px 10px;background:#141a24;border-radius:8px;border:1px solid #1f2735;font-size:10.5px;line-height:1.8}
 .sig{color:#4ade80;font-size:9px;font-weight:700}
-
-/* ---- compare card ---- */
-.row-plain{display:block;margin-bottom:10px}
-.row-plain:last-child{margin-bottom:0}
 
 /* ---- L2 disclosures ---- */
 details.l2{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden}
@@ -85,12 +68,10 @@ details.l2 .body{padding:0 14px 14px}
 .tag{font-size:9px;padding:1px 6px;border-radius:4px;background:#1b2130;color:#8b93a1;letter-spacing:.5px}
 .foot{font-size:9.5px;color:#6b7280;margin-top:10px;line-height:1.6}
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
-.sectionhd{font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--ink);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #2a3140}
-.sectionhd:first-of-type{margin-top:0}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>TCL FIB — GRANT</h1><div class="sub">Both structures, shown together · every exit management scored on every trade</div></div>
+    <div><h1>SUPER MARIO FIB — GRANT</h1><div class="sub">Single-order fib, no L1 · every exit management scored on every trade</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="tfTg"><button data-t="1m" class="on">1M</button><button data-t="15s">15S</button></div>
       <div class="mini" id="status">loading…</div>
@@ -99,21 +80,20 @@ details.l2 .body{padding:0 14px 14px}
   <details class="primer" open>
     <summary>How to read this board</summary>
     <div class="body">
-      <p><b>What's on this board.</b> A chart-replayed backtest, not live trades. Two fib structures are tested off the same entry criteria: a two-order ladder (Entry + L1, TCL 2.0) and a single-order setup (Super Mario, no L1). Within each structure, several exit managements are scored on every trade at once — they're all hypotheses about the same real trade, not separate strategies to pick between live. Both structures show together on this page, one section after the other — there's nothing to toggle between.</p>
-      <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below — the head-to-head card, both structures' sections — reflects only that timeframe's trades.</p>
-      <p><b>Full @ 2R / Full @ 3R</b> — the no-partial baseline for either structure. Close the entire position the instant price hits that fixed target; 0 if the trade only got as far as risk-free, −1 if the stop never even cleared. It's the one number that means the same thing on both structures, so the head-to-head card up top uses it.</p>
-      <p><b>The 50%-off managements</b> bank half the position early, move the rest to breakeven, and let it ride toward the target. <b>Fill isn't a choice, so it isn't split into competing cards.</b> Two-order's single "50% @ 1R" card scores each trade off whatever was actually on — entry-only basis if L1 never filled, blended average of Entry and L1 if it did (same convention as Craig's board) — pooled into one statistic, the same way Craig's board blends solo vs. laddered fills per trade rather than showing them as separate strategies. Single-order banks at the TP price (~fib 0.618) instead of a fixed 1R, since that's where its own partial point sits.</p>
-      <p><b>BOS Exit R</b> (two-order only, leads its section) is different in kind from everything else here — it's the realistic result of the break-of-structure trail actually being run, not a fixed-target hypothesis. No 2R/3R variants; it just runs as far as structure allows once the trade is risk-free. Everything else in that section is a hypothesis being tested against it.</p>
+      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Two exit managements are scored on the same trades at once: closing the whole position at TP with no partial, versus banking half at TP and trailing the rest on break-of-structure. They're both hypotheses about the same real trade, not separate strategies to pick between live.</p>
+      <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
+      <p><b>Full @ TP — no partial.</b> Close the entire position the instant price hits TP (~fib 0.68). No partial, no de-risking along the way. −1 if TP never clears.</p>
+      <p><b>50% @ TP → trail BOS.</b> Bank half at TP (~fib 0.68), move the rest to breakeven, and trail the remainder on break-of-structure. That second half isn't a fixed-target hypothesis — it's scored at wherever the trail actually exited, so this management is part realized result, part hypothesis. −1 if TP never clears.</p>
       <p><b>The curve under each row</b> is that management's cumulative R, trade by trade, in the order the trades actually happened — not dollars, just R stacked on itself. Green and rising means it's ahead net; red and sinking means it's behind.</p>
       <p><b>Reading a dot-and-line mark</b> (the ranked table below). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
       <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size.</p>
-      <p><b>Why within-structure comparisons are paired.</b> Every management is computed off the same Max Run, so a delta is only meaningful over rows scored on both sides being compared — that's what "paired" means everywhere on this board except one place: the two-order-vs-single-order card up top compares different trades by definition (a trade is one structure or the other, never both), so that one is shown side by side, not paired, and should be read as a lean rather than a tested result.</p>
+      <p><b>The head-to-head margin is paired.</b> Both managements are computed off the same Max Run on the same trades, so the delta between them is a trade-by-trade paired comparison, not two independent samples.</p>
     </div>
   </details>
   <div id="board"></div>
 </div>
 <script>
-/* ============================== stats primitives (structure-agnostic) ============================== */
+/* ============================== stats primitives ============================== */
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
 const fR=x=>{const v=Math.abs(x)<0.005?0:x; return (v>=0?'+':'')+v.toFixed(2)+'R';};
 const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
@@ -195,28 +175,14 @@ function equityCurveSVG(series, w, h){
   </svg>`;
 }
 
-/* ============================== Grant's schema ============================== */
-const SETUPVAL={two:'Two-order (TCL 2.0)', single:'Single-order (Super Mario)'};
-const SETUPNAME={two:'Two-order (TCL 2.0)', single:'Single-order (Super Mario)'};
-const MGMT = {
-  two: [
-    {k:'full', name:'Full send · no partial', short:'Full',
-     desc:'Close the entire position the instant price hits the target. No partial, no de-risking along the way.',
-     props:{'2R':'full2R','3R':'full3R'}},
-    {k:'half', name:'50% @ 1R', short:'50%·1R',
-     desc:'Bank half the position at the 1R price, move the rest to breakeven, let it ride to target. Fill isn’t a choice, so this isn’t split into an “entry-only” card and an “entry+L1” card — each trade uses whatever was actually on (entry-only basis if L1 never filled, blended avg(Entry,L1) if it did), pooled into one statistic. Same principle as Craig’s board: the market decides, not you.',
-     props:{'2R':'half1r2R','3R':'half1r3R'}},
-  ],
-  single: [
-    {k:'full', name:'Full send · no partial', short:'Full',
-     desc:'Close the entire position the instant price hits the target.',
-     props:{'2R':'full2R','3R':'full3R'}},
-    {k:'tp', name:'50% @ TP', short:'50%·TP',
-     desc:'Bank half the position at the TP price (~fib 0.618), move the rest to breakeven, let it ride to target.',
-     props:{'2R':'tp2R','3R':'tp3R'}},
-  ],
-};
-const TGTS=['2R','3R'];
+/* ============================== Grant's schema — Super Mario only ============================== */
+const SETUP_SINGLE='Single-order (Super Mario)';
+const MGMT=[
+  {key:'fullTP', name:'Full @ TP · no partial', short:'Full TP',
+   desc:'Close the entire position the instant price hits TP (~fib 0.68). No partial, no trail.'},
+  {key:'tpTrailBOS', name:'50% @ TP → trail BOS', short:'50%+Trail',
+   desc:'Bank half at TP (~fib 0.68), move the rest to breakeven, trail the remainder on break-of-structure — scored at wherever the trail actually exited, not a fixed ceiling.'},
+];
 
 let TRADES=[], ALL=[], TF='1m', firstLoad=true, lastOk=null;
 const OPEN=new Set();
@@ -234,36 +200,26 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => t.Timeframe===TF).sort(chrono);
+  TRADES = ALL.filter(t => t.Timeframe===TF && t.SetupType===SETUP_SINGLE).sort(chrono);
 }
 
-/* ============================== L0 — top performer within the toggled structure ============================== */
-function bestCandidate(setup, pool){
-  const all=[];
-  MGMT[setup].forEach(m=>TGTS.forEach(t=>{
-    const prop=m.props[t], s=statsFor(prop,pool);
-    if(s.n) all.push({m,t,prop,s});
-  }));
+/* ============================== L0 — head-to-head: which management wins ============================== */
+function bestCandidate(pool){
+  const all=MGMT.map(m=>({m, prop:m.key, s:statsFor(m.key,pool)})).filter(x=>x.s.n);
   all.sort((a,b)=>b.s.mean-a.s.mean);
   return all;
 }
-function answerBlock(setup, pool){
-  const ranked=bestCandidate(setup,pool);
+function answerBlock(pool){
+  const ranked=bestCandidate(pool);
   if(!ranked.length) return `<div class="card answer"><div class="empty-note">No trades match this filter yet.</div></div>`;
   const best=ranked[0], runnerUp=ranked[1];
   const s=best.s;
   const sig = s.lo>0;
   const margin = runnerUp ? paired(runnerUp.prop,best.prop,pool) : null;
   const marginSig = margin && margin.n>0 && margin.lo>0;
-  const rivals=[];
-  MGMT[setup].forEach(m=>TGTS.forEach(t=>{
-    if(m.k===best.m.k && t===best.t) return;
-    const p=paired(best.prop,m.props[t],pool);
-    if(p.n>0 && !(p.hi<0)) rivals.push(`${m.short} → ${t}`);
-  }));
   return `<div class="card answer">
-    <div class="eyebrow">${setup==='two'?'Best hypothesis — tested against the realized result above':'Top performer — '+SETUPNAME[setup]}</div>
-    <div class="policy">${best.m.name} → ${best.t}</div>
+    <div class="eyebrow">Best hypothesis so far</div>
+    <div class="policy">${best.m.name}</div>
     <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
       <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
     <div class="curve">${equityCurveSVG(seriesFor(best.prop,pool),600,70)}</div>
@@ -276,102 +232,19 @@ function answerBlock(setup, pool){
       <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak} trade${s.winStreak===1?'':'s'}</div></div>
       <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(s.n/4.6))} days</div></div>
     </div>
-    ${runnerUp ? `<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${runnerUp.m.name} → ${runnerUp.t}</b> at ${fR(runnerUp.s.mean)} (n${runnerUp.s.n}) — leads by <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${margin.n?(marginSig?' <span class="sig">sig</span>':' · not yet significant'):''}.</div>` : ''}
-    ${sig ? '' : `<div class="caveat" style="margin-top:9px">
-      ${rivals.length ? 'Statistically tied with: '+rivals.join(', ')+'. ' : ''}
-      With ${s.n} trades this board can reliably tell managements apart only when they differ by roughly a full R — most of the gaps here are smaller than that.</div>`}
+    ${runnerUp ? `<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${runnerUp.m.name}</b> at ${fR(runnerUp.s.mean)} (n${runnerUp.s.n}) — leads by <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${margin.n?(marginSig?' <span class="sig">sig</span>':' · not yet significant'):''}.</div>` : ''}
+    ${sig ? '' : `<div class="caveat" style="margin-top:9px">With ${s.n} trades this board can reliably tell the two managements apart only once they differ by roughly a full R — the gap here may still be smaller than that.</div>`}
   </div>`;
 }
 
-/* ============================== L1 — cube: management × target, paired on identical trades ============================== */
-function cubeBlock(setup, pool){
-  const mgmts=MGMT[setup];
-  let facets='';
-  mgmts.forEach(m=>{
-    let rows='';
-    TGTS.forEach(t=>{
-      const prop=m.props[t], s=statsFor(prop,pool);
-      rows+=`<div class="row">
-        <div class="rowlbl"><span>→ ${t} · ${s.n?Math.round(s.winRate*100)+'% win':'—'}</span><span>${fR(s.mean??0)} n${s.n} · Σ ${s.n?fR(s.total):'—'}</span></div>
-        ${equityCurveSVG(seriesFor(prop,pool),300,44)}
-      </div>`;
-    });
-    const d=paired(m.props['2R'],m.props['3R'],pool);
-    facets+=`<div class="facet">
-      <div class="fname">${m.name}</div>
-      <div class="fsub">${m.desc}</div>
-      ${rows}
-      <div class="marginrow"><span>3R − 2R, paired</span><b class="${d.n?cls(d.mean):''}">${d.n?fR(d.mean)+(d.lo>0?' ':d.hi<0?' ':' · ns'):'—'}</b></div>
-    </div>`;
-  });
-  const mgmtDeltas=[];
-  for(let i=0;i<mgmts.length;i++)for(let j=i+1;j<mgmts.length;j++){
-    TGTS.forEach(t=>{
-      const p=paired(mgmts[i].props[t], mgmts[j].props[t], pool);
-      if(p.n) mgmtDeltas.push(`${mgmts[j].short}−${mgmts[i].short} @${t}: <b class="${p.lo>0?'pos':p.hi<0?'neg':'mut'}">${fR(p.mean)}</b>${p.lo>0||p.hi<0?' <span class="sig">sig</span>':''}`);
-    });
-  }
-  return `<div class="cubewrap">
-    <div class="lbl">Which management, which target</div>
-    <div class="fsub" style="margin-bottom:9px">Every card below scores the same ${pool.length} trade${pool.length===1?'':'s'} — not separate samples, different hypothetical readings of one dataset. A <span class="sig">sig</span> tag on more than one card isn't independent confirmation; they're correlated off the same Max Run. That's why every delta here is computed paired, trade by trade, never as a difference of two independent means.</div>
-    <div class="facets">${facets}</div>
-    ${mgmtDeltas.length?`<div class="ctlstrip"><b style="color:var(--ink)">Management vs. management, paired</b> (green = 95% CI clears zero): ${mgmtDeltas.join(' &nbsp;·&nbsp; ')}</div>`:''}
-  </div>`;
-}
-
-/* ============================== L0b — BOS trail exit, the REALIZED result (two-order only, leads the page) ============================== */
-function realizedBlock(pool){
-  const s=statsFor('bosExitR',pool);
-  if(!s.n) return `<div class="card answer"><div class="eyebrow">Realized result — BOS trail exit, two-order</div><div class="empty-note">No Trailing BOS Exit logged yet for this filter — nothing to lead with until at least one trade has an exit.</div></div>`;
-  return `<div class="card answer">
-    <div class="eyebrow">Realized result — BOS trail exit, two-order</div>
-    <div class="policy">What the trail actually captured</div>
-    <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
-      <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
-    <div class="curve">${equityCurveSVG(seriesFor('bosExitR',pool),600,70)}</div>
-    <div class="fsub">No fixed target — runs as far as break-of-structure allows once the trade is risk-free. This is the real exit for two-order trades; the best hypothesis below is being tested against it, not the other way around.</div>
-    <div class="stats">
-      <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
-      <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
-      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
-      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak} trade${s.streak===1?'':'s'}</div></div>
-      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak} trade${s.winStreak===1?'':'s'}</div></div>
-    </div>
-  </div>`;
-}
-
-/* ============================== top — two-order vs. single-order, which fib wins (leads the page — this is Grant's own question) ============================== */
-function setupCompareBlock(pool){
-  const twoPool=pool.filter(t=>t.SetupType===SETUPVAL.two);
-  const singlePool=pool.filter(t=>t.SetupType===SETUPVAL.single);
-  const col=(name,pool)=>{
-    const s2=statsFor('full2R',pool), s3=statsFor('full3R',pool);
-    return `<div>
-      <div class="policy" style="font-size:15px;margin-bottom:6px">${name}</div>
-      <div class="band" style="margin-bottom:4px"><div class="bandnum ${s2.n?cls(s2.mean):'mut'}" style="font-size:18px">${s2.n?fR(s2.mean):'—'}</div><div class="bandci">Full @ 2R · ${s2.n?`[${fR(s2.lo)}, ${fR(s2.hi)}] n${s2.n}`:'no data'}</div></div>
-      ${s2.n?equityCurveSVG(seriesFor('full2R',pool),280,44):''}
-      <div class="mini" style="margin-top:6px">Full @ 3R: <span class="${s3.n?cls(s3.mean):'mut'}">${s3.n?fR(s3.mean):'—'}</span>${s3.n?` n${s3.n}`:''}</div>
-    </div>`;
-  };
-  return `<div class="card answer" style="margin-bottom:10px">
-    <div class="eyebrow">Which fib wins — two-order vs. single-order</div>
-    <div class="fsub" style="margin-bottom:10px">Full-send outcome — the one comparison that means the same thing on both structures. Not paired: different trades, not the same trade scored two ways, so read the gap as a lean.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      ${col(SETUPNAME.two,twoPool)}
-      ${col(SETUPNAME.single,singlePool)}
-    </div>
-  </div>`;
-}
-
-/* ============================== L2 — all, ranked ============================== */
-function rankedTable(setup, pool){
-  const rows=[];
-  MGMT[setup].forEach(m=>TGTS.forEach(t=>{ rows.push({m,t,prop:m.props[t],s:statsFor(m.props[t],pool)}); }));
+/* ============================== L2 — both, ranked ============================== */
+function rankedTable(pool){
+  const rows=MGMT.map(m=>({m,prop:m.key,s:statsFor(m.key,pool)}));
   rows.sort((a,b)=>(b.s.n?b.s.mean:-99)-(a.s.n?a.s.mean:-99));
   let h='';
   rows.forEach(r=>{
     const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
-    h+=`<tr><td><span class="tag">${r.m.short}</span> → ${r.t}<div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
+    h+=`<tr><td><span class="tag">${r.m.short}</span><div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
       <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.prop,pool),140,32):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
       <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
@@ -381,8 +254,8 @@ function rankedTable(setup, pool){
       <td class="${s.n&&s.winStreak?'pos':'mut'}">${s.n?s.winStreak:'—'}</td>
       <td class="mut">${s.n||'—'}</td></tr>`;
   });
-  return `<div class="fsub">Every row here is the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not ${rows.length} separate samples — do not add the n's up. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own; two sig rows aren't independent confirmation of each other. If untagged, read the expectancy as a lean, not a proven winner.</div>
-    <table class="matrix"><thead><tr><th>Management · target</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
+  return `<div class="fsub">Both rows are the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not two separate samples. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own.</div>
+    <table class="matrix"><thead><tr><th>Management</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
 /* ============================== render ============================== */
@@ -390,24 +263,12 @@ function disclosure(id,title,bodyHtml){
   const open=OPEN.has(id);
   return `<details class="l2" id="${id}" ${open?'open':''}><summary>${title}</summary><div class="body">${bodyHtml}</div></details>`;
 }
-function structureSection(key,label,pool){
-  if(!pool.length) return `<div class="sectionhd">${label}</div><div class="card"><div class="empty-note">No ${label.toLowerCase()} trades logged for this timeframe yet.</div></div>`;
-  return `<div class="sectionhd">${label}</div>` +
-    (key==='two' ? realizedBlock(pool) : '') +
-    answerBlock(key,pool) +
-    disclosure('d-'+key+'-all','All, ranked — '+label, rankedTable(key,pool)) +
-    cubeBlock(key,pool);
-}
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  const headCompare=setupCompareBlock(pool);
-  if(!pool.length){ board.innerHTML=headCompare+'<div class="card"><div class="empty-note">No trades logged for this timeframe yet.</div></div>'; return; }
-  const twoPool=pool.filter(t=>t.SetupType===SETUPVAL.two);
-  const singlePool=pool.filter(t=>t.SetupType===SETUPVAL.single);
-  board.innerHTML = headCompare +
-    structureSection('two',SETUPNAME.two,twoPool) +
-    structureSection('single',SETUPNAME.single,singlePool) +
-    `<div class="foot">Every within-structure comparison on this board is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this timeframe yet.</div></div>'; return; }
+  board.innerHTML = answerBlock(pool) +
+    disclosure('d-all','All, ranked', rankedTable(pool)) +
+    `<div class="foot">Both managements are paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
   });
