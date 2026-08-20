@@ -48,9 +48,14 @@ function score(t, r, { stop, target, partial }) {
   const d = r.d, R = d * ((t.entry - t.sl) + (t.l1 - t.sl));
   if (!(R > 0)) return null;
   const at = f => t.sl + f * (t.anchor - t.sl);
-  const legs = r.l1 ? [t.entry, t.l1] : [t.entry];
-  const be = legs.reduce((a, b) => a + b, 0) / legs.length;
-  const pnl = px => legs.reduce((a, e) => a + d * (px - e), 0);
+  // TIME-GATED LEGS. `r.l1` is "L1 filled at some point in the whole replay", and replay()
+  // runs to the ORIGINAL stop — far past most scenarios' exits. Using it untimed credits a
+  // trade that paid its target at bar 5 with a second leg that filled at bar 100. That is
+  // the same look-ahead already retracted once, and it was still live here. The fix is to
+  // read the fill state AS OF THE CURRENT BAR, which replay() already records as l1At.
+  const legsAt = k => (r.l1At != null && k >= r.l1At) ? [t.entry, t.l1] : [t.entry];
+  const pnlAt = (k, px) => legsAt(k).reduce((a, e) => a + d * (px - e), 0);
+  const beAt = k => { const L = legsAt(k); return L.reduce((a, b) => a + b, 0) / L.length; };
 
   const tgt = target == null ? null : at(target);
   const par = partial == null ? null : at(partial);
@@ -58,13 +63,13 @@ function score(t, r, { stop, target, partial }) {
 
   for (const p of r.path) {
     // partial first — it sits nearer than the target by construction
-    if (par != null && open === 1 && d * (p.fav - par) >= 0) { banked += pnl(par) / 2; open = 0.5; }
-    if (tgt != null && d * (p.fav - tgt) >= 0) return (banked + pnl(tgt) * open) / R;
-    const active = (stop === 'be' && r.cleared && p.k >= r.clearedAt) ? be : t.sl;
-    if (d * (p.adv - active) < 0) return (banked + pnl(active) * open) / R;
+    if (par != null && open === 1 && d * (p.fav - par) >= 0) { banked += pnlAt(p.k, par) / 2; open = 0.5; }
+    if (tgt != null && d * (p.fav - tgt) >= 0) return (banked + pnlAt(p.k, tgt) * open) / R;
+    const active = (stop === 'be' && r.cleared && p.k >= r.clearedAt) ? beAt(p.k) : t.sl;
+    if (d * (p.adv - active) < 0) return (banked + pnlAt(p.k, active) * open) / R;
   }
   const last = r.path[r.path.length - 1];
-  return (banked + pnl(last.fav === undefined ? t.entry : (d === 1 ? last.l : last.h)) * open) / R;
+  return (banked + pnlAt(last.k, d === 1 ? last.l : last.h) * open) / R;
 }
 
 (async () => {
