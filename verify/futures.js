@@ -19,6 +19,19 @@
 // a FORWARD verification tool — run it while trades are fresh. It cannot retroactively
 // audit a log older than that, which is why entry timestamps have to be captured at
 // logging time rather than reconstructed later.
+//
+// THE OTHER ROUTE, AND WHAT IT ACTUALLY BUYS (measured 2026-08-21, not assumed).
+// The TradingView Desktop MCP bridge reads the local app over CDP. Tested against a live
+// MNQ1! chart:
+//   15S — real 15-second bars, exact ordering, no envelope needed. But replay refused
+//         2026-06-24 and clamped forward 27 days to 2026-07-21, so seconds data is held
+//         for only ~30 days. It CANNOT reach trades older than that either.
+//   1m  — replay landed on 2026-06-23T23:59:59 exactly as asked, so minute data goes back
+//         years.
+// So the bridge buys HISTORY DEPTH, not resolution: it reaches old trades that this file
+// cannot, but at 1m, under the same envelope rule. Nothing anywhere gives 15s on a trade
+// older than a month — which makes verifying trades PROMPTLY the only way to get exact
+// intra-bar ordering, and makes an entry timestamp logged at the time non-negotiable.
 const fs = require('fs');
 const path = require('path');
 
