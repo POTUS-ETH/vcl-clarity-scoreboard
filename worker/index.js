@@ -374,7 +374,12 @@ async function computeGrant(token) {
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
-    if (title.toUpperCase().startsWith('TEST')) continue;
+    // Deliberately seeded test rows DO come through — the board renders a hazard banner
+    // over them. The title-prefix rule stays only for legacy scaffolding that predates the
+    // explicit flag; without this split, seeded rows named TEST-* silently vanished and the
+    // board read "no trades" while 60 rows sat in the log.
+    const isTest = !!getProp(t, 'Test Data');
+    if (!isTest && title.toUpperCase().startsWith('TEST')) continue;
     // an empty "+ New" row has no Entry Price at all — distinct from a real trade with blank
     // outcomes, which must never be skipped.
     if (getProp(t, 'Entry Price') == null) continue;
