@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Super Mario Fib — Grant · eight outcomes, one fib</title>
+<title>VCL V5 Tracker · one fib, eight outcomes</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -95,7 +95,7 @@ details.l2 .body{padding:0 14px 14px}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>SUPER MARIO FIB — GRANT</h1><div class="sub">Single-order fib, no L1 · full-position targets vs. 50%-off with a capped runner</div></div>
+    <div><h1>VCL V5 — SINGLE-ORDER FIB</h1><div class="sub">One entry, one stop, one geometry · SOL / BTC / ETH · 1m · full-position targets vs. 50%-off with a capped runner</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="SOL">SOL</button><button data-p="BTC">BTC</button><button data-p="ETH">ETH</button></div>
       <div class="mini" id="status">loading…</div>
@@ -104,7 +104,7 @@ details.l2 .body{padding:0 14px 14px}
   <details class="primer">
     <summary>How to read this board</summary>
     <div class="body">
-      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Eight exit outcomes are scored on <em>every</em> trade at once. They are not eight strategies competing on separate samples; they are eight ways of pricing the same set of real trades.</p>
+      <p><b>What's on this board.</b> A chart-replayed backtest of the VCL V5 single-order fib — no L1, one entry, the same geometry on every pair. Eight exit outcomes are scored on <em>every</em> trade at once. They are not eight strategies competing on separate samples; they are eight ways of pricing the same set of real trades.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
       <p><b>The fib is fixed, so every level is forced.</b> Stop 0.085, entry 0.382, TP 0.68. That makes 1R = 0.297 in fib units, and the whole board hangs off four levels: <b>1R = fib 0.679</b> (the TP itself), <b>2R = 0.976</b>, <b>3R = 1.272</b>, <b>5R = 1.866</b>.</p>
       <p><b>Family 1 — full position, no partial.</b> Four fixed targets, binary by construction: +NR if Max Run reached it, −1R if not. <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1. The fifth row, <b>Full size → BE + trail</b>, is the no-partial control: same full size, but no ceiling — it takes whatever structure gives.</p>
@@ -202,7 +202,10 @@ function equityCurveSVG(series, w, h){
   </svg>`;
 }
 
-/* ============================== Grant's schema — Super Mario only ==============================
+/* ============================== VCL V5 schema — single-order fib only ==============================
+   NOTE: SETUP_SINGLE below is the literal Notion select value, not a label. It still reads
+   "Super Mario" because that is the stored option name and eight formulas gate on it; renaming
+   it means editing the option and every formula together, so it stays until that is worth doing.
    Six outcomes, two families, off ONE fib. Only four chart levels drive all of them:
    1R = fib 0.679 (the 0.68 TP) · 2R = 0.976 · 3R = 1.272 · 5R = 1.866.
    The families share the upper two levels at different position sizes — a half-size
@@ -513,7 +516,7 @@ function testBanner(pool){
 
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML=testBanner(ALL)+'<div class="card"><div class="empty-note">No Super Mario trades logged for this pair yet.</div></div>'; return; }
+  if(!pool.length){ board.innerHTML=testBanner(ALL)+'<div class="card"><div class="empty-note">No VCL V5 trades logged for this pair yet.</div></div>'; return; }
   board.innerHTML = testBanner(pool) +
     verdictLine(pool) +
     winnerCard(pool) +
