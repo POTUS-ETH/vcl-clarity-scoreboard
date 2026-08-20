@@ -289,6 +289,10 @@ const CORS = {
 // Returns RAW inputs only; the v3 widget recomputes R client-side using the
 // corrected full-ladder model (single source of truth in v3.html).
 const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
+// ...which has since been split server-side exactly like Craig's board, so the legacy
+// /databases/{id}/query path returns zero rows with has_more:false rather than erroring.
+// ?view=v3 had been silently reporting an empty log while 116 trades sat in it.
+const V3_DATA_SOURCE = 'a9821f82-d4cc-4652-a6ad-46969c4fc0da';
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 
@@ -427,8 +431,63 @@ async function computeGrant(token) {
   };
 }
 
+
+// ── Trade Log v3 raw geometry ────────────────────────────────────────
+// Exposes the fib inputs from the master log so the V5 outcome set can be re-scored
+// against it. Entry Price is a TEXT property in this log (not number), so it is parsed
+// rather than read straight through.
+async function computeV3Raw2(token) {
+  const trades = await queryAll(MTL_DB, token);
+  const num = v => { if (v == null) return null;
+    const n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isNaN(n) ? null : n; };
+  return {
+    updated: new Date().toISOString(),
+    tradeCount: trades.length,
+    trades: trades.map(t => ({
+      id: t.id, date: getProp(t, 'Date'), pair: getProp(t, 'Pair'),
+      dir: getProp(t, 'Direction'), session: getProp(t, 'Session'),
+      trader: getProp(t, 'Trader'), avwap: getProp(t, 'AVWAP TYPE') || [],
+      entry: num(getProp(t, 'Entry Price')),
+      l1:    num(getProp(t, 'L1 Price')),
+      sl:    num(getProp(t, 'SL Price')),
+      rangePct: getProp(t, 'Range %'),
+      bosMaxR:  getProp(t, 'BoS Swing Trail: Max R Price'),
+      bosExit:  getProp(t, 'BoS Swing Trail: Exit Price'),
+      haMaxR:   getProp(t, '10m HA Trail: Max R Price'),
+      haExit:   getProp(t, '10m HA Trail: Exit Price'),
+    })),
+  };
+}
+
+
+// ── Screenshot URLs for the V3 log ───────────────────────────────────
+// Notion hands back short-lived signed S3 links for file properties; getProp() drops them
+// because it has no 'files' case. This exposes them so chart images can actually be pulled
+// down and looked at. Links expire in about an hour — re-fetch rather than caching them.
+async function computeV3Shots(token) {
+  const trades = await queryAllDataSource(V3_DATA_SOURCE, token);
+  const fileUrls = page => {
+    const p = page.properties?.['Screenshot'];
+    if (!p || p.type !== 'files') return [];
+    return (p.files || []).map(f => f?.file?.url || f?.external?.url).filter(Boolean);
+  };
+  return {
+    updated: new Date().toISOString(),
+    trades: trades.map(t => ({
+      id: t.id, date: getProp(t, 'Date'), pair: getProp(t, 'Pair'),
+      tf: getProp(t, 'Timeframe'), dir: getProp(t, 'Direction'),
+      entry: getProp(t, 'Entry Price'), sl: getProp(t, 'SL Price'),
+      l1: getProp(t, 'L1 Price'), maxRun: getProp(t, 'Max Run'),
+      bosExit: getProp(t, 'BoS Exit'), notes: getProp(t, 'Notes'),
+      shots: fileUrls(t),
+    })),
+  };
+}
+
 async function computeV3Raw(token, dbId) {
-  const trades = await queryAll(dbId, token);
+  const trades = dbId === V3_DB
+    ? await queryAllDataSource(V3_DATA_SOURCE, token)   // split source; see note above
+    : await queryAll(dbId, token);
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -802,6 +861,8 @@ export default {
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
         'v4-futures': () => computeV4Futures(env.NOTION_TOKEN),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
+        'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
+        'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),
         grant:       () => computeGrant(env.NOTION_TOKEN),
         prop:        () => computePropData(env.NOTION_TOKEN),
         scoreboard:  () => computeScoreboard(env.NOTION_TOKEN),
