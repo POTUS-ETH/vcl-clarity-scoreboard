@@ -93,7 +93,7 @@ details.l2 .body{padding:0 14px 14px}
   <div class="hd">
     <div><h1>SUPER MARIO FIB — GRANT</h1><div class="sub">Single-order fib, no L1 · full-position targets vs. 50%-off with a capped runner</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div class="tg" id="tfTg"><button data-t="1m" class="on">1M</button><button data-t="15s">15S</button></div>
+      <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="SOL">SOL</button><button data-p="BTC">BTC</button><button data-p="ETH">ETH</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -231,7 +231,8 @@ const MGMT=[
 ];
 const byFam=f=>MGMT.filter(m=>m.fam===f);
 
-let TRADES=[], ALL=[], TF='1m', firstLoad=true, lastOk=null;
+let TRADES=[], ALL=[], PAIR='all', firstLoad=true, lastOk=null;
+const TF='1m';  // this board tests 1m only, across SOL/BTC/ETH
 const OPEN=new Set();
 
 /* ============================== series / stats over Grant's precomputed R fields ============================== */
@@ -247,7 +248,8 @@ const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
-  TRADES = ALL.filter(t => t.Timeframe===TF && t.SetupType===SETUP_SINGLE).sort(chrono);
+  TRADES = ALL.filter(t => t.Timeframe===TF && t.SetupType===SETUP_SINGLE
+                          && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
 }
 
 /* ============================== L0 — the verdict ==============================
@@ -280,6 +282,10 @@ function verdictLine(pool){
    do you exit at" — raise it and fewer bars clear but each pays more. One picture holds
    the whole question, and it is a chart, which is what Grant actually reads. */
 function reachLadderSVG(pool){
+  // Above ~24 trades the per-trade bars stop being readable, so the same data is
+  // drawn as a survival curve instead: what share of trades reached at least X R.
+  // Same information, and it gets MORE legible as n grows rather than less.
+  if(pool.length>24) return reachCurveSVG(pool);
   const dirOf=t=>t.Direction==='Long'?1:-1;
   const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
     return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
@@ -328,6 +334,49 @@ function reachLadderSVG(pool){
       ${bars}
     </svg>
     <div class="fsub" style="margin:6px 0 0">Every outcome on this board is this one picture read at a different height. The levels do not fail independently — a trade that misses 3R misses 5R too — so two outcomes agreeing is not two pieces of evidence.</div>
+  </div>`;
+}
+
+/* ============================== L1 (large-n form) — the reach curve ============================== */
+function reachCurveSVG(pool){
+  const dirOf=t=>t.Direction==='Long'?1:-1;
+  const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
+    return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
+  const rs=pool.map(rOf).filter(v=>v!=null).sort((a,b)=>a-b);
+  if(!rs.length) return '';
+  const W=1000,H=230,padL=52,padR=130,padT=20,padB=34;
+  const maxR=Math.max(6,rs[rs.length-1])*1.05, minR=Math.min(-1.5,rs[0]);
+  const pw=W-padL-padR, ph=H-padT-padB;
+  const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
+  const surv=r=>rs.filter(v=>v>=r).length/rs.length;
+  let path='';
+  for(let i=0;i<=160;i++){
+    const r=minR+(maxR-minR)*i/160;
+    path+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(r)).toFixed(1);
+  }
+  let grid='';
+  [1,2,3,5].forEach((N,i)=>{
+    const f=['0.679','0.976','1.272','1.866'][i], p=surv(N);
+    grid+=`<line x1="${x(N).toFixed(1)}" y1="${padT-4}" x2="${x(N).toFixed(1)}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
+       +  `<circle cx="${x(N).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.5" fill="#3fb950"/>`
+       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
+       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
+       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(p)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(p*100)}%</text>`;
+  });
+  let yax='';
+  [0,0.25,0.5,0.75,1].forEach(p=>{
+    yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
+      +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
+  });
+  return `<div class="card" style="padding:12px 14px 8px">
+    <div class="lbl">Reach curve — share of trades that ran at least this far (n=${rs.length})</div>
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+      ${yax}${grid}
+      <path d="${path}" fill="none" stroke="#3fb950" stroke-width="2"/>
+      <text x="${W-padR+12}" y="${padT+10}" font-size="10" fill="#8b93a1">median run</text>
+      <text x="${W-padR+12}" y="${padT+24}" font-size="13" font-weight="700" fill="#e6e8ec">${rs[Math.floor(rs.length/2)].toFixed(2)}R</text>
+    </svg>
+    <div class="fsub" style="margin:6px 0 0">Each dot is one exit level: how often price reached it at all. Every outcome on this board is a point on this curve weighed against what it pays.</div>
   </div>`;
 }
 
@@ -404,7 +453,7 @@ function disclosure(id,title,bodyHtml){
 }
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this timeframe yet.</div></div>'; return; }
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this pair yet.</div></div>'; return; }
   board.innerHTML = verdictLine(pool) +
     reachLadderSVG(pool) +
     intervalStripSVG(pool) +
@@ -426,7 +475,7 @@ async function poll(){
     ALL=(j&&j.trades)||[];
     applyFilters(); render();
     lastOk=Date.now();
-    st.textContent=`${TF.toUpperCase()} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
+    st.textContent=`1M · ${PAIR==='all'?'all pairs':PAIR} · ${TRADES.length} trade${TRADES.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`;
     firstLoad=false;
   }catch(e){
     if(firstLoad){ st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
@@ -440,9 +489,9 @@ function wire(id,attr,set){
     b.onclick=()=>{ const v=b.dataset[attr]; if(v===set()) return;
       document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on',x===b));
       set(v); applyFilters(); render();
-      document.getElementById('status').textContent=`${TF.toUpperCase()} · ${TRADES.length} trades · switched`; };});
+      document.getElementById('status').textContent=`1M · ${PAIR==='all'?'all pairs':PAIR} · ${TRADES.length} trades`; };});
 }
-wire('tfTg','t', v=>{ if(v===undefined) return TF; TF=v; });
+wire('pairTg','p', v=>{ if(v===undefined) return PAIR; PAIR=v; });
 poll(); setInterval(poll,5000);
 </script>
 </body></html>

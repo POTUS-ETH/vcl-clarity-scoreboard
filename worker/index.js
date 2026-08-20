@@ -381,6 +381,7 @@ async function computeGrant(token) {
     rows.push({
       id:        t.id,
       created:   t.created_time,
+      num:       getProp(t, '#'),
       Trade:     title,
       SetupType: getProp(t, 'Setup Type'),
       Direction: getProp(t, 'Direction'),
@@ -388,47 +389,29 @@ async function computeGrant(token) {
       Session:   getProp(t, 'Session'),
       Pair:      getProp(t, 'Pair'),
       date:      getProp(t, 'Date'),
-      // raw geometry, so a consumer can check a published R against its own reading
+      // Only Entry and the 1-of-fib anchor are typed; the rest of the geometry is solved
+      // in Notion off those two (v4's rule). Max Run and the trail exit are the outcomes.
       entry:     getProp(t, 'Entry Price'),
-      l1:        getProp(t, 'L1 Price'),
-      stop:      getProp(t, 'Stop Price'),
-      tp:        getProp(t, 'TP Price'),
       anchor:    getProp(t, '1 of Fib Price'),
-      p618:      getProp(t, '0.618 Price'),
-      p1272:     getProp(t, '1.272 Price'),
       maxRun:    getProp(t, 'Max Run'),
       bosExit:   getProp(t, 'Trailing BOS Exit'),
-      l1Filled:  getProp(t, 'L1 Filled'),
-      l1FillTiming: getProp(t, 'L1 Fill Timing'),
+      // solved geometry, exposed so a consumer can re-derive any R independently
+      fib0:      getProp(t, 'Fib 0 Price'),
+      stop:      getProp(t, 'Stop Price'),
+      tp:        getProp(t, 'TP Price'),
+      oneR:      getProp(t, '1R (price)'),
       rangePct:  getProp(t, 'Range %'),
       notes:     getProp(t, 'Notes'),
-      // computed R fields, read straight off the Notion formulas — single source of truth
-      oneR:        getProp(t, '1R (price)'),
+      // the eight outcomes, straight off the Notion formulas
       maxRunR:     getProp(t, 'Max Run R'),
-      bosExitR:    getProp(t, 'BOS Exit R'),
-      full2R:      getProp(t, 'Full @ 2R'),
-      full3R:      getProp(t, 'Full @ 3R'),
-      half1r2R:    getProp(t, '50% @ 1R -> 2R'),
-      half1r3R:    getProp(t, '50% @ 1R -> 3R'),
-      tp2R:        getProp(t, '50% @ TP -> 2R'),
-      tp3R:        getProp(t, '50% @ TP -> 3R'),
-      // Grant's actual current plan (2026-08) — replaces the 2R/3R ceilings above for his
-      // real trading: TCL 2.0 branches on L1 Filled (0.618/1.272 vs 0.382/0.618/stop-to-L1),
-      // Super Mario picks one of two live exit methods.
-      tclPlanR:    getProp(t, 'TCL 2.0 Plan R'),
-      fullTP:      getProp(t, 'Full @ TP'),
-      tpTrailBOS:  getProp(t, '50% @ TP -> Trail BOS'),
-      // The six outcomes Grant is actually testing (2026-08-19). Two families off the
-      // same Super Mario fib: close the whole position at a fixed R, or bank 50% at the
-      // 0.68 and cap the runner. Only four chart levels drive all six — 1R/0.68,
-      // 2R/0.976, 3R/1.272, 5R/1.866 — because a half-size runner needs 2R to move the
-      // position 1R, so the two families share their upper two levels at different sizes.
-      smFull1R:    getProp(t, 'SM Full TP @ 1R'),
-      smFull2R:    getProp(t, 'SM Full TP @ 2R'),
-      smFull3R:    getProp(t, 'SM Full TP @ 3R'),
-      smFull5R:    getProp(t, 'SM Full TP @ 5R'),
-      smCap1272:   getProp(t, 'SM 50% then TP 1.272'),
-      smCap1866:   getProp(t, 'SM 50% then TP 1.866'),
+      bosExitR:    getProp(t, 'BOS Exit R'),          // = full size, no partial, BE + trail
+      smFull1R:    getProp(t, 'Full TP @ 1R'),
+      smFull2R:    getProp(t, 'Full TP @ 2R'),
+      smFull3R:    getProp(t, 'Full TP @ 3R'),
+      smFull5R:    getProp(t, 'Full TP @ 5R'),
+      smCap1272:   getProp(t, '50% then cap 1.272'),
+      smCap1866:   getProp(t, '50% then cap 1.866'),
+      tpTrailBOS:  getProp(t, '50% then trail (incumbent)'),
     });
   }
   return {
