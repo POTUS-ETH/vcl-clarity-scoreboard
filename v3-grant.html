@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Super Mario Fib — Grant · Full TP vs 50% + trail BOS</title>
+<title>Super Mario Fib — Grant · six outcomes, one fib</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -71,7 +71,7 @@ details.l2 .body{padding:0 14px 14px}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>SUPER MARIO FIB — GRANT</h1><div class="sub">Single-order fib, no L1 · every exit management scored on every trade</div></div>
+    <div><h1>SUPER MARIO FIB — GRANT</h1><div class="sub">Single-order fib, no L1 · full-position targets vs. 50%-off with a capped runner</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div class="tg" id="tfTg"><button data-t="1m" class="on">1M</button><button data-t="15s">15S</button></div>
       <div class="mini" id="status">loading…</div>
@@ -80,16 +80,17 @@ details.l2 .body{padding:0 14px 14px}
   <details class="primer">
     <summary>How to read this board</summary>
     <div class="body">
-      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Two exit managements are scored on the same trades at once: closing the whole position at TP with no partial, versus banking half at TP and trailing the rest on break-of-structure. They're both hypotheses about the same real trade, not separate strategies to pick between live.</p>
+      <p><b>What's on this board.</b> A chart-replayed backtest of Grant's single-order Super Mario fib — no L1, one entry. Seven exit outcomes are scored on <em>every</em> trade at once. They are not seven strategies competing on separate samples; they are seven ways of pricing the same set of real trades.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
-      <p><b>The fib is fixed, so the payoff is too.</b> Stop sits at 0.085, entry at 0.382, TP at 0.68. That spacing puts the TP almost exactly <b>1R</b> from entry by construction — reward 0.68−0.382 = 0.298 against risk 0.382−0.085 = 0.297. It isn't a property of any one trade; it falls out of the layout.</p>
-      <p><b>Full @ TP — no partial.</b> Close the entire position the instant price hits TP. Because of the geometry above this is a <b>1:1 bet — always +1R or −1R, never anything else</b>, so its expectancy is nothing more than its win rate: 2 × win% − 1. It breaks even at exactly 50% and has no upside tail at all.</p>
-      <p><b>50% @ TP → trail BOS.</b> Bank half at TP, move the rest to breakeven, trail the remainder on break-of-structure. Scored at wherever the trail actually exited, so it's part realized result, part hypothesis. −1 if TP never clears.</p>
-      <p><b>So the whole comparison reduces to one question: does the runner beat 1R?</b> On a winner this management returns 0.5 + 0.5 × (whatever the trail got). It beats Full @ TP only when the trail exceeds 1R, and it <em>costs</em> half an R whenever the runner retraces to breakeven. Every bit of the gap between the two rows is the runner — nothing else can move it.</p>
-      <p><b>The curve under each row</b> is that management's cumulative R, trade by trade, in the order the trades actually happened — not dollars, just R stacked on itself. Green and rising means it's ahead net; red and sinking means it's behind.</p>
-      <p><b>Reading a dot-and-line mark</b> (the ranked table below). Dot = mean R (expectancy). Line = 95% confidence interval. A green "sig" tag means that interval clears zero — the edge is real at 95% confidence. No tag means the line still crosses zero: read the number as this log's best lean so far, not a proven result.</p>
-      <p><b>Max drawdown, LIS, and WIS are three different things.</b> Max drawdown is the worst peak-to-trough dip in cumulative R — a big win followed by a few small losses can still be a shallow drawdown. LIS (losses in succession) and WIS (wins in succession) count the longest run of consecutive losing or winning trades, regardless of size.</p>
-      <p><b>The head-to-head margin is paired.</b> Both managements are computed off the same Max Run on the same trades, so the delta between them is a trade-by-trade paired comparison, not two independent samples.</p>
+      <p><b>The fib is fixed, so every level is forced.</b> Stop 0.085, entry 0.382, TP 0.68. That makes 1R = 0.297 in fib units, and the whole board hangs off four levels: <b>1R = fib 0.679</b> (the TP itself), <b>2R = 0.976</b>, <b>3R = 1.272</b>, <b>5R = 1.866</b>.</p>
+      <p><b>Family 1 — full position, no partial.</b> Everything off at one fixed target. Binary by construction: +NR if Max Run reached it, −1R if not. Note this means <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1.</p>
+      <p><b>Family 2 — 50% off at the 0.68, then the runner.</b> Banking half at the TP locks <b>0.5R</b> (the TP is 1R away, at half size). The remaining half then carries everything. Because it's half size it must make <b>2R to move the position 1R</b> — so the runner needs 3R for a 2R trade (fib 1.272) and 5R for a 3R trade (fib 1.866).</p>
+      <p><b>That's why the two families share price levels.</b> "Full TP @ 3R" and "runner capped at 1.272" are the <em>same line on the chart</em> — they differ only in how much size is still on when price gets there. Same for 5R and 1.866.</p>
+      <p><b>The uncapped trail is the incumbent, kept as a baseline.</b> It's what Grant is running now: half off, then let BOS run with no ceiling. The two capped variants are being tested against it, not against each other.</p>
+      <p><b>Everything is one reach curve.</b> All seven numbers are determined by which R levels Max Run cleared — shown directly in the strip under the headline. The targets don't fail independently, so two outcomes agreeing is <em>not</em> two pieces of evidence.</p>
+      <p><b>The curve under each row</b> is that outcome's cumulative R, trade by trade, in the order they happened. Green and rising means ahead net; red and sinking means behind.</p>
+      <p><b>A green <span class="sig">sig</span> tag</b> means the 95% confidence interval clears zero — the edge holds at 95% on its own. No tag means the interval still crosses zero: read it as this log's best lean so far, not a proven result.</p>
+      <p><b>Max drawdown</b> is the worst peak-to-trough dip in cumulative R. <b>LIS</b> and <b>WIS</b> count the longest runs of consecutive losing or winning trades, regardless of size.</p>
     </div>
   </details>
   <div id="board"></div>
@@ -177,14 +178,36 @@ function equityCurveSVG(series, w, h){
   </svg>`;
 }
 
-/* ============================== Grant's schema — Super Mario only ============================== */
+/* ============================== Grant's schema — Super Mario only ==============================
+   Six outcomes, two families, off ONE fib. Only four chart levels drive all of them:
+   1R = fib 0.679 (the 0.68 TP) · 2R = 0.976 · 3R = 1.272 · 5R = 1.866.
+   The families share the upper two levels at different position sizes — a half-size
+   runner must make 2R to move the position 1R, so "runner capped at 1.272" (3R on half)
+   and "full TP at 3R" are the same price, scored on different size. */
 const SETUP_SINGLE='Single-order (Super Mario)';
-const MGMT=[
-  {key:'fullTP', name:'Full @ TP · no partial', short:'Full TP',
-   desc:'Close the entire position the instant price hits TP (~fib 0.68). No partial, no trail.'},
-  {key:'tpTrailBOS', name:'50% @ TP → trail BOS', short:'50%+Trail',
-   desc:'Bank half at TP (~fib 0.68), move the rest to breakeven, trail the remainder on break-of-structure — scored at wherever the trail actually exited, not a fixed ceiling.'},
+const FAMILIES=[
+  {k:'full', label:'Full position · no partial',
+   blurb:'Close everything at one fixed target. Binary by construction: +NR if Max Run reached it, -1R if not. No partial, no trail, no breakeven tier.'},
+  {k:'part', label:'50% off at the 0.68, runner capped',
+   blurb:'Bank half at the 0.68 TP (worth 0.5R, since the TP sits at 1R), stop to breakeven, then the runner. Capped variants full-close the runner at the named fib; the baseline lets the BOS trail run uncapped.'},
 ];
+const MGMT=[
+  {key:'smFull1R', fam:'full', name:'Full TP @ 1R',  short:'F1R', lvl:'fib 0.679',
+   desc:'Whole position off at 1R — the 0.68 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
+  {key:'smFull2R', fam:'full', name:'Full TP @ 2R',  short:'F2R', lvl:'fib 0.976',
+   desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
+  {key:'smFull3R', fam:'full', name:'Full TP @ 3R',  short:'F3R', lvl:'fib 1.272',
+   desc:'Whole position off at 3R, the 1.272 extension.'},
+  {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.866',
+   desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
+  {key:'smCap1272', fam:'part', name:'50% -> cap 1.272', short:'C1.272', lvl:'runner 3R = 2R net',
+   desc:'Half off at 0.68, runner trails on BOS but full-closes at fib 1.272. Caps the trade at +2R; if 1.272 never prints the runner is scored at the real BOS exit.'},
+  {key:'smCap1866', fam:'part', name:'50% -> cap 1.866', short:'C1.866', lvl:'runner 5R = 3R net',
+   desc:'Same, capped at fib 1.866 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
+  {key:'tpTrailBOS', fam:'part', name:'50% -> uncapped trail', short:'Trail', lvl:'no ceiling',
+   desc:'The incumbent: half off at 0.68, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
+];
+const byFam=f=>MGMT.filter(m=>m.fam===f);
 
 let TRADES=[], ALL=[], TF='1m', firstLoad=true, lastOk=null;
 const OPEN=new Set();
@@ -221,7 +244,7 @@ function answerBlock(pool){
   const marginSig = margin && margin.n>0 && margin.lo>0;
   return `<div class="card answer">
     <div class="eyebrow">Best hypothesis so far</div>
-    <div class="policy">${best.m.name}</div>
+    <div class="policy">${best.m.name} <span class="mut" style="font-size:12px;font-weight:400">${best.m.lvl}</span></div>
     <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
       <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n}</div></div>
     <div class="curve">${equityCurveSVG(seriesFor(best.prop,pool),600,70)}</div>
@@ -235,29 +258,46 @@ function answerBlock(pool){
       <div class="stat"><div class="k">Effective sample</div><div class="v mut" title="trades cluster by trading day">~${Math.max(1,Math.round(s.n/4.6))} days</div></div>
     </div>
     ${runnerUp ? `<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${runnerUp.m.name}</b> at ${fR(runnerUp.s.mean)} (n${runnerUp.s.n}) — leads by <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${margin.n?(marginSig?' <span class="sig">sig</span>':' · not yet significant'):''}.</div>` : ''}
-    ${sig ? '' : `<div class="caveat" style="margin-top:9px">With ${s.n} trades this board can reliably tell the two managements apart only once they differ by roughly a full R — the gap here may still be smaller than that.</div>`}
+    ${sig ? '' : `<div class="caveat" style="margin-top:9px">With ${s.n} trades this board can only separate outcomes that differ by roughly a full R. Several of these sit well inside that, so their ordering is not yet a result — and because they all price the same reach curve, they move together.</div>`}
   </div>`;
 }
 
-/* ============================== runner scorecard ==============================
-   Full @ TP is pinned at +/-1R by the fib layout (stop .085 / entry .382 / TP .68),
-   so it has no upside tail. Every bit of the gap between the two managements is the
-   runner. This counts what the runner actually did rather than leaving that buried
-   in an aggregate mean — on a small sample the count IS the story. */
-function runnerStrip(pool){
-  const rows=pool.map(t=>({full:num(t.fullTP), trail:num(t.tpTrailBOS)}))
-                 .filter(r=>r.full!=null&&r.trail!=null);
-  const winners=rows.filter(r=>r.full>0);
-  if(!winners.length) return '';
-  const ran=winners.filter(r=>r.trail>r.full).length;
-  const died=winners.filter(r=>r.trail<r.full).length;
-  const flat=winners.length-ran-died;
-  const gain=winners.filter(r=>r.trail>r.full).reduce((a,r)=>a+(r.trail-r.full),0);
-  const cost=winners.filter(r=>r.trail<r.full).reduce((a,r)=>a+(r.full-r.trail),0);
-  return `<div class="ctlstrip"><b style="color:var(--ink)">What the runner did</b> — on the ${winners.length} trade${winners.length===1?'':'s'} where TP cleared (losers are identical either way, so they can't separate these):
-    <span class="pos">${ran} ran past 1R</span> for <span class="pos">+${gain.toFixed(2)}R</span> of extra gain &nbsp;·&nbsp;
-    <span class="neg">${died} retraced</span>, giving back <span class="neg">−${cost.toFixed(2)}R</span> versus just closing at TP${flat?` &nbsp;·&nbsp; <span class="mut">${flat} identical</span>`:''}.
-    <span class="mut">Net ${fR(gain-cost)} across ${winners.length}, i.e. ${fR((gain-cost)/rows.length)} per trade — that is the entire margin between the two rows above.</span></div>`;
+/* ============================== how far price actually went ==============================
+   Every outcome on this board is a function of one thing: which R levels Max Run cleared.
+   Showing that distribution directly means the six expectancies stop looking like six
+   independent findings and read as what they are -- one reach curve, priced six ways. */
+function reachStrip(pool){
+  const dir=t=>t.Direction==='Long'?1:-1;
+  const reached=(t,N)=>{const d=dir(t),risk=d*(t.entry-t.stop),tgt=t.entry+d*N*risk;
+    return d===1? t.maxRun>=tgt : t.maxRun<=tgt;};
+  const ok=pool.filter(t=>[t.entry,t.stop,t.maxRun].every(v=>v!=null));
+  if(!ok.length) return '';
+  const cells=[1,2,3,5].map(N=>{
+    const c=ok.filter(t=>reached(t,N)).length;
+    return `<b class="${c?'pos':'mut'}">${N}R</b> ${c}/${ok.length}`;
+  });
+  return `<div class="ctlstrip"><b style="color:var(--ink)">How far price actually ran</b> — of ${ok.length} trade${ok.length===1?'':'s'}, Max Run cleared: ${cells.join(' &nbsp;·&nbsp; ')}.
+    <span class="mut">Every outcome above is this one curve priced differently — the targets do not fail independently, so two of them agreeing is not two pieces of evidence.</span></div>`;
+}
+
+/* ============================== family blocks ============================== */
+function familyBlock(fam, pool){
+  const f=FAMILIES.find(x=>x.k===fam), ms=byFam(fam);
+  const rows=ms.map(m=>{
+    const st=statsFor(m.key,pool);
+    return `<tr${m.baseline?' style="opacity:.85"':''}>
+      <td><span class="tag">${m.short}</span> ${m.name}${m.baseline?' <span class="mini">· baseline</span>':''}
+        <div class="mini" style="font-weight:400;margin-top:2px">${m.lvl} — ${m.desc}</div></td>
+      <td style="width:140px">${st.n?equityCurveSVG(seriesFor(m.key,pool),130,30):'<span class="na">no data</span>'}</td>
+      <td class="${st.n?cls(st.mean):'na'}">${st.n?fR(st.mean):'—'}${st.n&&!(st.lo<0&&st.hi>0)?' <span class="sig">sig</span>':''}</td>
+      <td>${st.n?Math.round(st.winRate*100)+'%':'<span class="na">—</span>'}</td>
+      <td class="${st.n?cls(st.total):'na'}">${st.n?fR(st.total):'—'}</td>
+      <td class="${st.n?'neg':'na'}">${st.n?fDD(st.dd):'—'}</td>
+      <td class="mut">${st.n||'—'}</td></tr>`;
+  }).join('');
+  return `<div class="sectionhd">${f.label}</div>
+    <div class="fsub">${f.blurb}</div>
+    <table class="matrix"><thead><tr><th>Outcome</th><th>curve</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>n</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 /* ============================== L2 — both, ranked ============================== */
@@ -267,7 +307,7 @@ function rankedTable(pool){
   let h='';
   rows.forEach(r=>{
     const s=r.s, sig=s.n && !(s.lo<0&&s.hi>0);
-    h+=`<tr><td><span class="tag">${r.m.short}</span><div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
+    h+=`<tr><td><span class="tag">${r.m.short}</span> ${r.m.name}<div class="mini" style="font-weight:400;margin-top:2px">${r.m.desc}</div></td>
       <td style="width:150px">${s.n?equityCurveSVG(seriesFor(r.prop,pool),140,32):'<span class="na">no data</span>'}</td>
       <td class="${s.n?cls(s.mean):'na'}">${s.n?fR(s.mean):'—'}${sig?' <span class="sig">sig</span>':''}</td>
       <td>${s.n?Math.round(s.winRate*100)+'%':'<span class="na">—</span>'}</td>
@@ -277,7 +317,7 @@ function rankedTable(pool){
       <td class="${s.n&&s.winStreak?'pos':'mut'}">${s.n?s.winStreak:'—'}</td>
       <td class="mut">${s.n||'—'}</td></tr>`;
   });
-  return `<div class="fsub">Both rows are the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not two separate samples. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own.</div>
+  return `<div class="fsub">Every row is the same ${pool.length} trade${pool.length===1?'':'s'} read a different way, not seven separate samples — do not add the n column up. If a row is tagged <span class="sig">sig</span>, its edge over scratch holds at 95% confidence on its own.</div>
     <table class="matrix"><thead><tr><th>Management</th><th>95% CI</th><th>expectancy</th><th>win%</th><th>total R</th><th>max DD</th><th>LIS</th><th>WIS</th><th>n</th></tr></thead><tbody>${h}</tbody></table>`;
 }
 
@@ -290,9 +330,11 @@ function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No Super Mario trades logged for this timeframe yet.</div></div>'; return; }
   board.innerHTML = answerBlock(pool) +
-    runnerStrip(pool) +
-    disclosure('d-all','All, ranked', rankedTable(pool)) +
-    `<div class="foot">Both managements are paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
+    reachStrip(pool) +
+    familyBlock('full',pool) +
+    familyBlock('part',pool) +
+    disclosure('d-all','All seven, ranked head to head', rankedTable(pool)) +
+    `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
   });

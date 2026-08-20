@@ -418,6 +418,17 @@ async function computeGrant(token) {
       tclPlanR:    getProp(t, 'TCL 2.0 Plan R'),
       fullTP:      getProp(t, 'Full @ TP'),
       tpTrailBOS:  getProp(t, '50% @ TP -> Trail BOS'),
+      // The six outcomes Grant is actually testing (2026-08-19). Two families off the
+      // same Super Mario fib: close the whole position at a fixed R, or bank 50% at the
+      // 0.68 and cap the runner. Only four chart levels drive all six — 1R/0.68,
+      // 2R/0.976, 3R/1.272, 5R/1.866 — because a half-size runner needs 2R to move the
+      // position 1R, so the two families share their upper two levels at different sizes.
+      smFull1R:    getProp(t, 'SM Full TP @ 1R'),
+      smFull2R:    getProp(t, 'SM Full TP @ 2R'),
+      smFull3R:    getProp(t, 'SM Full TP @ 3R'),
+      smFull5R:    getProp(t, 'SM Full TP @ 5R'),
+      smCap1272:   getProp(t, 'SM 50% then TP 1.272'),
+      smCap1866:   getProp(t, 'SM 50% then TP 1.866'),
     });
   }
   return {
