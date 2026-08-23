@@ -1,0 +1,269 @@
+//@version=6
+// VCL crypto detector — Craig's FVG variant, ported from detect.js.
+//
+// WHY THIS EXISTS. detect.js is verified only against itself. This is an independent
+// second implementation of the same spec (STRATEGY.md §3a) running on TradingView's own
+// tape, so the two can be diffed. Agreement promotes a line to [VERIFIED]; divergence
+// means one of them is wrong and names the bar to go look at.
+//
+// WHY THE CHART MUST BE ON 1h. Pine sees ~20k chart bars on Premium — 14 days at 1m,
+// short of the 42-day audit window. request.security_lower_tf reaches 100k INTRABARS
+// (Basic..Premium; 125k Expert, 200k Ultimate), so a 1h chart pulling 1m intrabars
+// covers 100000/60 = 1666 hours = 69 days. Run this on 1h, not on 1m.
+//
+// Volume is RECORDED, NEVER GATED — same reason as detect.js: inventing a threshold here
+// would let it be "discovered" to matter later, which is circular.
+indicator("VCL Detector — Craig FVG variant", overlay = true, max_labels_count = 500)
+
+// ── inputs. Every parameter detect.js exposes, exposed here too, so a sweep on one side
+//    can be reproduced on the other. None are hardcoded to whatever fits. ─────────────
+calcBars    = input.int(100000, "calc_bars_count (1m intrabars)", minval = 1000, maxval = 200000)
+fvgTFmin    = input.int(5,     "FVG timeframe (min)", options = [5, 15])
+minGap      = input.float(0.0,  "min FVG size (price)", minval = 0)
+reactWin    = input.int(30,    "reaction window (1m bars)", minval = 1)
+minRangePct = input.float(0.25, "min range %", minval = 0)
+maxWaitBoS  = input.int(120,   "max wait BoS (1m bars)", minval = 1)
+maxWaitFill = input.int(240,   "max wait fill (1m bars)", minval = 1)
+maxTouch    = input.int(240,   "max wait first touch (1m bars)", minval = 1)
+tickSz      = input.float(0.01, "tick size", minval = 0.00000001)
+doLong      = input.bool(true,  "longs")
+doShort     = input.bool(true,  "shorts")
+showLabels  = input.bool(true,  "draw labels")
+
+GAP   = tickSz          // entry sits one tick beyond the AVWAP
+BUF   = 256             // circular 1m buffer; must exceed PLOOK + PK + reactWin
+PK    = 2               // pivot fractal half-width
+PLOOK = 90              // pivot lookback
+MAXZ  = 48              // concurrent zone cap
+
+// ── 1m intrabars ──────────────────────────────────────────────────────────────────────
+[i_h, i_l, i_c, i_v, i_t] = request.security_lower_tf(syminfo.tickerid, "1", [high, low, close, volume, time], calc_bars_count = calcBars)
+
+// ── rolling 1m buffer (circular: array.shift on every one of 100k bars is O(n) and
+//    times the script out; a write pointer is O(1)) ──────────────────────────────────
+var array<float> bh = array.new<float>(BUF, na)
+var array<float> bl = array.new<float>(BUF, na)
+var array<float> bc = array.new<float>(BUF, na)
+var array<float> bv = array.new<float>(BUF, na)
+var int ptr  = 0        // next write slot
+var int nbar = -1       // global index of newest buffered 1m bar
+var int nfill = 0       // how many slots are populated
+
+// value `ago` bars back from newest (0 = newest)
+gh(int ago) => array.get(bh, (ptr - 1 - ago + BUF * 2) % BUF)
+gl(int ago) => array.get(bl, (ptr - 1 - ago + BUF * 2) % BUF)
+gc(int ago) => array.get(bc, (ptr - 1 - ago + BUF * 2) % BUF)
+gv(int ago) => array.get(bv, (ptr - 1 - ago + BUF * 2) % BUF)
+
+// ── HTF aggregation for FVGs, rolled from the 1m stream exactly as detect.js roll() ──
+var array<float> zh = array.new<float>()
+var array<float> zl = array.new<float>()
+var float curH = na
+var float curL = na
+var int   curK = na
+
+// ── zones ─────────────────────────────────────────────────────────────────────────────
+type Zone
+    int   dir
+    float near
+    float far
+    float mid
+    int   born
+    int   state      // 0 wait touch · 1 reacting · 2 wait BoS · 3 wait entry
+    int   firstIdx
+    int   reactIdx
+    float reactPx
+    float level
+    int   bosIdx
+    float anchorC
+    float anchorS
+    float pv
+    float vv
+    float volRatio
+
+var array<Zone> zones = array.new<Zone>()
+var int    lastEntry = -1
+var int    nSetups   = 0
+var int    nLong     = 0
+var int    nShort    = 0
+var array<string> outText = array.new<string>()
+var array<float>  outPx   = array.new<float>()
+
+// most recent confirmed fractal pivot strictly older than the bar `agoI` back
+priorPivot(int agoI, int d) =>
+    float res = na
+    for a = agoI + PK + 1 to agoI + PLOOK
+        if a + PK >= nfill or a + PK >= BUF
+            break
+        bool ok = true
+        for x = a - PK to a + PK
+            if x != a
+                if (d == 1 ? gh(x) >= gh(a) : gl(x) <= gl(a))
+                    ok := false
+                    break
+        if ok
+            res := d == 1 ? gh(a) : gl(a)
+            break
+    res
+
+// median volume over the 31 bars ending `agoI` back
+medVol(int agoI) =>
+    array<float> t = array.new<float>()
+    for a = agoI to math.min(agoI + 30, nfill - 1)
+        array.push(t, gv(a))
+    array.sort(t)
+    array.size(t) > 0 ? array.get(t, math.floor(array.size(t) / 2)) : na
+
+// ── main: walk this chart bar's 1m intrabars through the state machine ───────────────
+if array.size(i_c) > 0
+    for k = 0 to array.size(i_c) - 1
+        float h = array.get(i_h, k)
+        float l = array.get(i_l, k)
+        float c = array.get(i_c, k)
+        float v = array.get(i_v, k)
+        int   t = array.get(i_t, k)
+
+        // push into the circular buffer
+        array.set(bh, ptr, h), array.set(bl, ptr, l), array.set(bc, ptr, c), array.set(bv, ptr, v)
+        ptr  := (ptr + 1) % BUF
+        nbar += 1
+        nfill := math.min(nfill + 1, BUF)
+
+        // ── HTF roll + FVG birth ──────────────────────────────────────────────────────
+        int step = fvgTFmin * 60000
+        int kk = math.floor(t / step) * step
+        if na(curK) or curK != kk
+            if not na(curK)
+                array.push(zh, curH), array.push(zl, curL)
+                if array.size(zh) > 8
+                    array.shift(zh), array.shift(zl)
+                // 3-bar imbalance on the just-completed HTF series
+                int n = array.size(zh)
+                if n >= 3
+                    float aH = array.get(zh, n - 3), aL = array.get(zl, n - 3)
+                    float cH = array.get(zh, n - 1), cL = array.get(zl, n - 1)
+                    for d in array.from(1, -1)
+                        bool okDir = d == 1 ? doLong : doShort
+                        bool imb   = d == 1 ? cL > aH : cH < aL
+                        if okDir and imb
+                            float near = d == 1 ? aH : aL
+                            float far  = d == 1 ? cL : cH
+                            if math.abs(far - near) >= minGap
+                                if array.size(zones) >= MAXZ
+                                    array.shift(zones)
+                                array.push(zones, Zone.new(dir = d, near = near, far = far, mid = (near + far) / 2, born = nbar, state = 0, firstIdx = -1, reactIdx = -1, reactPx = na, level = na, bosIdx = -1, anchorC = na, anchorS = na, pv = 0.0, vv = 0.0, volRatio = na))
+            curK := kk
+            curH := h
+            curL := l
+        else
+            curH := math.max(curH, h)
+            curL := math.min(curL, l)
+
+        // ── advance every live zone ──────────────────────────────────────────────────
+        if array.size(zones) > 0
+            for zi = array.size(zones) - 1 to 0
+                Zone z = array.get(zones, zi)
+                int d = z.dir
+                bool kill = false
+
+                if z.state == 0
+                    if nbar - z.born > maxTouch
+                        kill := true
+                    else if (d == 1 ? l <= z.near : h >= z.near)
+                        z.state    := 1
+                        z.firstIdx := nbar
+                        z.reactIdx := nbar
+                        z.reactPx  := d == 1 ? l : h
+
+                else if z.state == 1
+                    // THE REACTION IS AN EVENT, NOT A WINDOW (detect.js note): the midpoint
+                    // rule only invalidates while the reaction is unfolding.
+                    if (d == 1 ? c < z.mid : c > z.mid)
+                        kill := true
+                    else
+                        float px = d == 1 ? l : h
+                        if d * (px - z.reactPx) < 0
+                            z.reactPx  := px
+                            z.reactIdx := nbar
+                        if nbar - z.firstIdx >= reactWin - 1
+                            int agoR = nbar - z.reactIdx
+                            z.level := priorPivot(agoR, d)
+                            if na(z.level)
+                                kill := true
+                            else
+                                z.volRatio := gv(agoR) / math.max(medVol(agoR), 1e-9)
+                                // AVWAP accumulates from the reaction bar forward
+                                float pv = 0.0, vv = 0.0
+                                for a = agoR to 0
+                                    float tp = (gh(a) + gl(a) + gc(a)) / 3
+                                    pv += tp * gv(a)
+                                    vv += gv(a)
+                                z.pv := pv
+                                z.vv := vv
+                                z.state := 2
+
+                else if z.state == 2
+                    z.pv += ((h + l + c) / 3) * v
+                    z.vv += v
+                    if (d == 1 ? c < z.mid : c > z.mid)
+                        kill := true
+                    else if nbar - z.reactIdx > maxWaitBoS
+                        kill := true
+                    else if (d == 1 ? c > z.level : c < z.level)
+                        z.bosIdx  := nbar
+                        z.anchorC := d == 1 ? h : l          // Craig: the BoS candle's extreme
+                        z.anchorS := z.anchorC                // SOP: the extreme AFTER the BoS
+                        z.state   := 3
+
+                else if z.state == 3
+                    z.pv += ((h + l + c) / 3) * v
+                    z.vv += v
+                    float ext = d == 1 ? h : l
+                    if d * (ext - z.anchorS) > 0
+                        z.anchorS := ext
+                    if nbar - z.bosIdx > maxWaitFill
+                        kill := true
+                    else
+                        float vw   = z.pv / z.vv
+                        float want = vw + d * GAP
+                        if l <= want and want <= h
+                            float entryPx = math.round(want / tickSz) * tickSz
+                            float zero    = (entryPx - 0.382 * z.anchorC) / 0.618
+                            // a ladder must be ordered — 0 < entry < 1 on a long
+                            bool ordered = d == 1 ? (zero < entryPx and entryPx < z.anchorC) : (z.anchorC < entryPx and entryPx < zero)
+                            float rangePct = math.abs(z.anchorC - zero) / zero * 100
+                            if ordered and rangePct >= minRangePct and nbar > lastEntry
+                                lastEntry := nbar
+                                nSetups   += 1
+                                if d == 1
+                                    nLong += 1
+                                else
+                                    nShort += 1
+                                string txt = (d == 1 ? "L" : "S") + "|" + str.tostring(t) + "|" + str.tostring(entryPx, "#.########") + "|" + str.tostring(z.anchorC, "#.########") + "|" + str.tostring(zero, "#.########") + "|" + str.tostring(z.anchorS, "#.########") + "|" + str.tostring(z.volRatio, "#.##") + "|" + str.tostring(fvgTFmin)
+                                array.push(outText, txt)
+                                array.push(outPx, entryPx)
+                            kill := true
+
+                if kill
+                    array.remove(zones, zi)
+
+// ── emit. Pine caps labels at 500, so the raw bars can never come out this way — but the
+//    DETECTIONS can, and they are what the diff needs. ────────────────────────────────
+if barstate.islast and showLabels
+    int n = array.size(outText)
+    int start = math.max(0, n - 495)
+    for j = start to n - 1
+        label.new(bar_index, array.get(outPx, j), array.get(outText, j), style = label.style_none, textcolor = color.new(color.white, 0), size = size.tiny)
+
+if barstate.islast
+    var table tb = table.new(position.top_right, 2, 5, border_width = 1)
+    table.cell(tb, 0, 0, "VCL setups", text_color = color.white)
+    table.cell(tb, 1, 0, str.tostring(nSetups), text_color = color.white)
+    table.cell(tb, 0, 1, "long / short", text_color = color.white)
+    table.cell(tb, 1, 1, str.tostring(nLong) + " / " + str.tostring(nShort), text_color = color.white)
+    table.cell(tb, 0, 2, "1m bars seen", text_color = color.white)
+    table.cell(tb, 1, 2, str.tostring(nbar + 1), text_color = color.white)
+    table.cell(tb, 0, 3, "FVG tf", text_color = color.white)
+    table.cell(tb, 1, 3, str.tostring(fvgTFmin) + "m", text_color = color.white)
+    table.cell(tb, 0, 4, "live zones", text_color = color.white)
+    table.cell(tb, 1, 4, str.tostring(array.size(zones)), text_color = color.white)

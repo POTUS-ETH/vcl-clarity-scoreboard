@@ -507,6 +507,14 @@ async function computeV3Raw(token, dbId) {
       L1after:    getProp(t, 'L1 after Max Run'),
       RangePct:   getProp(t, 'Range %'),
       date:       getProp(t, 'Date'),
+      Session:    getProp(t, 'Session'),
+      // The log's OWN scored outcomes — the ladder methodology as actually tested.
+      // Needed to compare like-for-like against the V5 re-scoring rather than against
+      // a number computed a different way.
+      v3_full1R:  getProp(t, 'R Full @1R'),
+      v3_full2R:  getProp(t, 'R Full @2R'),
+      v3_half1R:  getProp(t, 'R 50% @1R'),
+      v3_half2R:  getProp(t, 'R 50% @2R'),
     });
   }
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };

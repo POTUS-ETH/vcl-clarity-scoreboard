@@ -1,0 +1,101 @@
+<title>V5 Audit Results</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:ui-monospace,'JetBrains Mono',Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:22px;font-size:13px}
+.w{max-width:900px;margin:0 auto}
+h1{font-size:16px;letter-spacing:.5px}
+.sub{font-size:10.5px;color:#8b93a1;margin-bottom:16px}
+.c{background:#161b24;border:1px solid #232a36;border-radius:10px;padding:15px;margin-bottom:11px}
+.l{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#8b93a1;margin-bottom:11px}
+.r{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.rl{width:210px;font-size:11px;color:#c3c9d4}
+.rs{color:#6b7280;font-size:9.5px;margin-left:5px}
+.rt{flex:1;height:19px;position:relative;background:#0e1117;border-radius:3px}
+.zero{position:absolute;top:0;bottom:0;width:1.5px;background:#5a6478}
+.rb{position:absolute;top:8px;height:3px;border-radius:2px;opacity:.55}
+.rd{position:absolute;top:5px;width:9px;height:9px;border-radius:50%;margin-left:-4px}
+.rv{width:56px;text-align:right;font-weight:700;font-size:11.5px}
+.g{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:4px}
+.k{background:#0e1117;border:1px solid #232a36;border-radius:7px;padding:9px;text-align:center}
+.kn{font-size:19px;font-weight:700}.kl{font-size:8.5px;color:#8b93a1;margin-top:2px;line-height:1.3}
+.n{font-size:10.5px;color:#8b93a1;line-height:1.65;margin-top:10px}
+b{color:#e6e8ec} .ok{color:#3fb950}.wa{color:#e0b341}.ba{color:#e66767}.mu{color:#8b93a1}
+</style>
+<div class="w">
+<h1>VCL V5 — RE-SCORED ON 85 MNQ 15s TRADES</h1>
+<div class="sub">Would the tighter V5 stop (fib 0.085) have taken these out? Verified against 1m bars pulled from TradingView.</div>
+
+<div class="c"><div class="l">Audit outcome — every trade classified</div>
+<div class="g">
+<div class="k"><div class="kn ok">38</div><div class="kl">verified<br>NOT stopped</div></div>
+<div class="k"><div class="kn ba">0</div><div class="kl">verified<br>stopped</div></div>
+<div class="k"><div class="kn mu">25</div><div class="kl">already −1R<br>under v3</div></div>
+<div class="k"><div class="kn wa">12</div><div class="kl">entry timing<br>undecided</div></div>
+<div class="k"><div class="kn wa">10</div><div class="kl">no usable<br>bar window</div></div>
+</div>
+<div class="n">Not one trade of the 38 resolved was stopped by the tighter stop. That is mechanically expected rather than surprising: entry sits at fib 0.382 and the V5 stop at 0.085, so the gap between it and the old stop is just <b>8.5% of the fib range</b>. Price that retraces far enough to reach 0.085 usually carries on to fib 0 and trips the v3 stop as well — landing in the grey bucket instead. Few trades fall in the gap.<br><br>
+<b>But the margins are thin.</b> Median clearance is 9.5 points; <b>10 of the 38 cleared by under 5 points</b>, the closest by 0.1. These are real misses, not comfortable ones.</div></div>
+
+<div class="c"><div class="l">VCL V5 — what we are simulating &nbsp;·&nbsp; bar = full range, dot = midpoint</div>
+<div class="r"><div class="rl">Full size → BE + trail<span class="rs"> ±0.80</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:24.680723221800978%;width:70.8913150394372%;background:#e0b341"></div>
+      <div class="rd" style="left:58.229145716459655%;background:#e0b341"></div></div>
+    <div class="rv">+0.36R</div></div><div class="r"><div class="rl">Full TP @ 2R<span class="rs"> ±0.64</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:21.491428561670396%;width:56.517105446276126%;background:#e0b341"></div>
+      <div class="rd" style="left:48.958792888437934%;background:#e0b341"></div></div>
+    <div class="rv">+0.15R</div></div><div class="r"><div class="rl">50% → uncapped trail<span class="rs"> ±0.59</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:25.609285944399783%;width:52.55281969370591%;background:#e0b341"></div>
+      <div class="rd" style="left:51.22031823778187%;background:#e0b341"></div></div>
+    <div class="rv">+0.20R</div></div><div class="r"><div class="rl">50% → cap 1.866<span class="rs"> ±0.57</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:25.512650905021868%;width:50.31502521422418%;background:#e0b341"></div>
+      <div class="rd" style="left:50.07033619586533%;background:#e0b341"></div></div>
+    <div class="rv">+0.17R</div></div><div class="r"><div class="rl">50% → cap 1.272<span class="rs"> ±0.53</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:26.88055890784704%;width:47.07929297958315%;background:#e0b341"></div>
+      <div class="rd" style="left:50.30816855831508%;background:#e0b341"></div></div>
+    <div class="rv">+0.18R</div></div><div class="r"><div class="rl">Full TP @ 3R<span class="rs"> ±0.61</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:20.19975268032238%;width:54.11499092974444%;background:#e0b341"></div>
+      <div class="rd" style="left:46.09364117512146%;background:#e0b341"></div></div>
+    <div class="rv">+0.08R</div></div><div class="r"><div class="rl">Full TP @ 1R<span class="rs"> ±0.45</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:24.313128152571963%;width:40.20788895556933%;background:#e0b341"></div>
+      <div class="rd" style="left:44.53083114967612%;background:#e0b341"></div></div>
+    <div class="rv">+0.05R</div></div><div class="r"><div class="rl">Full TP @ 5R<span class="rs"> ±0.66</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:4.42796173876182%;width:58.57212921475434%;background:#e66767"></div>
+      <div class="rd" style="left:30.98647759581643%;background:#e66767"></div></div>
+    <div class="rv">-0.26R</div></div>
+<div class="n">The range spans <b>best case</b> (all 22 unresolved survive) to <b>worst case</b> (all are stopped at −1R), and includes 95% sampling error at each end. The ± is half that full span.</div></div>
+
+<div class="c"><div class="l">What you actually tested — the ladder scoring already in the log</div>
+<div class="r"><div class="rl">Full @1R<span class="rs"> n=85</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:54.34983538984737%;width:16.82755878004896%;background:#9dc0f6"></div>
+      <div class="rd" style="left:62.763614779871844%;background:#9dc0f6"></div></div>
+    <div class="rv">+0.46R</div></div><div class="r"><div class="rl">Full @2R<span class="rs"> n=85</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:48.05633655188447%;width:24.861569915177313%;background:#9dc0f6"></div>
+      <div class="rd" style="left:60.48712150947313%;background:#9dc0f6"></div></div>
+    <div class="rv">+0.41R</div></div><div class="r"><div class="rl">50% @1R<span class="rs"> n=85</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:51.49683395607687%;width:24.679820749201568%;background:#9dc0f6"></div>
+      <div class="rd" style="left:63.836744330677654%;background:#9dc0f6"></div></div>
+    <div class="rv">+0.48R</div></div><div class="r"><div class="rl">50% @2R<span class="rs"> n=85</span></div>
+    <div class="rt"><div class="zero" style="left:42.44708444908232%"></div>
+      <div class="rb" style="left:47.83911308235091%;width:29.734397326509217%;background:#9dc0f6"></div>
+      <div class="rd" style="left:62.706311745605525%;background:#9dc0f6"></div></div>
+    <div class="rv">+0.46R</div></div>
+<div class="n">Same 85 trades, scored by the log's own formulas. These carry only sampling error — no re-simulation — so their intervals are far tighter, and <b>all four clear zero</b>.</div></div>
+
+<div class="c"><div class="l">Reading the comparison</div>
+<div class="n">
+Both sets are risk-normalised, so an R is an R: size each trade to the same dollar risk and the numbers compare directly. The V5 stop is tighter, which means <b>more size for the same risk</b> — the leverage property that motivated the model.<br><br>
+<b>The honest verdict: V5's best cell beats the ladder's best cell only in the best case.</b> Full size → BE + trail reaches <b class="ok">+0.667R</b> if every unresolved trade survives, against the ladder's best of <b>+0.483R</b> (50% @1R). At the pessimistic end it collapses to <b class="ba">+0.046R</b>. The midpoint, <b>+0.356R ±0.80</b>, sits <i>below</i> the ladder — and its interval contains zero, while all four ladder cells exclude it.<br><br>
+So on this evidence <b>V5 is not demonstrably better than what you already ran.</b> It may be, at the optimistic end. The 22 unresolved trades decide it, and they are unresolvable from 1m data — the 15s history needed is past the ~30-day wall.
+</div></div>
+</div>
