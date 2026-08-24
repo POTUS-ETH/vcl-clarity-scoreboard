@@ -97,6 +97,7 @@ details.l2 .body{padding:0 14px 14px}
   <div class="hd">
     <div><h1>VCL V5 — SINGLE-ORDER FIB</h1><div class="sub">One entry, one stop, one geometry · SOL / BTC / ETH · 1m · full-position targets vs. 50%-off with a capped runner</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div class="tg" id="modelTg"><button data-m="mario" class="on">SUPER MARIO</button><button data-m="vcl">VCL LADDER</button></div>
       <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="SOL">SOL</button><button data-p="BTC">BTC</button><button data-p="ETH">ETH</button></div>
       <div class="mini" id="status">loading…</div>
     </div>
@@ -210,31 +211,87 @@ function equityCurveSVG(series, w, h){
    The families share the upper two levels at different position sizes — a half-size
    runner must make 2R to move the position 1R, so "runner capped at 1.272" (3R on half)
    and "full TP at 3R" are the same price, scored on different size. */
-const FAMILIES=[
+// ── VCL ladder, scored off the SAME row ────────────────────────────────────────
+// Both models enter at the AVWAP, but on different fibs: 0.325 of the Super Mario fib
+// and 0.382 of the VCL fib land on the same price, so VCL's stop sits deeper — about
+// 28% more room. Both solve from entry + anchor, so nothing extra gets typed.
+//
+// WHAT MAKES A ROW SCOREABLE. This log is Super-Mario-native: Max Run is the furthest
+// favourable price BEFORE THE SM STOP was hit. So if Max Adverse crossed the SM stop,
+// the SM trade closed there while the ladder trade — deeper stop — was still live, and
+// nothing in the row says what price did next. Those rows return null, not -1R. Scoring
+// them as losses would invent a result; scoring them as wins would invent a bigger one.
+function vclScore(t){
+  const E=num(t.entry), A=num(t.anchor), MR=num(t.maxRun), BX=num(t.bosExit), MA=num(t.maxAdverse);
+  const out={vclF1:null,vclP1:null,vclHyA:null,vclHyB:null,vclState:'no-data'};
+  if(E==null||A==null||MR==null||BX==null) return out;
+  const vRange=(A-E)/(1-0.382), vZero=E-0.382*vRange, dir=vRange>0?1:-1;
+  const L1=vZero+0.17*vRange;
+  const smRange=(A-E)/(1-0.325), smStop=E-0.325*smRange;
+  if(MA==null){ out.vclState='need-adverse'; return out; }
+  if(dir*(MA-vZero)<=1e-9){ out.vclState='stopped'; return {...out,vclF1:-1,vclP1:-1,vclHyA:-1,vclHyB:-1}; }
+  if(dir*(MA-smStop)<=1e-9){ out.vclState='sm-truncated'; return out; }   // see note above
+  // Ladder risk is the full two-fill distance, per the 0.552 law — never an individual
+  // fill's own risk. Entry-only trades carry half the size, so a 1R target needs twice
+  // the travel in price.
+  const l1Filled = dir*(MA-L1)<=1e-9;
+  const avg=l1Filled?(E+L1)/2:E, posM=l1Filled?1:0.5;
+  const iniR=Math.abs((E+L1)/2-vZero);
+  if(!iniR) return out;
+  const peakR=posM*(MR-avg)*dir/iniR, exitR=posM*(BX-avg)*dir/iniR;
+  const f1=peakR>=1?1:exitR, p1=peakR>=1?0.5+0.5*exitR:exitR;
+  return {vclF1:f1, vclP1:p1, vclHyA:l1Filled?p1:f1, vclHyB:l1Filled?f1:p1,
+          vclState:l1Filled?'l1-filled':'entry-only'};
+}
+
+const FAMILIES_VCL=[
+  {k:'full', label:'Full position \u00b7 no partial',
+   blurb:'Ladder geometry: entry at the VCL fib 0.382, L1 at 0.17, stop at fib 0. 1R is the full two-fill risk (0.552 of the range), never one leg\u2019s own. Entry-only trades run at half size, so a 1R target needs roughly twice the travel.'},
+  {k:'part', label:'50% at 1R, runner on the BOS trail',
+   blurb:'Bank half at 1R, stop to breakeven, runner rides the trail. Hybrids pick per-trade by fill type.'},
+];
+const MGMT_VCL=[
+  {key:'vclF1', fam:'full', name:'Full @1R', short:'F1R', lvl:'ladder 1R',
+   desc:'Whole ladder position off at 1R.'},
+  {key:'vclHyA', fam:'full', name:'Hybrid A @1R', short:'HyA', lvl:'by fill type',
+   desc:'L1 filled -> 50% at 1R plus runner; entry-only -> full off at 1R. The V3 live default.'},
+  {key:'vclP1', fam:'part', name:'50% @1R', short:'P1R', lvl:'runner uncapped',
+   desc:'Half off at 1R, stop to breakeven, runner on the BOS trail.', baseline:true},
+  {key:'vclHyB', fam:'part', name:'Hybrid B @1R', short:'HyB', lvl:'by fill type',
+   desc:'The inverse of Hybrid A.'},
+];
+
+const FAMILIES_MARIO=[
   {k:'full', label:'Full position · no partial',
    blurb:'Close everything at one fixed target. Binary by construction: +NR if Max Run reached it, -1R if not. No partial, no trail, no breakeven tier.'},
   {k:'part', label:'50% off at the 0.68, runner capped',
    blurb:'Bank half at the 0.68 TP (worth 0.5R, since the TP sits at 1R), stop to breakeven, then the runner. Capped variants full-close the runner at the named fib; the baseline lets the BOS trail run uncapped.'},
 ];
-const MGMT=[
-  {key:'smFull1R', fam:'full', name:'Full TP @ 1R',  short:'F1R', lvl:'fib 0.679',
+const MGMT_MARIO=[
+  {key:'smFull1R', fam:'full', name:'Full TP @ 1R',  short:'F1R', lvl:'fib 0.65',
    desc:'Whole position off at 1R — the 0.68 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
-  {key:'smFull2R', fam:'full', name:'Full TP @ 2R',  short:'F2R', lvl:'fib 0.976',
+  {key:'smFull2R', fam:'full', name:'Full TP @ 2R',  short:'F2R', lvl:'fib 0.975',
    desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
-  {key:'smFull3R', fam:'full', name:'Full TP @ 3R',  short:'F3R', lvl:'fib 1.272',
+  {key:'smFull3R', fam:'full', name:'Full TP @ 3R',  short:'F3R', lvl:'fib 1.30',
    desc:'Whole position off at 3R, the 1.272 extension.'},
-  {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.866',
+  {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.95',
    desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
   {key:'bosExitR', fam:'full', name:'Full size -> BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
    desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.68.'},
-  {key:'smCap1272', fam:'part', name:'50% -> cap 1.272', short:'C1.272', lvl:'runner 3R = 2R net',
+  {key:'smCap1272', fam:'part', name:'50% -> cap 1.30', short:'C1.30', lvl:'runner 3R = 2R net',
    desc:'Half off at 0.68, runner trails on BOS but full-closes at fib 1.272. Caps the trade at +2R; if 1.272 never prints the runner is scored at the real BOS exit.'},
-  {key:'smCap1866', fam:'part', name:'50% -> cap 1.866', short:'C1.866', lvl:'runner 5R = 3R net',
+  {key:'smCap1866', fam:'part', name:'50% -> cap 1.95', short:'C1.95', lvl:'runner 5R = 3R net',
    desc:'Same, capped at fib 1.866 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
   {key:'tpTrailBOS', fam:'part', name:'50% -> uncapped trail', short:'Trail', lvl:'no ceiling',
    desc:'The incumbent: half off at 0.68, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
 ];
+let MODEL='mario', MGMT=MGMT_MARIO.slice(), FAMILIES=FAMILIES_MARIO.slice();
 const byFam=f=>MGMT.filter(m=>m.fam===f);
+function applyModel(){
+  const v = MODEL==='vcl';
+  MGMT = (v?MGMT_VCL:MGMT_MARIO).slice();
+  FAMILIES = (v?FAMILIES_VCL:FAMILIES_MARIO).slice();
+}
 
 let TRADES=[], ALL=[], PAIR='all', firstLoad=true, lastOk=null;
 const TF='1m';  // this board tests 1m only, across SOL/BTC/ETH
@@ -254,6 +311,10 @@ const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
 function applyFilters(){
   TRADES = ALL.filter(t => t.Timeframe===TF && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
+  // Super Mario outcomes arrive already computed from the Notion formulas; the ladder has
+  // no formulas on this log, so score it here and hang it off the same row. Both models
+  // then read identically as t[key], and the toggle only chooses which keys to show.
+  TRADES.forEach(t => Object.assign(t, vclScore(t)));
 }
 
 /* ============================== L0 — the verdict ==============================
@@ -520,7 +581,9 @@ function render(){
     `<div class="sectionhd">Full numbers — every outcome, ranked</div>` + rankedTable(pool) +
     reachLadderSVG(pool) +
     intervalStripSVG(pool) +
-    `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
+    (MODEL==='vcl'
+      ? `<div class="foot">Ladder outcomes are derived here from Max Adverse, which decides the stop and the L1 fill. <b>This log is Super-Mario-native</b>, so Max Run stops at the SM stop — rows where Max Adverse crossed it are dropped rather than scored, because the ladder trade would still have been live and the row says nothing about what came next. Rows with no Max Adverse are dropped too. That is why n is smaller here than on the Super Mario side. Trades cluster by trading day — treat n as an upper bound on independent evidence.</div>`
+      : `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`);
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
   });
@@ -554,6 +617,7 @@ function wire(id,attr,set){
       document.getElementById('status').textContent=`1M · ${PAIR==='all'?'all pairs':PAIR} · ${TRADES.length} trades`; };});
 }
 wire('pairTg','p', v=>{ if(v===undefined) return PAIR; PAIR=v; });
+wire('modelTg','m', v=>{ if(v===undefined) return MODEL; MODEL=v; applyModel(); });
 poll(); setInterval(poll,5000);
 </script>
 </body></html>

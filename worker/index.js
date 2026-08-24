@@ -411,6 +411,14 @@ async function computeGrant(token) {
       oneR:      getProp(t, '1R (price)'),
       rangePct:  getProp(t, 'Range %'),
       notes:     getProp(t, 'Notes'),
+      // Max Adverse is what lets ONE row score both models. Compared against the Super
+      // Mario fib 0 it settles that stop; against the VCL fib's 0 and 0.17 it settles the
+      // ladder stop and the L1 fill. Both fibs solve from entry + anchor, so nothing extra
+      // is typed. Caveat that the board has to respect: this log is Super-Mario-native, so
+      // Max Run is truncated at the SM stop — a row that stopped there cannot be scored on
+      // the ladder, whose stop is deeper and would still have been live.
+      maxAdverse:   getProp(t, 'Max Adverse'),
+      avwapTouches: getProp(t, 'AVWAP Touches Before Entry'),
       // the eight outcomes, straight off the Notion formulas
       maxRunR:     getProp(t, 'Max Run R'),
       bosExitR:    getProp(t, 'BOS Exit R'),          // = full size, no partial, BE + trail
