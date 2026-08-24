@@ -11,16 +11,19 @@
 // Every outcome is then pure arithmetic on the four typed prices. No bars. No timestamps.
 // No ambiguity, no bounds, no unresolved bucket. That is the entire payoff of logging
 // forward instead of auditing backward.
-const FIB = { stop: 0.085, entry: 0.382, tp: 0.68, r2: 0.976, r3: 1.272, r5: 1.866 };
+// Fib redrawn 2026-08-24: the stop IS fib 0 now, rather than 0.085 of a fib anchored on
+// the swept extreme. Same prices — on a 77pt range the two labellings agree to 3 cents —
+// but the numbers come out clean: entry 0.325, TP 0.65 = exactly double the entry, so the
+// TP sits at 1.000R by construction instead of 1.003R.
+const FIB = { stop: 0, entry: 0.325, tp: 0.65, r2: 0.975, r3: 1.30, r5: 1.95 };
 
 /** Solve the row's geometry from the only two prices that are typed. */
 function levels(entry, oneOfFib) {
   const range = (oneOfFib - entry) / (1 - FIB.entry);   // signed: entry -> anchor
-  const zero = entry - FIB.entry * range;
+  const zero = entry - FIB.entry * range;               // fib 0, which is now the stop
   const at = f => zero + f * range;
-  const stop = at(FIB.stop);
-  return { zero, anchor: oneOfFib, stop, tp: at(FIB.tp), at,
-           oneR: Math.abs(entry - stop), dir: range > 0 ? 1 : -1 };
+  return { zero, anchor: oneOfFib, stop: zero, tp: at(FIB.tp), at,
+           oneR: Math.abs(entry - zero), dir: range > 0 ? 1 : -1 };
 }
 
 /**
@@ -43,9 +46,11 @@ function score(row) {
   // EPS: a Max Run typed at exactly the target price lands on 4.999999999999999 after the
   // price->R divide, and a bare >= then scores a 5R trade as -1R. Boundary hits are the
   // common case here (targets are levels people actually take profit at), not an edge case.
-  const EPS = 1e-9;
-  const hit = N => mr >= N - EPS;                        // Max Run gates every target
-  const tpHit = mr >= tp - EPS;
+  // See TOL note in the widget: absorbs both float error and the fib tool's tick-rounded
+  // display, which now matters because the TP sits at exactly 1.000R with no headroom.
+  const TOL = 0.02;
+  const hit = N => mr >= N - TOL;                        // Max Run gates every target
+  const tpHit = mr >= tp - TOL;
   // Runner half is scored at its cap if the cap printed, else at the real trail exit.
   const runner = cap => tpHit ? 0.5 * tp + 0.5 * (hit(cap) ? cap : be) : -1;
   return { ...L, mr, be, tp, stopped,

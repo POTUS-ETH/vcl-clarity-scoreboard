@@ -77,10 +77,10 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 // settles both, and neither is a counterfactual needing bar data to reconstruct.
 const MGMTS_LADDER=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'}];
 const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half',label:'50% \u2192 uncapped trail'},
-  {k:'m_c1272',label:'50% \u2192 cap 1.272'},{k:'m_c1866',label:'50% \u2192 cap 1.866'},
+  {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
 const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse.';
-const FOOT_MARIO='R math: single order, no L1 leg. Fib 0.085 = stop, 0.382 = entry, 0.68 = TP, 1.0 = anchor \u2014 so 1R = 0.297 fib units and the TP sits at 1.003R by construction, which is why Full TP @ 1R is a pure 1:1 bet. <b>Max Adverse decides every stop-out</b>: it is compared against 0.085, and where it is blank the exit price is used as a floor, which can miss a stop that later recovered \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.976 / 1.272 / 1.866.';
+const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and where it is blank the exit price is used as a floor, which can miss a stop that later recovered \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
 let RANGE_REF='f1';
@@ -94,25 +94,35 @@ function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 function marioR(row){
   const E=num(row.EntryPrice), A=num(row.anchor), MR=num(row.MaxRun),
         BX=num(row.BoSExit), MA=num(row.MaxAdverse);
-  const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_c1272:null,m_c1866:null,m_half:null};
+  const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_half:null};
   if(E==null||A==null||MR==null||BX==null) return out;
-  const range=(A-E)/(1-0.382), zero=E-0.382*range, at=f=>zero+f*range;
-  const dir=range>0?1:-1, stop=at(0.085), oneR=Math.abs(E-stop);
+  // Fib redrawn 2026-08-24 so the stop IS fib 0: entry 0.325, TP 0.65 = exactly double it.
+  // Same prices as the old 0.085/0.382/0.68 labelling — they agree to 3 cents on a 77pt
+  // range — but the TP now lands on 1.000R by construction rather than 1.003R.
+  const range=(A-E)/(1-0.325), zero=E-0.325*range, at=f=>zero+f*range;
+  const dir=range>0?1:-1, stop=zero, oneR=Math.abs(E-stop);
   if(!oneR) return out;
   const R=p=>dir*(p-E)/oneR;
   // Max Adverse is what settles the tighter stop. Falling back to the exit is a FLOOR,
   // not a substitute: a trade that dipped through 0.085 and recovered reads as survived.
   const stopped = MA!=null ? dir*(MA-stop)<=1e-9 : dir*(BX-stop)<=1e-9;
   if(stopped){ for(const k in out) out[k]=-1; return out; }
-  const EPS=1e-9, mr=R(MR), be=R(BX), tp=R(at(0.68));
-  // EPS: a Max Run typed at exactly the target price divides to 4.999999999999999, and a
-  // bare >= then scores a 5R trade as -1R. Boundary hits are the common case, not an edge.
-  const hit=N=>mr>=N-EPS, tpHit=mr>=tp-EPS;
+  // TOL, not an epsilon. Two separate problems, one knob:
+  //  1. float — a Max Run typed at exactly a target divides to 4.999999999999999.
+  //  2. rounding — the fib tool DISPLAYS levels to the tick, so a TP whose true price is
+  //     28871.04 shows as 28871.00. Under the old fib the TP sat at 1.003R and absorbed
+  //     that; now it is exactly 1.000R, so any rounding down turns a TP hit into a -1R.
+  // 2% of 1R covers a tick on MNQ and crypto. On a very tight 1R (MGC ~1.7pt vs a 0.10
+  // tick) one tick is still ~6% of R and this will not cover it — a per-pair tick size is
+  // the only airtight fix. Logging rule meanwhile: type the price that actually printed,
+  // never the rounded level read off the fib tool.
+  const TOL=0.02, mr=R(MR), be=R(BX), tp=R(at(0.65));
+  const hit=N=>mr>=N-TOL, tpHit=mr>=tp-TOL;
   const runner=cap=>tpHit?0.5*tp+0.5*(hit(cap)?cap:be):-1;
   out.m_f1=hit(1)?1:-1; out.m_f2=hit(2)?2:-1; out.m_f3=hit(3)?3:-1; out.m_f5=hit(5)?5:-1;
   // Clearing the anchor moves the stop to break-even, so the trail cannot finish negative.
-  out.m_trail = mr>=R(at(1))-EPS ? Math.max(be,0) : be;
-  out.m_c1272=runner(3); out.m_c1866=runner(5);
+  out.m_trail = mr>=R(at(1))-TOL ? Math.max(be,0) : be;
+  out.m_cap3=runner(3); out.m_cap5=runner(5);
   out.m_half = tpHit ? 0.5*tp+0.5*be : -1;
   return out;
 }
