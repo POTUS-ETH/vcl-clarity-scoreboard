@@ -295,6 +295,7 @@ const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 const V3_DATA_SOURCE = 'a9821f82-d4cc-4652-a6ad-46969c4fc0da';
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
+const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
 // Craig's outcome columns. Read straight off the Notion formulas so there is exactly
 // one place the R math lives.
@@ -529,7 +530,20 @@ async function computeV3Raw(token, dbId) {
 // (Entry Time, AVWAP Anchor Time, BoS Confirm Time, Exit Time) kept for future
 // tape-verification the way Entry Time already works for Craig's crypto board.
 async function computeV4Futures(token) {
-  const trades = await queryAllDataSource(V4_FUTURES_DATA_SOURCE, token);
+  // The /data_sources endpoint returns 200 with zero results here while /databases
+  // returns the same log's rows — so an empty answer from it is indistinguishable from
+  // "the log is empty" and silently blanked this board. Try both, and report which one
+  // actually produced the rows so a future empty is diagnosable from the payload alone.
+  // The two endpoints disagree about this log: /data_sources returns only the blank
+  // "+ New" row while /databases returns every trade. A zero-check is not enough to catch
+  // that — it returned 1, not 0 — so take whichever endpoint yields more rows and report
+  // both counts, because an empty board here is otherwise indistinguishable from an empty log.
+  const [dsRows, dbRows] = await Promise.all([
+    queryAllDataSource(V4_FUTURES_DATA_SOURCE, token).catch(() => []),
+    queryAll(V4_FUTURES_DB, token).catch(() => []),
+  ]);
+  const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
+  const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -570,7 +584,7 @@ async function computeV4Futures(token) {
       tz:         getProp(t, 'Timezone'),
     });
   }
-  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
 }
 
 // ── Prop Firm Rotation Tracker (live Notion-backed dashboard) ─────────
