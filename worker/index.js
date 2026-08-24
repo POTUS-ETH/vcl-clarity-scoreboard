@@ -555,12 +555,19 @@ async function computeV4Futures(token) {
       L1after:    getProp(t, 'L1 after Max Run'),
       RangePct:   getProp(t, 'Range %'),
       date:       getProp(t, 'Date'),
-      // sim/backtest params — not read by the current widget, kept for reconstruction
-      entryTime:      getProp(t, 'Entry Time'),
-      avwapAnchorTime: getProp(t, 'AVWAP Anchor Time'),
-      bosConfirmTime:  getProp(t, 'BoS Confirm Time'),
-      exitTime:        getProp(t, 'Exit Time'),
+      // Max Adverse is the worst price reached BEFORE Max Run. It is what lets one row
+      // score two models at once: compare it against fib 0 for the ladder stop, against
+      // fib 0.085 for the Super Mario stop, and against fib 0.17 for the L1 fill. Without
+      // it the tighter stop is a counterfactual no amount of bar data can settle once
+      // 15s history ages out (~30 days).
+      MaxAdverse: getProp(t, 'Max Adverse'),
       anchor:     getProp(t, '1 of Fib Price'),
+      // Times are plain HHMM text plus a Timezone select — a calendar picker per row was
+      // too slow to log during a session.
+      entryTime:  getProp(t, 'Entry Time (HHMM)'),
+      anchorTime: getProp(t, 'Anchor Time (HHMM)'),
+      exitTime:   getProp(t, 'Exit Time (HHMM)'),
+      tz:         getProp(t, 'Timezone'),
     });
   }
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), tradeCount: rows.length, trades: rows };
