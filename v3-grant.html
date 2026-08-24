@@ -107,10 +107,10 @@ details.l2 .body{padding:0 14px 14px}
     <div class="body">
       <p><b>What's on this board.</b> A chart-replayed backtest of the VCL V5 single-order fib — no L1, one entry, the same geometry on every pair. Eight exit outcomes are scored on <em>every</em> trade at once. They are not eight strategies competing on separate samples; they are eight ways of pricing the same set of real trades.</p>
       <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
-      <p><b>The fib is fixed, so every level is forced.</b> Stop 0.085, entry 0.382, TP 0.68. That makes 1R = 0.297 in fib units, and the whole board hangs off four levels: <b>1R = fib 0.679</b> (the TP itself), <b>2R = 0.976</b>, <b>3R = 1.272</b>, <b>5R = 1.866</b>.</p>
+      <p><b>The fib is fixed, so every level is forced.</b> It is drawn stop-to-anchor: <b>fib 0 is the stop</b>, entry 0.325, TP 0.65 — exactly double the entry, so the TP sits at 1.000R by construction. The whole board hangs off four levels: <b>1R = fib 0.65</b> (the TP itself), <b>2R = 0.975</b>, <b>3R = 1.30</b>, <b>5R = 1.95</b>.</p>
       <p><b>Family 1 — full position, no partial.</b> Four fixed targets, binary by construction: +NR if Max Run reached it, −1R if not. <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1. The fifth row, <b>Full size → BE + trail</b>, is the no-partial control: same full size, but no ceiling — it takes whatever structure gives.</p>
-      <p><b>Family 2 — 50% off at the 0.68, then the runner.</b> Banking half at the TP locks <b>0.5R</b> (the TP is 1R away, at half size). The remaining half then carries everything. Because it's half size it must make <b>2R to move the position 1R</b> — so the runner needs 3R for a 2R trade (fib 1.272) and 5R for a 3R trade (fib 1.866).</p>
-      <p><b>That's why the two families share price levels.</b> "Full TP @ 3R" and "runner capped at 1.272" are the <em>same line on the chart</em> — they differ only in how much size is still on when price gets there. Same for 5R and 1.866.</p>
+      <p><b>Family 2 — 50% off at the 0.68, then the runner.</b> Banking half at the TP locks <b>0.5R</b> (the TP is 1R away, at half size). The remaining half then carries everything. Because it's half size it must make <b>2R to move the position 1R</b> — so the runner needs 3R for a 2R trade (fib 1.30) and 5R for a 3R trade (fib 1.95).</p>
+      <p><b>That's why the two families share price levels.</b> "Full TP @ 3R" and "runner capped at 1.30" are the <em>same line on the chart</em> — they differ only in how much size is still on when price gets there. Same for 5R and 1.95.</p>
       <p><b>The uncapped trail is the incumbent, kept as a baseline.</b> It's what Grant is running now: half off, then let BOS run with no ceiling. The two capped variants are being tested against it, not against each other.</p>
       <p><b>Everything is one reach curve.</b> All seven numbers are determined by which R levels Max Run cleared — shown directly in the strip under the headline. The targets don't fail independently, so two outcomes agreeing is <em>not</em> two pieces of evidence.</p>
       <p><b>The curve under each row</b> is that outcome's cumulative R, trade by trade, in the order they happened. Green and rising means ahead net; red and sinking means behind.</p>
@@ -207,9 +207,9 @@ function equityCurveSVG(series, w, h){
    Setup Type is gone from the log: there is only one structure now, so a column that always
    held the same value was pure overhead. The formulas no longer gate on it either.
    Six outcomes, two families, off ONE fib. Only four chart levels drive all of them:
-   1R = fib 0.679 (the 0.68 TP) · 2R = 0.976 · 3R = 1.272 · 5R = 1.866.
+   1R = fib 0.65 (the TP) · 2R = 0.975 · 3R = 1.30 · 5R = 1.95.
    The families share the upper two levels at different position sizes — a half-size
-   runner must make 2R to move the position 1R, so "runner capped at 1.272" (3R on half)
+   runner must make 2R to move the position 1R, so "runner capped at 1.30" (3R on half)
    and "full TP at 3R" are the same price, scored on different size. */
 // ── VCL ladder, scored off the SAME row ────────────────────────────────────────
 // Both models enter at the AVWAP, but on different fibs: 0.325 of the Super Mario fib
@@ -273,15 +273,15 @@ const MGMT_MARIO=[
   {key:'smFull2R', fam:'full', name:'Full TP @ 2R',  short:'F2R', lvl:'fib 0.975',
    desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
   {key:'smFull3R', fam:'full', name:'Full TP @ 3R',  short:'F3R', lvl:'fib 1.30',
-   desc:'Whole position off at 3R, the 1.272 extension.'},
+   desc:'Whole position off at 3R, the 1.30 extension.'},
   {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.95',
    desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
   {key:'bosExitR', fam:'full', name:'Full size -> BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
    desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.68.'},
   {key:'smCap1272', fam:'part', name:'50% -> cap 1.30', short:'C1.30', lvl:'runner 3R = 2R net',
-   desc:'Half off at 0.68, runner trails on BOS but full-closes at fib 1.272. Caps the trade at +2R; if 1.272 never prints the runner is scored at the real BOS exit.'},
+   desc:'Half off at the TP, runner trails on BOS but full-closes at fib 1.30. Caps the trade at +2R; if 1.30 never prints the runner is scored at the real BOS exit.'},
   {key:'smCap1866', fam:'part', name:'50% -> cap 1.95', short:'C1.95', lvl:'runner 5R = 3R net',
-   desc:'Same, capped at fib 1.866 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
+   desc:'Same, capped at fib 1.95 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
   {key:'tpTrailBOS', fam:'part', name:'50% -> uncapped trail', short:'Trail', lvl:'no ceiling',
    desc:'The incumbent: half off at 0.68, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
 ];
@@ -404,7 +404,7 @@ function reachLadderSVG(pool){
   const pw=W-padL-padR, ph=H-padT-padB;
   const y=r=>padT+(1-(r-minR)/(maxR-minR))*ph;
   const n=rows.length, slot=pw/n, bw=Math.min(46,slot*0.54);
-  const LV=[{r:1,f:'0.679'},{r:2,f:'0.976'},{r:3,f:'1.272'},{r:5,f:'1.866'}];
+  const LV=[{r:1,f:'0.65'},{r:2,f:'0.975'},{r:3,f:'1.30'},{r:5,f:'1.95'}];
   const zero=y(0);
 
   let grid='';
@@ -464,7 +464,7 @@ function reachCurveSVG(pool){
   }
   let grid='';
   [1,2,3,5].forEach((N,i)=>{
-    const f=['0.679','0.976','1.272','1.866'][i], p=surv(N);
+    const f=['0.65','0.975','1.30','1.95'][i], p=surv(N);
     grid+=`<line x1="${x(N).toFixed(1)}" y1="${padT-4}" x2="${x(N).toFixed(1)}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<circle cx="${x(N).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.5" fill="#3fb950"/>`
        +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
