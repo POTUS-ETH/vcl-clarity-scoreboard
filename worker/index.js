@@ -113,12 +113,32 @@ function getProp(page, name) {
 // `Trailing/Stop Exit`, `Max Adverse` never added) would have failed the very first
 // request instead of silently null-ing every row. Empty logs (no sample) skip the check;
 // the widget's empty-log branch handles that case correctly on its own.
-function assertSchema(sample, viewName, fields) {
-  if (!sample) return;
-  const have = sample.properties || {};
+function assertSchema(rows, viewName, fields) {
+  const list = Array.isArray(rows) ? rows : (rows ? [rows] : []);
+  // A genuinely empty log has no schema to assert against, and the widgets' empty-log
+  // branches handle that correctly. Anything else must be checked.
+  if (!list.length) return;
+  // Take ANY row. Property NAMES are identical on every page in a Notion database —
+  // only the values differ — so there is no reason to hunt for a row with data. The
+  // previous version picked `the first row with an Entry Price`, which quietly created
+  // the exact hole this function exists to close: had `Entry Price` itself been the
+  // renamed field, no row would have matched, `sample` would have been undefined, and
+  // the check would have "passed" by doing nothing while every row mapped to null.
+  const have = list[0].properties || {};
   const missing = fields.filter(f => !(f in have));
   if (!missing.length) return;
-  const msg = `${viewName}: expected schema fields not found: ${missing.map(m => JSON.stringify(m)).join(', ')}. `
+  // Name the near-misses explicitly. The rename that broke this view was `SM  Trail Stop`
+  // with a double space — invisible in the Notion UI and invisible in a plain list of
+  // available names, which is why it cost a deploy to find. Collapsing whitespace and
+  // case turns it into an obvious one-line answer.
+  const norm = k => k.replace(/\s+/g, ' ').trim().toLowerCase();
+  const byNorm = new Map(Object.keys(have).map(k => [norm(k), k]));
+  const detail = missing.map(m => {
+    const near = byNorm.get(norm(m));
+    return near ? `${JSON.stringify(m)} (found ${JSON.stringify(near)} — differs only in whitespace/case)`
+                : JSON.stringify(m);
+  });
+  const msg = `${viewName}: expected schema fields not found: ${detail.join(', ')}. `
             + `Available: ${Object.keys(have).map(k => JSON.stringify(k)).join(', ')}.`;
   throw new Error(msg);
 }
@@ -399,8 +419,7 @@ async function computeGrant(token) {
   // not a BOS" reason). The worker does not read `Trail Stop` directly — it reads the R
   // formulas that reference it internally — so the assertion covers only what this view
   // actually depends on.
-  const sample = trades.find(t => getProp(t, 'Entry Price') != null);
-  assertSchema(sample, 'grant', [
+  assertSchema(trades, 'grant', [
     'Trade','Direction','Timeframe','Session','Pair','#','Date',
     'Entry Price','1 of Fib Price','Max Run',
     'Fib 0 Price','Stop Price','TP Price','1R (price)','Range %',
@@ -586,8 +605,7 @@ async function computeV4Futures(token) {
   // prefix, `Max Adverse` stays unprefixed because it discriminates the two stops. Assert
   // the schema BEFORE mapping so a rename drift fails the request loudly instead of
   // returning a payload of nulls the way `Trailing BOS Exit` did on crypto.
-  const sample = trades.find(t => getProp(t, 'Entry Price') != null);
-  assertSchema(sample, 'v4-futures', [
+  assertSchema(trades, 'v4-futures', [
     'Trade','Direction','Timeframe','Session','Pair',
     'Entry Price','L1 Price','SL Price',
     'VCL Max Run','VCL Trail Stop','SM Max Run','SM Trail Stop',
