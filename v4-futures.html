@@ -86,7 +86,7 @@ const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half'
   {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
 const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse. Full @2R/3R/5R hold the whole position for a further target and exit on BoS if it never trades there \u2014 they never book a synthetic \u22121R. 50% + N-R runner locks half at 1R and aims the runner at the higher target; the runner exits on BoS if it doesn\u2019t trade there. Because entry-only trades run at half size, their targets sit at roughly double the distance: with L1 filled 2R/3R/5R are fib 0.828 / 1.104 / 1.656, entry-only 1.486 / 2.038 / 3.142.';
-const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM BoS Exit</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
+const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM Trail Stop</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
 let RANGE_REF='f1';
@@ -97,44 +97,60 @@ function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
 // Super Mario (VCL V5). Geometry solves from the two prices already typed: entry sits at
 // fib 0.325 of the span from fib 0 to the anchor, so fib0 = E - 0.325*range.
-// Excursions come from SM Max Run / SM BoS Exit and NEVER from the ladder's Max Run /
-// BoS Exit: the SM trail arms earlier because its levels sit nearer entry, so on the same
+// Excursions come from SM Max Run / SM Trail Stop and NEVER from the ladder's VCL Max Run /
+// VCL Trail Stop: the SM trail arms earlier because its levels sit nearer entry, so on the same
 // trade the two models close at different moments and their excursions are different
 // numbers. Falling back to the ladder's pair scores a trade neither model would have taken.
+// Per-instrument tick grid. Notion now stores SL/SM Stop/L1 rounded to the tick (stops
+// away from entry, L1 toward entry) — so we round Max Adverse to the same grid in the
+// ADVERSE direction and compare exactly. No tolerance: with both sides on the grid and
+// both rounded conservatively, a breach either happened or it didn't. Trades that merely
+// grazed the stop score as stop-outs; Super Mario comes out slightly pessimistic rather
+// than neutral, which is the correct direction to be wrong in for a backtest.
+const TICK={MNQ:0.25, MES:0.25, MGC:0.10};
 function marioR(row){
-  const E=num(row.EntryPrice), A=num(row.anchor), MR=num(row.SMMaxRun),
-        BX=num(row.SMBoSExit), MA=num(row.MaxAdverse);
+  const E=num(row.EntryPrice), A=num(row.anchor), MR_raw=num(row.SMMaxRun),
+        BX=num(row.SMTrailStop), MA_raw=num(row.MaxAdverse);
   const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_half:null};
-  if(E==null||A==null||MR==null||BX==null) return out;
+  if(E==null||A==null||MR_raw==null||BX==null) return out;
   // Max Adverse settles the tighter stop and nothing else can stand in for it. Unknown
   // (null) leaves the row unscoreable; 0 is not "never went adverse" — Max Adverse is a
   // PRICE, and 0 would satisfy the Long breach test and book a full loss. Both exit here
   // rather than being assumed survived or assumed stopped.
-  if(MA==null||MA===0) return out;
+  if(MA_raw==null||MA_raw===0) return out;
   // Fib redrawn 2026-08-24 so the stop IS fib 0: entry 0.325, TP 0.65 = exactly double it.
   // Same prices as the old 0.085/0.382/0.68 labelling — they agree to 3 cents on a 77pt
   // range — but the TP now lands on 1.000R by construction rather than 1.003R.
   const range=(A-E)/(1-0.325), zero=E-0.325*range, at=f=>zero+f*range;
   const dir=range>0?1:-1, stop=zero, oneR=Math.abs(E-stop);
   if(!oneR) return out;
+  // Tick-grid rounding per audit §9 (Max Adverse) and §13 (Max Run). Both round in the
+  // pessimistic direction so grid-alignment never manufactures a hit or manufactures a
+  // survival.
+  //   Max Adverse: AWAY from entry — floor for Long (adverse is below), ceil for Short.
+  //   Max Run:     TOWARD entry — floor for Long (favourable is above; rounding down keeps
+  //                us from crediting a target the raw print didn't reach), ceil for Short.
+  // Note (§13 literal vs intent): §13's operation words say "ceiling for Long, floor for
+  // Short" on Max Run, but the stated intent is "toward entry, never credit unless
+  // genuinely reached" and "complement of Max Adverse". The operation implemented here
+  // matches the intent (floor-Long / ceil-Short). If POTUS confirms the literal wording,
+  // flip these two Math calls and re-audit.
+  const tick=TICK[row.Pair]||null;
+  const MA = tick==null ? MA_raw
+           : dir>0 ? Math.floor(MA_raw/tick)*tick   // away from entry (down for Long)
+                   : Math.ceil(MA_raw/tick)*tick;
+  const MR = tick==null ? MR_raw
+           : dir>0 ? Math.floor(MR_raw/tick)*tick   // toward entry (down for Long)
+                   : Math.ceil(MR_raw/tick)*tick;
   const R=p=>dir*(p-E)/oneR;
-  const stopped = dir*(MA-stop)<=1e-9;
+  const stopped = dir*(MA-stop)<=0;                    // compare exactly, no epsilon
   if(stopped){ for(const k in out) out[k]=-1; return out; }
-  // TOL, not an epsilon. Two separate problems, one knob:
-  //  1. float — a Max Run typed at exactly a target divides to 4.999999999999999.
-  //  2. rounding — the fib tool DISPLAYS levels to the tick, so a TP whose true price is
-  //     28871.04 shows as 28871.00. Under the old fib the TP sat at 1.003R and absorbed
-  //     that; now it is exactly 1.000R, so any rounding down turns a TP hit into a -1R.
-  // 2% of 1R covers a tick on MNQ and crypto. On a very tight 1R (MGC ~1.7pt vs a 0.10
-  // tick) one tick is still ~6% of R and this will not cover it — a per-pair tick size is
-  // the only airtight fix. Logging rule meanwhile: type the price that actually printed,
-  // never the rounded level read off the fib tool.
-  const TOL=0.02, mr=R(MR), be=R(BX), tp=R(at(0.65));
-  const hit=N=>mr>=N-TOL, tpHit=mr>=tp-TOL;
+  const mr=R(MR), be=R(BX), tp=R(at(0.65));
+  const hit=N=>mr>=N, tpHit=mr>=tp;                    // exact comparison — no TOL
   const runner=cap=>tpHit?0.5*tp+0.5*(hit(cap)?cap:be):-1;
   out.m_f1=hit(1)?1:-1; out.m_f2=hit(2)?2:-1; out.m_f3=hit(3)?3:-1; out.m_f5=hit(5)?5:-1;
   // Clearing the anchor moves the stop to break-even, so the trail cannot finish negative.
-  out.m_trail = mr>=R(at(1))-TOL ? Math.max(be,0) : be;
+  out.m_trail = mr>=R(at(1)) ? Math.max(be,0) : be;
   out.m_cap3=runner(3); out.m_cap5=runner(5);
   out.m_half = tpHit ? 0.5*tp+0.5*be : -1;
   return out;
@@ -143,7 +159,7 @@ function marioR(row){
 function computeR(row){
   const dir=row.Direction;
   const E=num(row.EntryPrice), L1=num(row.L1Price), SL=num(row.SLPrice),
-        MR=num(row.MaxRun), BX=num(row.BoSExit);
+        MR=num(row.VCLMaxRun), BX=num(row.VCLTrailStop);
   const b=!!row.L1before, a=!!row.L1after, l1=b||a;
   const dirM = dir==='Long'?1:(dir==='Short'?-1:null);
   const iniR = (E!=null&&L1!=null&&SL!=null)?Math.abs((E+L1)/2-SL):null;
@@ -256,7 +272,7 @@ function dropCounts(pool){
   let excluded=0, invalid=0;
   pool.forEach(t=>{
     const raw=t.raw||{};
-    const MR=num(mario?raw.SMMaxRun:raw.MaxRun), BX=num(mario?raw.SMBoSExit:raw.BoSExit);
+    const MR=num(mario?raw.SMMaxRun:raw.VCLMaxRun), BX=num(mario?raw.SMTrailStop:raw.VCLTrailStop);
     const MA=num(raw.MaxAdverse);
     if(mario && MA===0){ invalid++; return; }              // one row, one count
     if(MR==null||BX==null||(mario&&MA==null)) excluded++;
@@ -270,8 +286,8 @@ function dropBadge(pool){
   if(excluded) parts.push(`<div class="midval">${excluded}</div><div class="mini">excluded</div>`);
   if(invalid)  parts.push(`<div class="midval neg">${invalid}</div><div class="mini">invalid</div>`);
   const tip = MODEL==='mario'
-    ? 'Excluded: SM Max Run, SM BoS Exit or Max Adverse blank. Invalid: Max Adverse logged as 0, which is not a price.'
-    : 'Excluded: Max Run or BoS Exit blank.';
+    ? 'Excluded: SM Max Run, SM Trail Stop or Max Adverse blank. Invalid: Max Adverse logged as 0, which is not a price.'
+    : 'Excluded: VCL Max Run or VCL Trail Stop blank.';
   return `<div class="card daysbadge" title="${tip}">${parts.join('<div class="mini">\u00b7</div>')}</div>`;
 }
 
@@ -431,8 +447,8 @@ async function poll(){
     firstLoad=false;
   }catch(e){
     if(firstLoad){
-      st.innerHTML='<span class="err">Connecting… '+(e.message||'')+'</span>';
-      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Waiting on the live Worker.</div></div>';
+      st.innerHTML='<span class="err">Worker unreachable: '+(e.message||'')+'</span>';
+      document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Worker unreachable and no cached snapshot available. Retrying every 5s.</div></div>';
       renderCalendar();
     }
   }
