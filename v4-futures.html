@@ -160,7 +160,21 @@ function computeR(row){
   const dir=row.Direction;
   const E=num(row.EntryPrice), L1=num(row.L1Price), SL=num(row.SLPrice),
         MR=num(row.VCLMaxRun), BX=num(row.VCLTrailStop);
-  const b=!!row.L1before, a=!!row.L1after, l1=b||a;
+  // L1 fill is DERIVED from Max Adverse, not read from the checkbox. L1 sits at a known
+  // price, so "did price reach it" is a measurement, not a judgement — and keeping the
+  // checkbox as a second source of truth for the same fact is how the two drift apart.
+  // The checkbox stays as the fallback for rows logged before Max Adverse existed.
+  //
+  // Only the BEFORE case is derivable: Max Adverse is the worst price reached before Max
+  // Run, so it cannot see an L1 that filled on a retrace afterwards. `L1 after Max Run`
+  // stays checkbox-only because nothing else in the row carries it.
+  const MA_l1=num(row.MaxAdverse), L1p=num(row.L1Price);
+  const dirL1 = dir==='Long'?1:(dir==='Short'?-1:null);
+  const bBox=!!row.L1before;
+  const bMeasured = (MA_l1!=null && L1p!=null && dirL1!=null) ? dirL1*(MA_l1-L1p)<=1e-9 : null;
+  const b = bMeasured===null ? bBox : bMeasured;
+  const l1Conflict = bMeasured!==null && bMeasured!==bBox;   // surfaced, never silently resolved
+  const a=!!row.L1after, l1=b||a;
   const dirM = dir==='Long'?1:(dir==='Short'?-1:null);
   const iniR = (E!=null&&L1!=null&&SL!=null)?Math.abs((E+L1)/2-SL):null;
   const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
@@ -187,7 +201,7 @@ function computeR(row){
   Object.assign(r, marioR(row));   // both models on the same row; the toggle only picks keys
   // raw is carried so the board can count what dropped out of scoring without either
   // scorer having to report it — see dropCounts().
-  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r, raw:row};
+  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', r, raw:row};
 }
 
 function applyPairFilter(){ TRADES = PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR); }
