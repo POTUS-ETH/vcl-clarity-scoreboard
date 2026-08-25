@@ -528,7 +528,7 @@ function render(){
     `<div class="sectionhd">Full numbers — every outcome, ranked</div>` + rankedTable(pool) +
     reachLadderSVG(pool) +
     intervalStripSVG(pool) +
-    `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`);
+    `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
   });
