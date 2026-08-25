@@ -106,6 +106,23 @@ function getProp(page, name) {
   }
 }
 
+// In-worker schema assertion (option B, per audit §13). A view function calls this after
+// fetching, before mapping rows, with the exact list of Notion property names it will
+// read. If any name is absent from the sample page's schema, throw with the full list of
+// available names — the exact bug the audit found (`Trailing BOS Exit` vs the actual
+// `Trailing/Stop Exit`, `Max Adverse` never added) would have failed the very first
+// request instead of silently null-ing every row. Empty logs (no sample) skip the check;
+// the widget's empty-log branch handles that case correctly on its own.
+function assertSchema(sample, viewName, fields) {
+  if (!sample) return;
+  const have = sample.properties || {};
+  const missing = fields.filter(f => !(f in have));
+  if (!missing.length) return;
+  const msg = `${viewName}: expected schema fields not found: ${missing.map(m => JSON.stringify(m)).join(', ')}. `
+            + `Available: ${Object.keys(have).map(k => JSON.stringify(k)).join(', ')}.`;
+  throw new Error(msg);
+}
+
 function newBucket(avwap, method) {
   return {
     avwap, method,
@@ -376,6 +393,22 @@ const GRANT_DATA_SOURCE = '60340af5-26f9-4dff-94c6-87f1bd61ac24'; // database: 7
 
 async function computeGrant(token) {
   const trades = await queryAllDataSource(GRANT_DATA_SOURCE, token);
+  // Crypto is Super Mario only (§8) with the field vocabulary from §13. No prefix — one
+  // model, nothing to disambiguate. The trail exit column is `Trail Stop` (renamed from
+  // the earlier `Trailing/Stop Exit` for the same "the exit may be the original stop,
+  // not a BOS" reason). The worker does not read `Trail Stop` directly — it reads the R
+  // formulas that reference it internally — so the assertion covers only what this view
+  // actually depends on.
+  const sample = trades.find(t => getProp(t, 'Entry Price') != null);
+  assertSchema(sample, 'grant', [
+    'Trade','Direction','Timeframe','Session','Pair','#','Date',
+    'Entry Price','1 of Fib Price','Max Run',
+    'Fib 0 Price','Stop Price','TP Price','1R (price)','Range %',
+    'Max Run R','BOS Exit R',
+    'Full TP @ 1R','Full TP @ 2R','Full TP @ 3R','Full TP @ 5R',
+    '50% then cap 1.272','50% then cap 1.866','50% then trail (incumbent)',
+    'AVWAP Touches Before Entry','Notes',
+  ]);
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -403,7 +436,6 @@ async function computeGrant(token) {
       entry:     getProp(t, 'Entry Price'),
       anchor:    getProp(t, '1 of Fib Price'),
       maxRun:    getProp(t, 'Max Run'),
-      bosExit:   getProp(t, 'Trailing BOS Exit'),
       // solved geometry, exposed so a consumer can re-derive any R independently
       fib0:      getProp(t, 'Fib 0 Price'),
       stop:      getProp(t, 'Stop Price'),
@@ -411,13 +443,10 @@ async function computeGrant(token) {
       oneR:      getProp(t, '1R (price)'),
       rangePct:  getProp(t, 'Range %'),
       notes:     getProp(t, 'Notes'),
-      // Max Adverse is what lets ONE row score both models. Compared against the Super
-      // Mario fib 0 it settles that stop; against the VCL fib's 0 and 0.17 it settles the
-      // ladder stop and the L1 fill. Both fibs solve from entry + anchor, so nothing extra
-      // is typed. Caveat that the board has to respect: this log is Super-Mario-native, so
-      // Max Run is truncated at the SM stop — a row that stopped there cannot be scored on
-      // the ladder, whose stop is deeper and would still have been live.
-      maxAdverse:   getProp(t, 'Max Adverse'),
+      // Crypto is Super Mario only (2026-08-25). The VCL ladder was retired from this board
+      // because the L1 leg forces range-sized trades and creates a leverage problem in crypto.
+      // Trailing BOS Exit and Max Adverse were the two fields the ladder scorer needed and
+      // neither existed on this schema — the reads are removed rather than renamed.
       avwapTouches: getProp(t, 'AVWAP Touches Before Entry'),
       // the eight outcomes, straight off the Notion formulas
       maxRunR:     getProp(t, 'Max Run R'),
@@ -532,11 +561,12 @@ async function computeV3Raw(token, dbId) {
 // ── VCL v4 (Sweep+BoS, futures) ──────────────────────────────────────
 // Same raw-inputs-only contract as v3: Notion holds geometry + hand-read outcomes,
 // the widget (v4-futures.html) is the single place R gets computed. New here is
-// the multi-source data model (queryAllDataSource, not queryAll) and two additions
-// the log carries but this view does not yet consume: Taken/Skip Reason (so a
-// rejected setup is on record instead of silently absent) and four timestamps
-// (Entry Time, AVWAP Anchor Time, BoS Confirm Time, Exit Time) kept for future
+// the multi-source data model (queryAllDataSource, not queryAll) and four HHMM
+// timestamps (Entry Time, Anchor Time, Exit Time + Timezone) kept for future
 // tape-verification the way Entry Time already works for Craig's crypto board.
+// Field vocabulary set by audit §13: excursion/exit fields carry their model prefix
+// (SM Max Run / SM Trail Stop / VCL Max Run / VCL Trail Stop); Max Adverse stays
+// unprefixed because it is a single reading of the price action, not model-specific.
 async function computeV4Futures(token) {
   // The /data_sources endpoint returns 200 with zero results here while /databases
   // returns the same log's rows — so an empty answer from it is indistinguishable from
@@ -552,48 +582,54 @@ async function computeV4Futures(token) {
   ]);
   const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
+  // Field names solidified in audit §13 — every excursion/exit field carries its model
+  // prefix, `Max Adverse` stays unprefixed because it discriminates the two stops. Assert
+  // the schema BEFORE mapping so a rename drift fails the request loudly instead of
+  // returning a payload of nulls the way `Trailing BOS Exit` did on crypto.
+  const sample = trades.find(t => getProp(t, 'Entry Price') != null);
+  assertSchema(sample, 'v4-futures', [
+    'Trade','Direction','Timeframe','Session','Pair',
+    'Entry Price','L1 Price','SL Price',
+    'VCL Max Run','VCL Trail Stop','SM Max Run','SM Trail Stop',
+    'L1 before Max Run','L1 after Max Run','Range %','Date',
+    'Max Adverse','1 of Fib Price',
+    'Entry Time (HHMM)','Anchor Time (HHMM)','Exit Time (HHMM)','Timezone',
+  ]);
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
     if (title.toUpperCase().startsWith('TEST')) continue; // ignore scaffolding rows
-    // Skip only a setup EXPLICITLY marked as passed on. `Taken` was never actually added
-    // to this log's schema, so getProp returns null for every row — and `!null` was
-    // skipping all 11 logged trades, leaving the v4 board silently empty rather than
-    // erroring. Absence of the field must mean "taken", not "not taken".
-    if (getProp(t, 'Taken') === false) continue;
     if (getProp(t, 'Entry Price') == null) continue;      // an empty "+ New" row, not a trade
     rows.push({
-      Trade:      title,
-      Direction:  getProp(t, 'Direction'),
-      Timeframe:  getProp(t, 'Timeframe'),
-      Session:    getProp(t, 'Session'),
-      Pair:       getProp(t, 'Pair'),
-      EntryPrice: getProp(t, 'Entry Price'),
-      L1Price:    getProp(t, 'L1 Price'),
-      SLPrice:    getProp(t, 'SL Price'),
-      MaxRun:     getProp(t, 'Max Run'),
-      BoSExit:    getProp(t, 'BoS Exit'),
-      // Super Mario reads its OWN excursion pair. Its trail arms earlier than the
-      // ladder's, so on the same trade these are genuinely different numbers.
-      SMMaxRun:   getProp(t, 'SM Max Run'),
-      SMBoSExit:  getProp(t, 'SM BoS Exit'),
-      L1before:   getProp(t, 'L1 before Max Run'),
-      L1after:    getProp(t, 'L1 after Max Run'),
-      RangePct:   getProp(t, 'Range %'),
-      date:       getProp(t, 'Date'),
-      // Max Adverse is the worst price reached BEFORE Max Run. It is what lets one row
-      // score two models at once: compare it against fib 0 for the ladder stop, against
-      // fib 0.085 for the Super Mario stop, and against fib 0.17 for the L1 fill. Without
-      // it the tighter stop is a counterfactual no amount of bar data can settle once
-      // 15s history ages out (~30 days).
-      MaxAdverse: getProp(t, 'Max Adverse'),
-      anchor:     getProp(t, '1 of Fib Price'),
+      Trade:        title,
+      Direction:    getProp(t, 'Direction'),
+      Timeframe:    getProp(t, 'Timeframe'),
+      Session:      getProp(t, 'Session'),
+      Pair:         getProp(t, 'Pair'),
+      EntryPrice:   getProp(t, 'Entry Price'),
+      L1Price:      getProp(t, 'L1 Price'),
+      SLPrice:      getProp(t, 'SL Price'),
+      // Renamed per §13. Both models coexist on this log, so the ladder pair carries the
+      // VCL prefix and Super Mario's pair carries SM. Trail Stop is the accurate name —
+      // if the trail never arms, the exit is the original stop, not a break of structure.
+      VCLMaxRun:    getProp(t, 'VCL Max Run'),
+      VCLTrailStop: getProp(t, 'VCL Trail Stop'),
+      SMMaxRun:     getProp(t, 'SM Max Run'),
+      SMTrailStop:  getProp(t, 'SM Trail Stop'),
+      L1before:     getProp(t, 'L1 before Max Run'),
+      L1after:      getProp(t, 'L1 after Max Run'),
+      RangePct:     getProp(t, 'Range %'),
+      date:         getProp(t, 'Date'),
+      // Max Adverse stays unprefixed — a single reading of the price action, not model-
+      // specific, and it is precisely what discriminates the two stops.
+      MaxAdverse:   getProp(t, 'Max Adverse'),
+      anchor:       getProp(t, '1 of Fib Price'),
       // Times are plain HHMM text plus a Timezone select — a calendar picker per row was
       // too slow to log during a session.
-      entryTime:  getProp(t, 'Entry Time (HHMM)'),
-      anchorTime: getProp(t, 'Anchor Time (HHMM)'),
-      exitTime:   getProp(t, 'Exit Time (HHMM)'),
-      tz:         getProp(t, 'Timezone'),
+      entryTime:    getProp(t, 'Entry Time (HHMM)'),
+      anchorTime:   getProp(t, 'Anchor Time (HHMM)'),
+      exitTime:     getProp(t, 'Exit Time (HHMM)'),
+      tz:           getProp(t, 'Timezone'),
     });
   }
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
