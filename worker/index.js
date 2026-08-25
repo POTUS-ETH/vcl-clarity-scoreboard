@@ -573,6 +573,10 @@ async function computeV4Futures(token) {
       SLPrice:    getProp(t, 'SL Price'),
       MaxRun:     getProp(t, 'Max Run'),
       BoSExit:    getProp(t, 'BoS Exit'),
+      // Super Mario reads its OWN excursion pair. Its trail arms earlier than the
+      // ladder's, so on the same trade these are genuinely different numbers.
+      SMMaxRun:   getProp(t, 'SM Max Run'),
+      SMBoSExit:  getProp(t, 'SM BoS Exit'),
       L1before:   getProp(t, 'L1 before Max Run'),
       L1after:    getProp(t, 'L1 after Max Run'),
       RangePct:   getProp(t, 'Range %'),

@@ -18,7 +18,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .top{border:2px solid #3b82f6;margin-bottom:12px}
 .top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.daysbadge-row{display:flex;justify-content:center;margin-bottom:10px}
+.daysbadge-row{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .daysbadge{display:inline-flex;align-items:baseline;gap:8px;padding:6px 16px;border-color:#3b82f6}
 .daysbadge .midval{font-size:16px;font-weight:700}
 .matrix{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
@@ -80,7 +80,7 @@ const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half'
   {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
 const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse.';
-const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and where it is blank the exit price is used as a floor, which can miss a stop that later recovered \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
+const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM BoS Exit</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
 let RANGE_REF='f1';
@@ -90,12 +90,21 @@ let PAIR='all';
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
 // Super Mario (VCL V5). Geometry solves from the two prices already typed: entry sits at
-// fib 0.382 of the span from fib 0 to the anchor, so fib0 = E - 0.382*range.
+// fib 0.325 of the span from fib 0 to the anchor, so fib0 = E - 0.325*range.
+// Excursions come from SM Max Run / SM BoS Exit and NEVER from the ladder's Max Run /
+// BoS Exit: the SM trail arms earlier because its levels sit nearer entry, so on the same
+// trade the two models close at different moments and their excursions are different
+// numbers. Falling back to the ladder's pair scores a trade neither model would have taken.
 function marioR(row){
-  const E=num(row.EntryPrice), A=num(row.anchor), MR=num(row.MaxRun),
-        BX=num(row.BoSExit), MA=num(row.MaxAdverse);
+  const E=num(row.EntryPrice), A=num(row.anchor), MR=num(row.SMMaxRun),
+        BX=num(row.SMBoSExit), MA=num(row.MaxAdverse);
   const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_half:null};
   if(E==null||A==null||MR==null||BX==null) return out;
+  // Max Adverse settles the tighter stop and nothing else can stand in for it. Unknown
+  // (null) leaves the row unscoreable; 0 is not "never went adverse" — Max Adverse is a
+  // PRICE, and 0 would satisfy the Long breach test and book a full loss. Both exit here
+  // rather than being assumed survived or assumed stopped.
+  if(MA==null||MA===0) return out;
   // Fib redrawn 2026-08-24 so the stop IS fib 0: entry 0.325, TP 0.65 = exactly double it.
   // Same prices as the old 0.085/0.382/0.68 labelling — they agree to 3 cents on a 77pt
   // range — but the TP now lands on 1.000R by construction rather than 1.003R.
@@ -103,9 +112,7 @@ function marioR(row){
   const dir=range>0?1:-1, stop=zero, oneR=Math.abs(E-stop);
   if(!oneR) return out;
   const R=p=>dir*(p-E)/oneR;
-  // Max Adverse is what settles the tighter stop. Falling back to the exit is a FLOOR,
-  // not a substitute: a trade that dipped through 0.085 and recovered reads as survived.
-  const stopped = MA!=null ? dir*(MA-stop)<=1e-9 : dir*(BX-stop)<=1e-9;
+  const stopped = dir*(MA-stop)<=1e-9;
   if(stopped){ for(const k in out) out[k]=-1; return out; }
   // TOL, not an epsilon. Two separate problems, one knob:
   //  1. float — a Max Run typed at exactly a target divides to 4.999999999999999.
@@ -147,7 +154,9 @@ function computeR(row){
     r.hyB = l1 ? r.f1 : r.p1;
   }
   Object.assign(r, marioR(row));   // both models on the same row; the toggle only picks keys
-  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r};
+  // raw is carried so the board can count what dropped out of scoring without either
+  // scorer having to report it — see dropCounts().
+  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, r, raw:row};
 }
 
 function applyPairFilter(){ TRADES = PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR); }
@@ -221,6 +230,36 @@ function riskList(pool){
   return html;
 }
 
+// Rows that never reach the matrix, counted for the ACTIVE model only — each model reads
+// its own excursion pair, and a row the ladder scores fine can be unscoreable for Super
+// Mario. Excluded = the inputs that model needs are blank. Invalid = Max Adverse is
+// exactly 0, which is never a legitimate reading because Max Adverse is a PRICE; it is
+// counted apart from "excluded" so a mislogged row reads as a logging fault, not a gap.
+// Ladder rows are never gated on Max Adverse — computeR() does not read it.
+function dropCounts(pool){
+  const mario = MODEL==='mario';
+  let excluded=0, invalid=0;
+  pool.forEach(t=>{
+    const raw=t.raw||{};
+    const MR=num(mario?raw.SMMaxRun:raw.MaxRun), BX=num(mario?raw.SMBoSExit:raw.BoSExit);
+    const MA=num(raw.MaxAdverse);
+    if(mario && MA===0){ invalid++; return; }              // one row, one count
+    if(MR==null||BX==null||(mario&&MA==null)) excluded++;
+  });
+  return {excluded, invalid};
+}
+function dropBadge(pool){
+  const {excluded, invalid}=dropCounts(pool);
+  if(!excluded && !invalid) return '';                     // nothing dropped, no badge
+  const parts=[];
+  if(excluded) parts.push(`<div class="midval">${excluded}</div><div class="mini">excluded</div>`);
+  if(invalid)  parts.push(`<div class="midval neg">${invalid}</div><div class="mini">invalid</div>`);
+  const tip = MODEL==='mario'
+    ? 'Excluded: SM Max Run, SM BoS Exit or Max Adverse blank. Invalid: Max Adverse logged as 0, which is not a price.'
+    : 'Excluded: Max Run or BoS Exit blank.';
+  return `<div class="card daysbadge" title="${tip}">${parts.join('<div class="mini">\u00b7</div>')}</div>`;
+}
+
 function pairMixCard(){
   const c={}; ALL_TRADES.forEach(t=>{ const p=t.pair||'—'; c[p]=(c[p]||0)+1; });
   const keys=Object.keys(c).sort();
@@ -255,7 +294,7 @@ function render(){
   const totDays=tdays(pool);
   const pairBadge = PAIR==='all' ? '' : ` <span class="pill" style="margin-left:6px">${PAIR}</span>`;
   board.innerHTML=`
-    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${totDays}</div><div class="mini">trading day${totDays===1?'':'s'} logged${pairBadge}</div></div></div>
+    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${totDays}</div><div class="mini">trading day${totDays===1?'':'s'} logged${pairBadge}</div></div>${dropBadge(pool)}</div>
     ${pairMixCard()}
     <div class="grid2">
       <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best methodology</div><div class="combo-md">${best?(MGMTS.find(m=>m.k===best.mk)||{}).label||best.mk:'—'}</div>${statBlock(best)}</div></div>
