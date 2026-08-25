@@ -75,11 +75,17 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 // Two models scored off the SAME logged row. They share the fib geometry and differ only
 // in where the stop sits and whether there is an L1 leg — so one set of typed prices
 // settles both, and neither is a counterfactual needing bar data to reconstruct.
-const MGMTS_LADDER=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'}];
+const MGMTS_LADDER=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'},
+  // Full TP @ 2R/3R/5R and 50% + N-R runner variants. Miss defaults to posExit (BoS trail),
+  // NOT SM-style -1R — the ladder always has a BoS exit whereas Mario non-TP outcomes are
+  // by definition stop-outs. Ladder rows must stay consistent with existing f1/p1.
+  // Appended, never prepended: applyModel() reads MGMTS[0].k for RANGE_REF and CAL_MGMT.
+  {k:'f2',label:'Full @2R'},{k:'f3',label:'Full @3R'},{k:'f5',label:'Full @5R'},
+  {k:'p2',label:'50% @1R + 2R runner'},{k:'p3',label:'50% @1R + 3R runner'},{k:'p5',label:'50% @1R + 5R runner'}];
 const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half',label:'50% \u2192 uncapped trail'},
   {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
-const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse.';
+const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse. Full @2R/3R/5R hold the whole position for a further target and exit on BoS if it never trades there \u2014 they never book a synthetic \u22121R. 50% + N-R runner locks half at 1R and aims the runner at the higher target; the runner exits on BoS if it doesn\u2019t trade there. Because entry-only trades run at half size, their targets sit at roughly double the distance: with L1 filled 2R/3R/5R are fib 0.828 / 1.104 / 1.656, entry-only 1.486 / 2.038 / 3.142.';
 const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM BoS Exit</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
@@ -144,7 +150,7 @@ function computeR(row){
   const avg = (E!=null&&L1!=null)?(E+L1)/2:null;
   const basisPeak = b?avg:E, posMpeak = b?1:0.5;
   const basisExit = l1?avg:E, posMexit = l1?1:0.5;
-  let r={f1:null,p1:null,hyA:null,hyB:null};
+  let r={f1:null,p1:null,hyA:null,hyB:null,f2:null,f3:null,f5:null,p2:null,p3:null,p5:null};
   if(MR!=null&&BX!=null&&iniR&&dirM!=null&&avg!=null){
     const peakR   = posMpeak*(MR-basisPeak)*dirM/iniR;
     const posExit = posMexit*(BX-basisExit)*dirM/iniR;
@@ -152,6 +158,15 @@ function computeR(row){
     r.p1 = peakR>=1 ? 0.5 + 0.5*posExit : posExit;
     r.hyA = l1 ? r.p1 : r.f1;
     r.hyB = l1 ? r.f1 : r.p1;
+    // Full TP at higher R targets — same rule as f1, further threshold, miss exits on BoS.
+    r.f2 = peakR>=2 ? 2 : posExit;
+    r.f3 = peakR>=3 ? 3 : posExit;
+    r.f5 = peakR>=5 ? 5 : posExit;
+    // 50% locks at 1R, runner targets a further R multiple — mirrors p1's structure, with
+    // the runner half capped at the target instead of trailing to BoS when the target trades.
+    r.p2 = peakR>=1 ? (peakR>=2 ? 0.5+0.5*2 : 0.5+0.5*posExit) : posExit;
+    r.p3 = peakR>=1 ? (peakR>=3 ? 0.5+0.5*3 : 0.5+0.5*posExit) : posExit;
+    r.p5 = peakR>=1 ? (peakR>=5 ? 0.5+0.5*5 : 0.5+0.5*posExit) : posExit;
   }
   Object.assign(r, marioR(row));   // both models on the same row; the toggle only picks keys
   // raw is carried so the board can count what dropped out of scoring without either
