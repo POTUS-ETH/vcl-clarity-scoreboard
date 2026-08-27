@@ -6,7 +6,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
-.wrap{max-width:980px;margin:0 auto}
+.wrap{max-width:1040px;margin:0 auto}
 .hd{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px}
 .hd h1{font-size:18px;font-weight:700;letter-spacing:.5px}
 .hd .sub{font-size:11px;color:#8b93a1}
@@ -14,10 +14,9 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
 .tg button:first-child{border-left:0}
 .tg button.on{background:#3b82f6;color:#fff}
-.card{background:#161b24;border:1px solid #232a36;border-radius:12px;padding:16px}
+.card{background:#161b24;border:1px solid #232a36;border-radius:10px;padding:16px}
 .top{border:2px solid #3b82f6;margin-bottom:12px}
 .top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
 .daysbadge-row{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
 .daysbadge{display:inline-flex;align-items:baseline;gap:8px;padding:6px 16px;border-color:#3b82f6}
 .daysbadge .midval{font-size:16px;font-weight:700}
@@ -31,7 +30,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .stats{display:flex;flex-wrap:wrap;gap:12px 18px}
 .stat .k{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#6b7280}
 .stat .v{font-size:16px;font-weight:700}
-.pos{color:#4ade80}.neg{color:#f87171}.mut{color:#6b7280}
+.pos{color:#3987e5}.neg{color:#e66767}.mut{color:#6b7280}
 .rowline{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid #232a36;font-size:12px}
 .rowline:first-of-type{border-top:0}
 .pill{font-size:10px;padding:1px 7px;border-radius:999px;background:#1e2938;color:#9dc0f6;font-weight:600}
@@ -57,6 +56,142 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .empty-note{color:#6b7280;font-size:12px;padding:6px 0}
 .err{color:#f87171;font-size:12px}
 .foot{font-size:10px;color:#6b7280;margin-top:14px;line-height:1.6}
+
+/* per-method drawer */
+.matrix .mname{display:flex;align-items:center;gap:7px;cursor:pointer}
+.chev{background:none;border:0;color:#7b8494;font:inherit;font-size:11px;cursor:pointer;padding:0;width:13px;position:relative}
+.chev::after{content:'';position:absolute;inset:-11px -7px}
+.mrow.is-open{background:#161b24}
+.matrix .cicol{font-size:11px;white-space:nowrap}
+.flag{font-size:9px;color:#e0b341;border:1px solid #e0b341;border-radius:3px;padding:0 3px;cursor:help}
+tr.dr>td{padding:0;border-bottom:1px solid #232a36;background:#12161d}
+.dr-in{padding:14px 16px 16px;display:flex;flex-direction:column;gap:13px}
+.dr-g{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+@media(max-width:760px){.dr-g{grid-template-columns:1fr}}
+.dr-b{background:#161b24;border:1px solid #232a36;border-radius:7px;padding:10px 12px}
+.dr-k{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#7b8494;margin-bottom:5px}
+.dr-b p{margin:0;font-size:11.5px;line-height:1.6;color:#c3c9d4}
+.dr-pre{font-size:10.5px;line-height:1.6;color:#7b8494;border-top:1px solid #232a36;padding-top:10px}
+/* mini calendar */
+.dr-cal{max-width:340px}
+.mc-h{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#c3c9d4;margin-bottom:6px}
+.mc-b{background:#0e1117;border:1px solid #232a36;color:#c3c9d4;border-radius:4px;cursor:pointer;font-size:10px;padding:1px 6px;margin-left:3px}
+.mc-b:disabled{opacity:.3;cursor:default}
+.mc-w7{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.mc-w7 i{font-style:normal;font-size:9px;color:#5d6675;text-align:center;letter-spacing:.5px}
+.mc-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mc-d{height:46px;border:1px solid #1d2430;border-radius:4px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:2px;background:#0e1117}
+.mc-e{border-color:transparent;background:transparent}
+.mc-n{font-size:9.5px;color:#5d6675;line-height:1}
+.mc-r{font-size:10.5px;font-weight:700;line-height:1}
+.mc-w{background:rgba(63,185,80,.14);border-color:rgba(63,185,80,.4)}
+.mc-l{background:rgba(230,103,103,.14);border-color:rgba(230,103,103,.4)}
+.mc-f{background:#161b24}
+
+/* The month grid runs full width. Cells are sized by HEIGHT, not aspect-ratio — at this
+   width a square cell would be ~120px tall and the month would not fit on screen. */
+.dd-l{max-height:300px;overflow-y:auto;padding-right:4px}
+.dd-l::-webkit-scrollbar{width:6px}
+.dd-l::-webkit-scrollbar-thumb{background:#2a3140;border-radius:3px}
+.dd-l::-webkit-scrollbar-track{background:transparent}
+@media(max-width:760px){.dr-cw{grid-template-columns:1fr}}
+.dr-cal{max-width:none}
+.dr-hint{font-size:8.5px;color:#5d6675;letter-spacing:0;text-transform:none;margin-left:6px}
+.mc-c{cursor:pointer}
+.mc-c:hover{border-color:#3b4557}
+.mc-s{outline:1.5px solid #4a90d9;outline-offset:-1.5px}
+.dd-h{display:flex;justify-content:space-between;font-size:10.5px;color:#c3c9d4;
+      padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #232a36;font-weight:700}
+.dd-t{border:1px solid #232a36;border-radius:6px;padding:8px 10px;margin-bottom:7px;background:#12161d}
+.dd-t:last-child{margin-bottom:0}
+.dd-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-size:11px}
+.dd-r{font-weight:700;font-size:12px}
+.dd-g{display:grid;grid-template-columns:auto auto auto auto auto auto;gap:4px 16px;font-size:10px;align-items:baseline;justify-content:start}
+.dd-g span{color:#7b8494}
+.dd-g b{color:#e6e8ec;font-weight:600;font-variant-numeric:tabular-nums}
+.dd-warn{margin-top:6px;font-size:10px;color:#e0b341}
+.dd-empty{font-size:11px;color:#7b8494;padding:14px 0}
+
+.matrix tr.grp th{font-size:8.5px;letter-spacing:1px;color:#5d6675;padding-bottom:2px;
+                  border-bottom:0;text-transform:uppercase;font-weight:500}
+.matrix .pathh, .matrix th.pathc{border-left:1px solid #2a3140}
+.matrix td.pathc{border-left:1px solid #1d2430;text-align:right;white-space:nowrap;font-size:11px}
+.matrix .dimc{opacity:.42}
+.mnote{font-size:10px;color:#7b8494;line-height:1.6;margin-top:9px;max-width:78ch}
+
+/* ── ported with the components above; keep in sync with v3-grant.html ── */
+.answer{border:1px solid #2a4a72;background:linear-gradient(180deg,#141d2c,#161b24);margin-bottom:10px}
+.answer .eyebrow{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#6fa3e0;margin-bottom:4px}
+.answer .policy{font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.3}
+.answer .band{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.answer .bandnum{font-size:22px;font-weight:700}
+.answer .bandci{font-size:11px;color:var(--mut)}
+.answer .curve{margin-bottom:8px}
+.answer .curve svg{display:block;width:100%;height:70px}
+.answer .caveat{font-size:11px;color:#e0b341;background:#1d1a10;border:1px solid #4a3d18;border-radius:6px;padding:7px 9px;line-height:1.5}
+.answer .stats{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap}
+.answer .stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+.answer .stat .v{font-size:14px;font-weight:700}
+.answer .policy{font-size:16px}
+.answer .bandnum{font-size:19px}
+.answer .stats{gap:11px}
+.sig{color:#4ade80;font-size:9px;font-weight:700}
+.fsub{font-size:9.5px;color:var(--mut);margin-bottom:9px;line-height:1.5}
+.ctlstrip{margin-top:8px;padding:8px 10px;background:#141a24;border-radius:8px;border:1px solid #1f2735;font-size:10.5px;line-height:1.8}
+
+.ebar{border-left:3px solid #3987e5;padding:9px 0 9px 13px;margin-bottom:14px}
+.eb1{font-size:14px;font-weight:700;letter-spacing:.6px;color:#e6e8ec}
+.eb2{font-size:10.5px;color:#7b8494;margin-top:2px}
+.warn{color:#e0b341}
+.sechd{font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;color:#5d6675;
+       margin:20px 0 9px;padding-bottom:5px;border-bottom:1px solid #232a36}
+.primhd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+        font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;color:#8b93a1}
+.primhd:hover{color:#c3c9d4}
+.primbody{margin-top:11px;display:flex;flex-direction:column;gap:9px}
+.primbody p{margin:0;font-size:11.5px;line-height:1.65;color:#c3c9d4}
+table.sp{width:100%;border-collapse:collapse;font-size:11.5px}
+table.sp th{font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:#5d6675;
+            text-align:right;padding:0 0 6px;font-weight:500}
+table.sp th:first-child{text-align:left}
+table.sp td{padding:7px 0;border-top:1px solid #1d2430}
+table.sp td.spn{text-align:right;font-variant-numeric:tabular-nums}
+
+.rline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+       padding:5px 0;border-top:1px solid #1d2430}
+.rline:first-of-type{border-top:0}
+.rl1{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px}
+.rl2{white-space:nowrap;font-size:11.5px;text-align:right}
+.card.top .stats{gap:10px 14px}
+
+
+/* The grid row is as tall as its tallest column, so the shorter card left a dead band
+   beneath it. Let the columns be flex stacks, let the answer card fill its column, and
+   push its closing caveat to the bottom — the space goes into the card instead of under it. */
+.card.answer .caveat{margin-top:auto}
+
+table.ptab{width:100%;border-collapse:collapse;font-size:11px}
+table.ptab td{padding:4px 0;border-top:1px solid #1d2430;vertical-align:baseline;white-space:nowrap}
+table.ptab tr:first-child td{border-top:0}
+table.ptab td.pm{width:99%;padding-left:7px;white-space:normal}
+table.ptab td.pr{text-align:right;padding-left:8px;font-weight:700}
+table.ptab td.pci{text-align:right;padding-left:7px;font-size:9.5px}
+table.ptab td.pn{text-align:right;padding-left:7px;font-size:9.5px}
+.ptilt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+       margin-top:11px;padding-top:8px;border-top:1px solid #232a36;font-size:11px}
+.card.top .band{margin-top:2px}
+.card.top .bandci{line-height:1.5}
+table.sp tr.sptot td{border-top:1px solid #2a3140;padding-top:8px}
+table.sp tr.sptot{color:#c3c9d4}
+/* Cards stack full width rather than sitting two-up. A tall answer card beside a short
+   session table left one column half empty and made the two boards read as different
+   products. Declared explicitly on both — this was previously a two-column grid on
+   futures and an accidentally-missing rule on crypto. */
+.grid2{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.grid2 > div{display:flex;flex-direction:column;min-width:0}
+.grid2 > div > .card.answer{flex:none;display:flex;flex-direction:column;margin-bottom:0}
+.grid2 > div > .card:last-child{margin-bottom:0}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
@@ -68,20 +203,18 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
     </div>
   </div>
   <div id="board"></div>
-  <div class="foot" id="foot"></div>
 
 </div>
 <script>
 // Two models scored off the SAME logged row. They share the fib geometry and differ only
 // in where the stop sits and whether there is an L1 leg — so one set of typed prices
 // settles both, and neither is a counterfactual needing bar data to reconstruct.
-const MGMTS_LADDER=[{k:'f1',label:'Full @1R'},{k:'p1',label:'50% @1R'},{k:'hyA',label:'Hybrid A @1R'},{k:'hyB',label:'Hybrid B @1R'},
+const MGMTS_LADDER=[{k:'f1',label:'Full TP @ 0.552 for 1R',fam:'full',short:'F1'},{k:'p1',label:'50% @ 0.552 \u2192 trail, uncapped',fam:'part',short:'P1'},{k:'hyA',label:'Hybrid A \u2014 by fill type',fam:'full',short:'HyA'},{k:'hyB',label:'Hybrid B \u2014 by fill type',fam:'part',short:'HyB'},
   // Full TP @ 2R/3R/5R and 50% + N-R runner variants. Miss defaults to posExit (BoS trail),
   // NOT SM-style -1R — the ladder always has a BoS exit whereas Mario non-TP outcomes are
   // by definition stop-outs. Ladder rows must stay consistent with existing f1/p1.
-  // Appended, never prepended: applyModel() reads MGMTS[0].k for RANGE_REF and CAL_MGMT.
-  {k:'f2',label:'Full @2R'},{k:'f3',label:'Full @3R'},{k:'f5',label:'Full @5R'},
-  {k:'p2',label:'50% @1R + 2R runner'},{k:'p3',label:'50% @1R + 3R runner'},{k:'p5',label:'50% @1R + 5R runner'}];
+  {k:'f2',label:'Full TP @ 0.828 for 2R',short:'F2'},{k:'f3',label:'Full TP @ 1.104 for 3R',short:'F3'},{k:'f5',label:'Full TP @ 1.656 for 5R',short:'F5'},
+  {k:'p2',label:'50% @ 0.552 \u2192 cap 2R for 1.5R',short:'P2'},{k:'p3',label:'50% @ 0.552 \u2192 cap 3R for 2R',short:'P3'},{k:'p5',label:'50% @ 0.552 \u2192 cap 5R for 3R',short:'P5'}];
 const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half',label:'50% \u2192 uncapped trail'},
   {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
@@ -89,8 +222,7 @@ const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Loss
 const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM Trail Stop</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
-let RANGE_REF='f1';
-let CAL_MGMT='f1', CAL_SESS='all', ALL_TRADES=[], TRADES=[], CAL_MONTH=null, calDefaulted=false;
+let ALL_TRADES=[], TRADES=[];
 let PAIR='all';
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
@@ -147,12 +279,23 @@ function marioR(row){
   if(stopped){ for(const k in out) out[k]=-1; return out; }
   const mr=R(MR), be=R(BX), tp=R(at(0.65));
   const hit=N=>mr>=N, tpHit=mr>=tp;                    // exact comparison — no TOL
-  const runner=cap=>tpHit?0.5*tp+0.5*(hit(cap)?cap:be):-1;
-  out.m_f1=hit(1)?1:-1; out.m_f2=hit(2)?2:-1; out.m_f3=hit(3)?3:-1; out.m_f5=hit(5)?5:-1;
+  // Same correction on the partial family. If the TP never printed there was no partial,
+  // so the whole position rode the trail — score the real exit. The old -1R put a full
+  // loss on trades that never lost: a row surviving its stop and trailing out at +0.26R
+  // scored -1.00R here, a 1.26R error.
+  const runner=cap=>tpHit?0.5*tp+0.5*(hit(cap)?cap:be):be;
+  // A missed target is NOT a loss. The `stopped` branch above already booked every real
+  // stop-out at -1R, so anything reaching here survived its stop and was closed on the
+  // trail — score it there. Booking -1R would assert a stop-out that never traded: on the
+  // current log 0 of 4 rows hit the SM stop, yet the old rule printed -1R in six cells.
+  // (The ladder side has always scored misses this way; this makes the two agree.)
+  // Caveat kept in view: the trail exit is a proxy. A fixed-target rule does not trail, so
+  // live this position would still be open at session end. It is the closest logged price.
+  out.m_f1=hit(1)?1:be; out.m_f2=hit(2)?2:be; out.m_f3=hit(3)?3:be; out.m_f5=hit(5)?5:be;
   // Clearing the anchor moves the stop to break-even, so the trail cannot finish negative.
   out.m_trail = mr>=R(at(1)) ? Math.max(be,0) : be;
   out.m_cap3=runner(3); out.m_cap5=runner(5);
-  out.m_half = tpHit ? 0.5*tp+0.5*be : -1;
+  out.m_half = tpHit ? 0.5*tp+0.5*be : be;
   return out;
 }
 
@@ -204,7 +347,103 @@ function computeR(row){
   return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', r, raw:row};
 }
 
-function applyPairFilter(){ TRADES = PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR); }
+function applyPairFilter(){ TRADES = decorate(PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR)); }
+
+// ── stats engine, shared verbatim with the crypto board ──────────────────────
+// Futures previously had no interval of any kind: stats() returned n/wins/wr/exp/total.
+// The board with 4 trades on one day had none of the hedging the 28-trade board has.
+const TTAB={2:4.303,3:3.182,4:2.776,5:2.571,6:2.447,7:2.365,8:2.306,9:2.262,10:2.228,11:2.201,12:2.179,13:2.160,14:2.145,15:2.131,16:2.120,17:2.110,18:2.101,19:2.093,20:2.086,21:2.080,22:2.074,23:2.069,24:2.064,25:2.060,26:2.056,27:2.052,28:2.048,29:2.045,30:2.042};
+const tCrit=df=>df<2?12.7:df>30?1.96:TTAB[df];
+const mean_=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const sd_=a=>{if(a.length<2)return 0;const m=mean_(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+function ci95(series){
+  const a=series.filter(x=>x!=null), n=a.length;
+  if(!n) return {n:0,mean:null,lo:null,hi:null,degenerate:false};
+  const m=mean_(a), sdv=sd_(a), se=n>1?sdv/Math.sqrt(n):0, t=tCrit(n-1);
+  // A zero-width interval is NOT confidence — it is every observation landing on the same
+  // number. At n=4 that is four identical readings, which must never outrank a method
+  // whose interval is honest about its spread.
+  return {n, mean:m, se, lo:m-t*se, hi:m+t*se, degenerate:n>1&&sdv===0};
+}
+function fullStats(series){
+  const c=ci95(series);
+  const wins=series.filter(x=>x>0.005).length, losses=series.filter(x=>x<-0.005).length;
+  const scratches=series.length-wins-losses;
+  let run=0,ws=0; for(const x of series){ if(x>0.005){run++; if(run>ws)ws=run;} else run=0; }
+  return {...c, wins, losses, scratches, winStreak:ws, winRate:(wins+losses)?wins/(wins+losses):0,
+          total:series.reduce((a,b)=>a+b,0), dd:maxDrawdown(series), streak:maxLossStreak(series).len||0};
+}
+
+// ── per-method copy ──────────────────────────────────────────────────────────
+// `what` is the rule. `test` is the line that was missing everywhere: which logged field
+// settles this outcome, at which level, and what happens on a miss. A reader cannot judge
+// a number without knowing what produced it.
+const LADDER_PREAMBLE='Two limit orders: entry at fib 0.382, L1 at 0.17, stop at fib 0. <b>1R is always the full two-fill ladder risk</b> — 0.552 of the range — whether or not L1 filled. Entry-only trades are on at half size, so every target sits at roughly double the distance. Because L1 sits between entry and stop, price cannot reach the stop without filling L1 first, so a stop-out is always a full −1R.';
+const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.975, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
+const METHOD_INFO={
+  f1:{what:'Close the entire position the moment price trades 1R in profit. If it never does, the trade exits wherever the break-of-structure trail actually took it.',
+      test:'Gated by <b>VCL Max Run</b> against fib 0.552 (L1 filled) or 0.934 (entry-only). On a miss, scored at the <b>logged VCL Trail Stop</b> — a hand-read price, not a computed level.',
+      fail:'Caps every winner at exactly +1R, so a 6R trade and a 1R trade score identically. It tells you nothing about the tail.'},
+  f2:{what:'Same rule held to 2R: fib 0.828 with L1 filled, 1.486 entry-only.',
+      test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>, never a synthetic −1R.',
+      fail:'On any trade that misses 2R this row is identical to Full @3R and @5R — three of four live trades score the same in all three columns.'},
+  f3:{what:'Whole position held to 3R: fib 1.104 with L1 filled, 2.038 entry-only.',
+      test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>.',
+      fail:'Same fate-sharing as Full @2R, and at four trades its entire lead comes from one trade that ran 6.6R.'},
+  f5:{what:'Whole position held to 5R: fib 1.656 with L1 filled, 3.142 entry-only.',
+      test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>.',
+      fail:'Ranks top on raw expectancy off a single trade. Remove that trade and it ranks below Full @1R — and its interval is the widest on the board.'},
+  p1:{what:'Bank half at 1R, then let the remainder ride the BoS trail with no further target. If 1R never trades, nothing is banked and the whole position is scored at the trail exit.',
+      test:'Gated by <b>VCL Max Run</b> for the partial, then <b>entirely by the logged VCL Trail Stop</b> for the runner.',
+      fail:'The runner is not floored at break-even, so a trade that reaches 1R and gives it all back books 0.5 plus half a negative number.'},
+  p2:{what:'Bank half at 1R, aim the remaining half at 2R rather than trailing indefinitely.',
+      test:'Gated by <b>VCL Max Run</b> twice, and by the <b>logged VCL Trail Stop</b> on a runner miss.',
+      fail:'Half size at 2R pays +1.50R at most — the name is the runner’s target, not the result. Identical to 50% @1R on any trade clearing 1R but not 2R.'},
+  p3:{what:'Bank half at 1R, runner aimed at 3R.',
+      test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
+      fail:'Delivers +2.00R at most, not 3R. Distinguishable from 50% @1R only on trades running past 3R — one in four here.'},
+  p5:{what:'Bank half at 1R, runner aimed at 5R.',
+      test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
+      fail:'Delivers +3.00R at most, not 5R, and its rank rests on the single 6.6R trade.'},
+  hyA:{what:'Picks the exit per trade by how the ladder filled: L1 filled → 50% @1R with a runner; entry-only → Full @1R. The V3 live default.',
+      test:'Gated by the <b>L1-fill flag</b> — derived by measuring <b>Max Adverse</b> against the L1 price — then by VCL Max Run and the logged trail exit.',
+      fail:'The only rows whose value turns on a derived flag rather than a measured price. A wrong L1 call moves a row by up to 4R.'},
+  hyB:{what:'The inverse of Hybrid A: L1 filled → Full @1R; entry-only → 50% @1R with a runner. It exists as A’s control.',
+      test:'Same gates as Hybrid A.',
+      fail:'Splits an already-small sample into two thinner ones. At n=4 that is one trade against three.'},
+  m_f1:{what:'Close the whole position at the TP, fib 0.65.',
+      test:'Gated by <b>SM Max Run</b> against the TP, with <b>Max Adverse</b> settling the stop-out first.',
+      fail:'The TP is exactly 1R away, so expectancy here is nothing but 2 × win% − 1. It carries no information beyond the win rate, and discards the entire tail.'},
+  m_f2:{what:'Whole position off at 2R, fib 0.975 — just inside the anchor.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first. A miss is scored at the real trail exit, not a synthetic loss.',
+      fail:'Shares its fate with 3R and 5R on any trade that misses 2R.'},
+  m_f3:{what:'Whole position off at 3R, fib 1.30.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
+      fail:'Only a minority of trades ever reach it, so it spends most of its life at or below break-even.'},
+  m_f5:{what:'Whole position off at 5R, fib 1.95 — well past the golden-ratio extension.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
+      fail:'Reached rarely. Its drawdown is a property of the target choice, not of the stop.'},
+  m_trail:{what:'No partial, no ceiling. Hold full size; once price clears the anchor at 2.077R the stop moves to break-even, so the trade cannot finish negative from there. Exit wherever the BoS trail took it.',
+      test:'Gated by <b>SM Max Run</b> for the break-even arming, then <b>entirely by the logged trail exit</b> — a hand-read chart judgement, not a level.',
+      fail:'Cannot be reproduced from the logged row. It inherits whatever the reader’s swing-high discretion was that session.'},
+  m_cap3:{what:'Bank half at the TP (worth 0.5R), stop to break-even, run the remaining half to fib 1.30 and close it there.',
+      test:'Gated by <b>SM Max Run</b> for the partial and the cap; if 1.30 never prints the runner is scored at the <b>logged trail exit</b>.',
+      fail:'Half size at 3R pays +2.00R, not 1.30R — the name is the chart level, not the payout, and it sits in a table of R figures.'},
+  m_cap5:{what:'The same, capped at fib 1.95: half at the TP plus half at 5R.',
+      test:'Identical gates — SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Pays +3.00R maximum, not 1.95R. Differs from cap 1.30 only on trades running past 3R.'},
+  m_half:{what:'The incumbent, and the control the capped variants are measured against: half off at the TP, stop to break-even, then let the BoS trail run with no target.',
+      test:'Gated by <b>SM Max Run</b> for the partial, then <b>entirely by the logged trail exit</b> for the runner.',
+      fail:'A hand-read exit that cannot be rebuilt from the logged prices — and it is the baseline, which is where reader drift does the most damage.'},
+};
+
+// ── THE SEAM ─────────────────────────────────────────────────────────────────
+// The only structural difference between this board and the crypto one. Futures nests
+// outcomes under t.r (the widget computes both models itself); crypto reads them straight
+// off the trade (Notion formulas wrote them). Everything else above and below is identical
+// code in both files — keep it that way or the boards drift apart again.
+//   crypto:  const RV=(t,k)=>t[k];
+const RV=(t,k)=>(t&&t.r)?t.r[k]:null;
 
 function serFor(mgmt,pool){ return pool.map(t=>t.r[mgmt]).filter(r=>r!=null); }
 function stats(series){ const n=series.length; if(!n) return {n:0};
@@ -214,67 +453,570 @@ function maxLossStreak(series){ let run=0,len=0,worst=0,worstLen=0;
   for(const r of series){ if(r<0){run+=r;len++;if(run<worst){worst=run;worstLen=len;}} else {run=0;len=0;} }
   return {dd:Math.abs(worst), len:worstLen}; }
 function maxDrawdown(series){ let cum=0,peak=0,mdd=0; for(const r of series){ cum+=r; if(cum>peak)peak=cum; const dd=peak-cum; if(dd>mdd)mdd=dd; } return mdd; }
-function mgmtStat(mk,pool){ const s=stats(serFor(mk,pool)); s.mk=mk; s.mls=maxLossStreak(serFor(mk,pool)); return s; }
 function bestOf(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.exp-a.exp)[0]; }
-function bestByTotal(list){ const v=list.filter(s=>s.n>0); if(!v.length) return null; return v.sort((a,b)=>b.total-a.total)[0]; }
-function bestMethod(rows){ let best=null; MGMTS.forEach(m=>{ const s=stats(rows.map(t=>t.r[m.k]).filter(x=>x!=null)); if(s.n>0 && (!best||s.exp>best.exp)) best={mk:m.k,label:m.label,n:s.n,exp:s.exp,tot:s.total,wr:s.wr}; }); return best; }
+// Ranking by total R rewards whichever method was scored on more trades — a volume
+// artifact, not an edge. It agreed with bestOf() only because every session happened to
+// hold exactly 2 trades; at unequal n they diverge and the board prints two different
+// "best method" for one session. One ranking rule, by expectancy, everywhere.
+const bestByTotal = bestOf;
+// Same rule as the answer card and the matrix: lower bound of the 95% interval, with a
+// zero-variance interval barred from winning. This card used to rank by raw expectancy,
+// which is why it kept naming a method the rest of the board had just ranked last.
+function bestMethod(rows){
+  let best=null;
+  // Reads through MGMT + RV, never t.r[m.k]: that shape is one board's, and this function
+  // runs on both.
+  MGMT.forEach(m=>{
+    const s=fullStats(rows.map(t=>RV(t,m.key)).filter(x=>x!=null));
+    if(!s.n) return;
+    if(!best || rankKey(s) > rankKey(best.s))
+      best={mk:m.key,label:m.name,n:s.n,exp:s.mean,lo:s.lo,hi:s.hi,deg:s.degenerate,tot:s.total,wr:s.winRate,s};
+  });
+  return best; }
 const SESS_ORDER=['Asia','Frankfurt','London','NY AM','NY','NY PM','Late'];
 function sessRank(s){ const i=SESS_ORDER.indexOf(s); return i<0?99:i; }
 function recoMap(pool){ const map={};
   [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{ const b=bestMethod(pool.filter(t=>t.session===se)); if(b) map[se]={mk:b.mk}; });
   return map; }
-function recoSeries(pool){ const m=recoMap(pool); return pool.map(t=>{ const p=m[t.session]; return p?t.r[p.mk]:null; }).filter(x=>x!=null); }
+function recoSeries(pool){ const m=recoMap(pool); return pool.map(t=>{ const p=m[t.session]; return p?RV(t,p.mk):null; }).filter(x=>x!=null); }
 function recoCard(pool){
   const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
   const rx=sessions.map(se=>({se,b:bestMethod(pool.filter(t=>t.session===se))})).filter(x=>x.b).sort((a,b)=>sessRank(a.se)-sessRank(b.se));
   const rser=recoSeries(pool), rs=stats(rser), rdd=maxDrawdown(rser), rmls=maxLossStreak(rser);
-  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 Session prescription</div><div class="empty-note">No trades yet.</div></div>`;
+  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div><div class="empty-note">No trades yet.</div></div>`;
   let sess='';
   rx.forEach(x=>{ const weak=x.b.exp<0.2, thin=x.b.n<5;
-    sess+=`<div class="rowline"><span><span class="pill">${x.se}</span> → <b>${x.b.label}</b>${weak?' <span class="mini" style="color:#e0b341">· weak</span>':''}${thin?' <span class="mini">· thin</span>':''}</span><span class="${cls(x.b.exp)}">${fR(x.b.exp)} <span class="mini">${Math.round(x.b.wr*100)}% · n${x.b.n}</span></span></div>`; });
-  const L=stats(pool.filter(t=>t.dir==='Long').map(t=>t.r.hyA).filter(x=>x!=null));
-  const S=stats(pool.filter(t=>t.dir==='Short').map(t=>t.r.hyA).filter(x=>x!=null));
-  let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="lbl" style="margin:14px 0 6px">Tilt</div><div class="rowline"><span>Direction</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
-  const recoStats=`<div class="stats" style="margin:6px 0 2px">
-    <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(rs.exp)}">${fR(rs.exp)}</div></div>
-    <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(rs.wr*100)}%</div></div>
-    <div class="stat"><div class="k">Total R</div><div class="v ${cls(rs.total)}">${fR(rs.total)}</div></div>
-    <div class="stat"><div class="k">Risk of ruin</div><div class="v neg">-${rdd.toFixed(2)}R <span class="mini">${rmls.len}× streak</span></div></div>
-  </div><div class="mini" style="margin-bottom:4px">If each session ran its prescribed exit exclusively · n${rs.n}</div>`;
-  return `<div class="card top" style="margin-bottom:12px"><div class="crown">🎯 Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 6px">By session, in order</div>${sess}${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
+    sess+=`<tr><td><span class="pill">${x.se}</span></td>
+      <td class="pm">${x.b.label}${weak?' <span class="mini" style="color:#e0b341">weak</span>':''}${thin?' <span class="mini">thin</span>':''}</td>
+      <td class="pr ${cls(x.b.exp)}">${fR(x.b.exp)}</td>
+      <td class="pci mut">${x.b.deg?'<span class="flag">±0</span>':`[${fR(x.b.lo)}, ${fR(x.b.hi)}]`}</td>
+      <td class="pn mut">n${x.b.n}</td></tr>`; });
+  // Tilt is measured on whatever method currently leads, not a hardcoded one — `hyA`
+  // does not exist on the crypto board.
+  const tk=(leaderOf(pool)||{}).best, TK=tk?tk.m.key:(MGMT[0]||{}).key;
+  const dirOf=t=>t.dir||t.Direction;
+  const L=stats(pool.filter(t=>dirOf(t)==='Long').map(t=>RV(t,TK)).filter(x=>x!=null));
+  const S=stats(pool.filter(t=>dirOf(t)==='Short').map(t=>RV(t,TK)).filter(x=>x!=null));
+  let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="ptilt"><span class="lbl">Direction tilt</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
+  // Reported as a DELTA against simply running the leader throughout. As its own headline
+  // number it competed with the answer card and lost, which read as a second opinion
+  // rather than as the answer to the question it actually asks: is switching by session
+  // worth anything over not switching?
+  const LD=leaderOf(pool), lead=LD?LD.best:null, leadExp=lead?lead.s.mean:null;
+  const delta = (leadExp!=null && rs.exp!=null) ? rs.exp-leadExp : null;
+  const verdict = delta==null ? ''
+    : Math.abs(delta)<0.05 ? 'no different from not switching at all'
+    : delta>0 ? `better than <b>${lead.m.name}</b> alone`
+              : `<b>worse</b> than <b>${lead.m.name}</b> alone`;
+  const recoStats=`<div class="band" style="margin:4px 0 2px">
+      <div class="bandnum ${delta==null?'mut':cls(delta)}">${delta==null?'—':(delta>=0?'+':'')+delta.toFixed(2)+'R'}</div>
+      <div class="bandci">per trade vs the leader · ${verdict}</div></div>
+    <div class="mini" style="margin-bottom:6px">${fR(rs.exp)} switching · ${leadExp==null?'—':fR(leadExp)} not switching · n${rs.n}</div>`;
+  return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 5px">By session, in order</div><table class="ptab">${sess}</table>${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
-function mgmtLabel(k){ if(k==='reco') return 'Strategic Rec'; return (MGMTS_LADDER.concat(MGMTS_MARIO).find(m=>m.k===k)||{}).label||k; }
+function normalizeMethods(){
+  MGMT = MGMTS.map(m=>{ const i=METHOD_INFO[m.k]||{};
+    return {...m, key:m.k, name:m.label, short:m.short||m.label,
+            lvl:m.lvl||'', desc:i.what||''}; });
+}
+function seriesFor(prop,pool){ return pool.map(t=>RV(t,prop)).filter(v=>v!=null&&!isNaN(v)); }
+function statsFor(prop,pool){ return fullStats(seriesFor(prop,pool)); }
+function paired(a,b,pool){
+  const d=[]; pool.forEach(t=>{const x=RV(t,a),y=RV(t,b); if(x!=null&&y!=null) d.push(y-x);});
+  return ci95(d);
+}
+// Attach the flat fields the ported chart code reads. Called once per filter pass.
+function decorate(pool){
+  const mario = MODEL==='mario';
+  pool.forEach(t=>{
+    const w=t.raw||{}, d=w.Direction==='Long'?1:-1;
+    t.Direction=w.Direction; t.entry=num(w.EntryPrice);
+    t.maxRun = num(mario ? w.SMMaxRun : w.VCLMaxRun);
+    let oneR=null;
+    if(mario){ const A=num(w.anchor), E=t.entry;
+      if(A!=null&&E!=null){ const rng=(A-E)/0.675; oneR=Math.abs(0.325*rng); } }
+    else { const E=t.entry, L1=num(w.L1Price), SL=num(w.SLPrice);
+      if(E!=null&&L1!=null&&SL!=null) oneR=Math.abs((E+L1)/2-SL); }
+    t.stop = (oneR&&t.entry!=null) ? t.entry - d*oneR : null;
+  });
+  return pool;
+}
 
-function statBlock(s){ if(!s||!s.n) return '<div class="empty-note">No trades yet.</div>';
-  return `<div class="stats">
-    <div class="stat"><div class="k">Expectancy</div><div class="v ${cls(s.exp)}">${fR(s.exp)}</div></div>
-    <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.wr*100)}%</div></div>
-    <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
-    <div class="stat"><div class="k">Trades</div><div class="v">${s.n}</div></div>
-  </div>`; }
+function equityCurveSVG(series, w, h){
+  w=w||300; h=h||44;
+  if(!series.length) return `<svg viewBox="0 0 ${w} ${h}"><line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" stroke="var(--zero)" stroke-width="1"/><text x="4" y="${h/2+4}" fill="#3d4553" font-size="10">no data</text></svg>`;
+  const cum=[0]; series.forEach(r=>cum.push(cum[cum.length-1]+r));
+  const minV=Math.min(0,...cum), maxV=Math.max(0,...cum);
+  const range=(maxV-minV)||1, n=cum.length-1;
+  const pad=3;
+  const px=i=>(i/n)*w;
+  const py=v=>pad+(1-(v-minV)/range)*(h-2*pad);
+  const base=py(0);
+  const pts=cum.map((v,i)=>({x:px(i), y:py(v), v}));
+  const segs=[];
+  let seg=[pts[0]], segSign=pts[0].v<0?'neg':'pos';
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1], b=pts[i];
+    if((a.v<0&&b.v>0)||(a.v>0&&b.v<0)){
+      const t=a.v/(a.v-b.v);
+      const cross={x:a.x+(b.x-a.x)*t, y:base, v:0};
+      seg.push(cross);
+      segs.push({pts:seg, sign:segSign});
+      segSign=b.v<0?'neg':'pos';
+      seg=[cross,b];
+    } else {
+      seg.push(b);
+      if(b.v<0) segSign='neg'; else if(b.v>0) segSign='pos';
+    }
+  }
+  segs.push({pts:seg, sign:segSign});
+  const COL={pos:'#3fb950', neg:'var(--neg)'};
+  const gid='eqg'+(_eqSeq++);
+  const defs=`<defs>
+    <linearGradient id="${gid}p" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.pos}" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="${COL.pos}" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="${gid}n" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${COL.neg}" stop-opacity="0"/>
+      <stop offset="100%" stop-color="${COL.neg}" stop-opacity="0.32"/>
+    </linearGradient>
+  </defs>`;
+  let body='';
+  segs.forEach(s=>{
+    if(s.pts.length<2) return;
+    const line=s.pts.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const first=s.pts[0], last=s.pts[s.pts.length-1];
+    const area=`${line} L${last.x.toFixed(1)},${base.toFixed(1)} L${first.x.toFixed(1)},${base.toFixed(1)} Z`;
+    body += `<path d="${area}" fill="url(#${gid}${s.sign==='pos'?'p':'n'})" stroke="none"/><path d="${line}" fill="none" stroke="${COL[s.sign]}" stroke-width="1.5"/>`;
+  });
+  return `<svg viewBox="0 0 ${w} ${h}">
+    ${defs}
+    <line x1="0" y1="${base.toFixed(1)}" x2="${w}" y2="${base.toFixed(1)}" stroke="var(--zero)" stroke-width="1"/>
+    ${body}
+  </svg>`;
+}
+const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
 
+let _eqSeq=0;
+
+// ── PORTED VERBATIM FROM v3-grant.html — do not edit here without editing there ──
+function verdictLine(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return '';
+  rows.sort((a,b)=>b.s.mean-a.s.mean);
+  const sig=rows.filter(r=>r.s.lo>0);
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  const n=rows[0].s.n;
+  const width=rows[0].s.hi-rows[0].s.lo;
+  const spread=rows[0].s.mean-rows[Math.min(3,rows.length-1)].s.mean;
+  const head = sig.length
+    ? `${n} TRADES · ${days} DAY${days===1?'':'S'} · ${sig.length} OUTCOME${sig.length===1?'':'S'} CLEAR ZERO`
+    : `${n} TRADES · ${days} DAY${days===1?'':'S'} · NOTHING SEPARATES YET`;
+  const body = sig.length
+    ? `${sig.map(r=>r.m.name).join(', ')} hold${sig.length===1?'s':''} above zero at 95%. Everything else is still a lean.`
+    : `The top four land within ${fR(spread)} of each other, and this board resolves about ${'±'+ (width/2).toFixed(1)}R. No change indicated — keep the trail.`;
+  return `<div style="border-left:2px solid var(--closeable);padding:2px 0 2px 10px;margin-bottom:11px">
+    <div style="font-size:15px;font-weight:700;color:var(--ink);letter-spacing:.3px">${head}</div>
+    <div style="font-size:11px;color:var(--mut);line-height:1.5;margin-top:2px">${body}</div></div>`;
+}
+
+// One definition of the leader, used by every card that needs it. Ranked on the lower
+// bound of the 95% interval; a zero-variance interval is every trade scoring the same
+// number and cannot take the top spot. Previously the answer card and the prescription
+// card each had their own rule and named different methods on the same screen.
+// Ranking key. A zero-variance sample is NOT unrankable — every trade landing on the same
+// number means the observed spread is zero, so the best estimate of the lower bound is the
+// mean itself. Barring it outright (the earlier rule) handed session picks to strictly
+// worse methods: in Asia it preferred 50% @1R at +0.65R over Full @1R at +1.00R purely
+// because the better one had no spread. The ±0 flag still marks it, because zero observed
+// variance in 2-4 binary outcomes is a short streak, not consistency.
+const rankKey = s => s.degenerate ? (s.mean ?? -999) : (s.lo ?? -999);
+
+// Ranking, tie-aware. The lower bound decides who is in contention — it penalises an
+// edge that rests on one outlier. But it must not DECIDE between methods the data cannot
+// separate: on the crypto log it put `cap 1.95` above `uncapped trail` on a 0.0198R
+// difference in lower bound, while a paired test of the two on the same trades returned
+// [-0.152, +0.249] — no separation at all. So: take the best lower bound, gather everything
+// statistically tied with it (paired difference straddling zero), and order that group by
+// expectancy. Ties resolve on the number a reader is actually comparing.
+function rankRows(rows, pool){
+  if(rows.length<2) return rows;
+  const sorted=[...rows].sort((a,b)=>rankKey(b.s)-rankKey(a.s));
+  const head=sorted[0];
+  // TWO conditions, not one. A paired test alone is not enough: at small n nothing
+  // separates from anything, the "tied" group becomes every method, and ordering it by
+  // expectancy silently degrades into ranking by expectancy — which puts the widest,
+  // most outlier-driven method on top. On the 4-trade futures log that returned
+  // Full TP @ 5R, interval [-2.02, +5.26], to first place.
+  // So a method is tied only if it ALSO sits within a trading-meaningful distance of the
+  // head on the ranking key. 0.10R: below that the two are the same trade in practice.
+  const TIE_R = 0.10;
+  const tied=sorted.filter(r=>{
+    if(r===head) return true;
+    if(Math.abs(rankKey(head.s)-rankKey(r.s)) > TIE_R) return false;
+    const p=paired(head.m.key, r.m.key, pool);
+    return !(p.n>0 && (p.lo>0 || p.hi<0));     // close AND not separated => tied
+  });
+  tied.sort((a,b)=>(b.s.mean??-999)-(a.s.mean??-999));
+  return tied.concat(sorted.filter(r=>!tied.includes(r)));
+}
+
+function leaderOf(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return null;
+  const order=rankRows(rows,pool);
+  return {best:order[0], up:order[1], order};
+}
+
+function winnerCard(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return '';
+  // Same rule as the matrix: lower bound of the interval, and a zero-width interval
+  // cannot take the top spot. Ranking this card by mean while the table below it ranks by
+  // lower bound would put two different winners on one screen.
+  const L=leaderOf(pool); const best=L.best, up=L.up, order=L.order, s=best.s;
+  const beatsZero = s.lo>0;
+  const margin = up ? paired(up.m.key,best.m.key,pool) : null;
+  const beatsNext = margin && margin.n>0 && margin.lo>0;
+  const solid = beatsZero && beatsNext;
+  const ties = rows.slice(1).filter(r=>{
+    const p=paired(best.m.key,r.m.key,pool); return p.n>0 && !(p.lo>0);
+  });
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  return `<div class="card answer">
+    <div class="eyebrow">${solid?'Leader — clears zero and beats the runner-up':'Leading so far — not yet a separation'}</div>
+    <div class="policy">${best.m.name} <span class="mut" style="font-size:12px;font-weight:400">${best.m.lvl}</span></div>
+    <div class="band"><div class="bandnum ${cls(s.mean)}">${fR(s.mean)}</div>
+      <div class="bandci">expectancy · 95% CI [${fR(s.lo)}, ${fR(s.hi)}] · n${s.n} over ${days} day${days===1?'':'s'}
+      ${beatsZero?'<span class="sig">clears zero</span>':'<span class="mut">· interval still crosses zero</span>'}</div></div>
+    <div class="curve">${equityCurveSVG(seriesFor(best.m.key,pool),600,70)}</div>
+    <div class="fsub">${best.m.desc}</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
+      <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
+      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
+      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak}</div></div>
+      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak}</div></div>
+      <div class="stat"><div class="k">Trading days</div><div class="v mut">${days}</div></div>
+    </div>
+    ${up?`<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${up.m.name}</b> at ${fR(up.s.mean)} — leader is ahead by
+      <b class="${margin.n?cls(margin.mean):''}">${margin.n?fR(margin.mean):'—'}</b> paired${beatsNext?' <span class="sig">significant</span>':' · not significant'}.</div>`:''}
+    ${solid?'':`<div class="caveat" style="margin-top:9px">
+      <b>Read this as a lean, not a verdict.</b> ${ties.length?`Statistically tied with: ${ties.map(t=>t.m.name).join(', ')}. `:''}
+      ${beatsZero?'The leader clears zero on its own, but its margin over the runner-up does not — those are different claims.':'The leader\'s own interval still includes zero.'}</div>`}
+  </div>`;
+}
+
+function reachLadderSVG(pool){
+  // Above ~24 trades the per-trade bars stop being readable, so the same data is
+  // drawn as a survival curve instead: what share of trades reached at least X R.
+  // Same information, and it gets MORE legible as n grows rather than less.
+  // Always the survival curve — POTUS chose one format for both boards, and it is the
+  // one that gets MORE legible as n grows. The per-trade bar variant is retired.
+  return reachCurveSVG(pool);
+  const dirOf=t=>t.Direction==='Long'?1:-1;
+  const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
+    return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
+  const rows=pool.map(t=>({t,r:rOf(t)})).filter(x=>x.r!=null);
+  if(!rows.length) return '';
+  const W=1000,H=250,padL=6,padR=138,padT=22,padB=36;
+  const maxR=Math.max(5.6,...rows.map(x=>x.r))*1.06, minR=-1.7;
+  const pw=W-padL-padR, ph=H-padT-padB;
+  const y=r=>padT+(1-(r-minR)/(maxR-minR))*ph;
+  const n=rows.length, slot=pw/n, bw=Math.min(46,slot*0.54);
+  const LV=[{r:1,f:'0.65'},{r:2,f:'0.975'},{r:3,f:'1.30'},{r:5,f:'1.95'}];
+  const zero=y(0);
+
+  let grid='';
+  LV.forEach(l=>{
+    const hits=rows.filter(x=>x.r>=l.r).length, yy=y(l.r);
+    grid+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR+6).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
+       +  `<text x="${W-padR+13}" y="${(yy+3.5).toFixed(1)}" font-size="11" fill="#8b93a1">`
+       +  `<tspan font-weight="700" fill="#c3c9d4">${l.r}R</tspan>  fib ${l.f}  `
+       +  `<tspan font-weight="700" fill="${hits?'#e6e8ec':'#4a5568'}">${hits}/${rows.length}</tspan></text>`;
+  });
+
+  let bars='';
+  rows.forEach((x,i)=>{
+    const cx=padL+slot*i+slot/2, win=x.r>0;
+    const top=y(Math.max(x.r,0)), bot=y(Math.min(x.r,0));
+    const col=win?'#3fb950':'var(--neg)';
+    bars+=`<rect x="${(cx-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}" fill="${col}" fill-opacity="0.20"/>`
+       +  `<line x1="${(cx-bw/2).toFixed(1)}" y1="${(win?top:bot).toFixed(1)}" x2="${(cx+bw/2).toFixed(1)}" y2="${(win?top:bot).toFixed(1)}" stroke="${col}" stroke-width="2"/>`
+       +  `<text x="${cx.toFixed(1)}" y="${(win?top-5:bot+12).toFixed(1)}" font-size="10" font-weight="700" fill="${col}" text-anchor="middle">${(x.r>=0?'+':'')+x.r.toFixed(2)}R</text>`;
+    const dt=(x.t.date||'').slice(5), ses=(x.t.Session||'').replace('London','Ldn').replace('NY AM','NYam').replace('NY PM','NYpm');
+    bars+=`<text x="${cx.toFixed(1)}" y="${(H-padB+14).toFixed(1)}" font-size="8.5" fill="#8b93a1" text-anchor="middle">${dt}</text>`
+       +  `<text x="${cx.toFixed(1)}" y="${(H-padB+24).toFixed(1)}" font-size="8.5" fill="#6b7280" text-anchor="middle">${ses}</text>`;
+    // a visible seam wherever the log jumps to a different day — clustering you can see
+    if(i>0 && rows[i-1].t.date && x.t.date && rows[i-1].t.date!==x.t.date){
+      const dx=(padL+slot*i).toFixed(1);
+      bars+=`<line x1="${dx}" y1="${padT-6}" x2="${dx}" y2="${H-padB+2}" stroke="#3d4553" stroke-width="1" stroke-dasharray="2 3"/>`;
+    }
+  });
+
+  return `<div class="card" style="padding:12px 14px 8px">
+    <div class="lbl">How far each trade actually ran — and what each exit level would have caught</div>
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+      ${grid}
+      <line x1="${padL}" y1="${zero.toFixed(1)}" x2="${(W-padR+6).toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#5a6478" stroke-width="1.5"/>
+      ${bars}
+    </svg>
+    <div class="fsub" style="margin:6px 0 0">Every outcome on this board is this one picture read at a different height. The levels do not fail independently — a trade that misses 3R misses 5R too — so two outcomes agreeing is not two pieces of evidence.</div>
+  </div>`;
+}
+
+function reachCurveSVG(pool){
+  const dirOf=t=>t.Direction==='Long'?1:-1;
+  const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
+    return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
+  const rs=pool.map(rOf).filter(v=>v!=null).sort((a,b)=>a-b);
+  if(!rs.length) return '';
+  const W=1000,H=230,padL=52,padR=130,padT=20,padB=34;
+  const maxR=Math.max(6,rs[rs.length-1])*1.05, minR=Math.min(-1.5,rs[0]);
+  const pw=W-padL-padR, ph=H-padT-padB;
+  const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
+  const surv=r=>rs.filter(v=>v>=r).length/rs.length;
+  let path='';
+  for(let i=0;i<=160;i++){
+    const r=minR+(maxR-minR)*i/160;
+    path+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(r)).toFixed(1);
+  }
+  let grid='';
+  [1,2,3,5].forEach((N,i)=>{
+    const f=['0.65','0.975','1.30','1.95'][i], p=surv(N);
+    grid+=`<line x1="${x(N).toFixed(1)}" y1="${padT-4}" x2="${x(N).toFixed(1)}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
+       +  `<circle cx="${x(N).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.5" fill="#3fb950"/>`
+       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
+       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
+       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(p)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(p*100)}%</text>`;
+  });
+  let yax='';
+  [0,0.25,0.5,0.75,1].forEach(p=>{
+    yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
+      +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
+  });
+  return `<div class="card" style="padding:12px 14px 8px">
+    <div class="lbl">Reach curve — share of trades that ran at least this far (n=${rs.length})</div>
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+      ${yax}${grid}
+      <path d="${path}" fill="none" stroke="#3fb950" stroke-width="2"/>
+      <text x="${W-padR+12}" y="${padT+10}" font-size="10" fill="#8b93a1">median run</text>
+      <text x="${W-padR+12}" y="${padT+24}" font-size="13" font-weight="700" fill="#e6e8ec">${rs[Math.floor(rs.length/2)].toFixed(2)}R</text>
+    </svg>
+    <div class="fsub" style="margin:6px 0 0">Each dot is one exit level: how often price reached it at all. Every outcome on this board is a point on this curve weighed against what it pays.</div>
+  </div>`;
+}
+
+function intervalStripSVG(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return '';
+  rows.sort((a,b)=>b.s.mean-a.s.mean);
+  const W=1000,labW=196,valW=66,padT=20,padB=20,rh=17;
+  const H=padT+padB+rows.length*rh;
+  const lo=Math.min(-1.3,...rows.map(r=>r.s.lo)), hi=Math.max(1.3,...rows.map(r=>r.s.hi));
+  const pw=W-labW-valW, x=v=>labW+(v-lo)/(hi-lo)*pw;
+  const lead=rows[0].s;
+
+  let ticks='';
+  for(let v=Math.ceil(lo);v<=Math.floor(hi);v++){
+    if(v===0) continue;
+    ticks+=`<line x1="${x(v).toFixed(1)}" y1="${padT-6}" x2="${x(v).toFixed(1)}" y2="${(H-padB+2).toFixed(1)}" stroke="#232a36" stroke-width="1"/>`
+        +  `<text x="${x(v).toFixed(1)}" y="${(H-padB+14).toFixed(1)}" font-size="8.5" fill="#6b7280" text-anchor="middle">${v>0?'+':''}${v}R</text>`;
+  }
+  let body='';
+  rows.forEach((r,i)=>{
+    const yy=padT+i*rh+rh/2, s=r.s;
+    const crosses=s.lo<0&&s.hi>0;
+    const col=crosses?'#4a5568':(s.lo>0?'#3fb950':'var(--neg)');
+    const dot=crosses?'#8b93a1':col;
+    body+=`<text x="0" y="${(yy+3.5).toFixed(1)}" font-size="10" fill="#c3c9d4">${r.m.name}</text>`
+       +  `<line x1="${x(s.lo).toFixed(1)}" y1="${yy.toFixed(1)}" x2="${x(s.hi).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="${col}" stroke-width="2"/>`
+       +  `<circle cx="${x(s.mean).toFixed(1)}" cy="${yy.toFixed(1)}" r="3.5" fill="${dot}"/>`
+       +  `<text x="${W}" y="${(yy+3.5).toFixed(1)}" font-size="10" font-weight="700" fill="${crosses?'#8b93a1':col}" text-anchor="end">${fR(s.mean)}</text>`;
+  });
+  const allGrey=rows.every(r=>r.s.lo<0&&r.s.hi>0);
+  return `<div class="card" style="padding:12px 14px 10px;margin-top:8px">
+    <div class="lbl">All ${rows.length} outcomes · 95% confidence intervals on one axis</div>
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+      <rect x="${x(lead.lo).toFixed(1)}" y="${padT-4}" width="${(x(lead.hi)-x(lead.lo)).toFixed(1)}" height="${(rows.length*rh+6).toFixed(1)}" fill="#9dc0f6" fill-opacity="0.06"/>
+      ${ticks}
+      <line x1="${x(0).toFixed(1)}" y1="${padT-8}" x2="${x(0).toFixed(1)}" y2="${(H-padB+2).toFixed(1)}" stroke="#5a6478" stroke-width="1.5"/>
+      ${body}
+    </svg>
+    <div class="fsub" style="margin:6px 0 0">Dot = expectancy, bar = 95% interval. <b>Grey means the bar crosses zero</b> — that outcome is not yet distinguishable from no edge at all. The shaded band is the leader's interval: anything whose dot sits inside it is not distinguishable from the leader either${allGrey?', and right now every one of them does':''}.</div>
+  </div>`;
+}
+
+// ── expectancy matrix with per-method drawer ─────────────────────────────────
+// Module-level so the 5s poll cannot clobber it: render() rebuilds the whole board, and
+// an open row must survive that.
+let OPEN_ROW=null, OPEN_MONTH={}, SEL_DAY={};
+
+// A compact month grid for ONE method, rendered inside its drawer. This replaces the big
+// shared calendar at the foot of the board: the calendar always answered a per-method
+// question, so it belongs with the method rather than behind its own selector.
+function miniCal(key,pool){
+  const dated=pool.filter(t=>t.date && RV(t,key)!=null);
+  if(!dated.length) return '<div class="mini">No dated trades for this method.</div>';
+  const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
+  const cur=OPEN_MONTH[key]&&months.includes(OPEN_MONTH[key])?OPEN_MONTH[key]:months[months.length-1];
+  const idx=months.indexOf(cur), [Y,M]=cur.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
+  const byDay={};
+  if(!SEL_DAY[key]){ const ds=[...new Set(dated.map(t=>t.date))].sort(); SEL_DAY[key]=ds[ds.length-1]; }
+  dated.filter(t=>ym(t.date)===cur).forEach(t=>{ const d=Number(t.date.slice(8,10)), r=RV(t,key);
+    (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
+  let cells='';
+  for(let i=0;i<start;i++) cells+='<div class="mc-d mc-e"></div>';
+  for(let d=1;d<=dim;d++){ const x=byDay[d];
+    const iso=`${cur}-${String(d).padStart(2,'0')}`, sel=SEL_DAY[key]===iso;
+    cells+=`<div class="mc-d${x?(x.sum>0?' mc-w':(x.sum<0?' mc-l':' mc-f')):''}${sel?' mc-s':''}${x?' mc-c':''}" `+
+           `${x?`data-day="${iso}" data-cal="${key}" title="${fR(x.sum)} · ${x.n} trade${x.n>1?'s':''}"`:''}>`+
+           `<span class="mc-n">${d}</span>${x?`<span class="mc-r ${cls(x.sum)}">${fR(x.sum)}</span>`:''}</div>`; }
+  const nav=months.length>1
+    ? `<button class="mc-b" data-cal="${key}" data-mo="${months[idx-1]||''}" ${idx<=0?'disabled':''}>‹</button>`+
+      `<button class="mc-b" data-cal="${key}" data-mo="${months[idx+1]||''}" ${idx>=months.length-1?'disabled':''}>›</button>` : '';
+  return `<div class="mc-h"><span>${first.toLocaleString('en-US',{month:'long',year:'numeric'})}</span><span>${nav}</span></div>
+    <div class="mc-w7"><i>S</i><i>M</i><i>T</i><i>W</i><i>T</i><i>F</i><i>S</i></div>
+    <div class="mc-g">${cells}</div>`;
+}
+
+// Trades on one day, for the method whose drawer is open. The calendar answers "when";
+// this answers "which trades, and what did they actually do". They belong side by side —
+// the space to the right of a month grid was otherwise dead.
+// Trades on one day, for the method whose drawer is open. Prices come through tradeFields(), which
+// normalises the two payload shapes: futures nests them under t.raw with model-prefixed
+// names (SMMaxRun / VCLTrailStop), crypto keeps them flat (maxRun / bosExit). A field a
+// board does not have is simply omitted rather than rendered as a dash — crypto has no L1
+// leg and no Max Adverse column, so those rows must not appear there at all.
+function tradeFields(t){
+  const w = t.raw || t;
+  const mario = (typeof MODEL!=='undefined') && MODEL==='mario';
+  const pick = (...ks)=>{ for(const k of ks){ const v=num(w[k]); if(v!=null) return v; } return null; };
+  return {
+    pair: w.Pair || t.pair || null,
+    dir:  w.Direction || t.dir || null,
+    time: w.entryTime || w['Entry Time (HHMM)'] || null,
+    tz:   w.tz || w.Timezone || null,
+    entry:  pick('EntryPrice','entry'),
+    anchor: pick('anchor','1 of Fib Price'),
+    maxRun: pick(mario?'SMMaxRun':'VCLMaxRun','SMMaxRun','VCLMaxRun','maxRun'),
+    exit:   pick(mario?'SMTrailStop':'VCLTrailStop','SMTrailStop','VCLTrailStop','bosExit'),
+    adverse: pick('MaxAdverse'),
+    l1: (t.l1===undefined) ? null : t.l1,
+    l1Src: t.l1Src || null,
+  };
+}
+function dayDetail(key,pool){
+  const day=SEL_DAY[key];
+  const ts=pool.filter(t=>t.date===day && RV(t,key)!=null);
+  if(!day||!ts.length) return `<div class="dd-empty">Select a day with trades.</div>`;
+  const tot=ts.reduce((a,t)=>a+RV(t,key),0);
+  const px=v=>v==null?null:Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const rows=ts.map(t=>{
+    const R=RV(t,key), f=tradeFields(t);
+    const cell=(label,val)=>val==null?'':`<span>${label}</span><b>${val}</b>`;
+    const fields=[
+      cell('entry',px(f.entry)), cell('1 of fib',px(f.anchor)),
+      cell('max run',px(f.maxRun)), cell('exit',px(f.exit)),
+      cell('max adverse',px(f.adverse)),
+      f.l1==null?'':cell('L1 filled',`${f.l1?'yes':'no'} <span class="mini">${f.l1Src==='maxAdverse'?'measured':'checkbox'}</span>`),
+    ].filter(Boolean).join('');
+    return `<div class="dd-t">
+      <div class="dd-hd">
+        <span><span class="pill">${f.pair||'—'}</span> <b>${f.dir||'—'}</b>
+          <span class="mini">${t.session||''}${f.time?' · '+f.time:''}${f.tz?' '+f.tz:''}</span></span>
+        <span class="dd-r ${cls(R)}">${fR(R)}</span>
+      </div>
+      <div class="dd-g">${fields}</div>${t.l1Conflict?'<div class="dd-warn">L1 checkbox disagrees with Max Adverse on this row.</div>':''}
+    </div>`;}).join('');
+  return `<div class="dd-h"><span>${day}</span><span class="${cls(tot)}">${fR(tot)} · ${ts.length} trade${ts.length>1?'s':''}</span></div>`+
+         `<div class="dd-l">${rows}</div>`;
+}
+
+function methodDrawer(m,pool){
+  const inf=METHOD_INFO[m.key]||{}, s=fullStats(seriesFor(m.key,pool));
+  const pre = String(m.key).startsWith('m_') ? MARIO_PREAMBLE : LADDER_PREAMBLE;
+  return `<tr class="dr" data-drawer="${m.key}"><td colspan="8"><div class="dr-in">
+    <div class="dr-g">
+      <div class="dr-b"><div class="dr-k">What it is</div><p>${inf.what||'<span class="mut">Not yet described.</span>'}</p></div>
+      <div class="dr-b"><div class="dr-k">How it is tested</div><p>${inf.test||'<span class="mut">—</span>'}</p></div>
+    </div>
+    <div class="dr-b dr-cal"><div class="dr-k">By day — this method only <span class="dr-hint">click a day</span></div>${miniCal(m.key,pool)}</div>
+    <div class="dr-b dr-day"><div class="dr-k">Trades on the selected day</div>${dayDetail(m.key,pool)}</div>
+    <div class="dr-pre">${pre}</div>
+  </div></td></tr>`;
+}
+
+// Rank by the LOWER BOUND of the 95% interval, not raw expectancy. That is what "best
+// return with least pain" actually is: a method that pays well and behaves consistently
+// has a high lower bound; one that pays well by way of a single outlier does not. It is
+// also order-independent, unlike drawdown or losing streak.
 function matrixTable(pool){
-  const rows=MGMTS.map(m=>({label:m.label, s:stats(serFor(m.k,pool))}));
-  rows.sort((a,b)=> ((a.s.n?0:1)-(b.s.n?0:1)) || ((b.s.exp||-999)-(a.s.exp||-999)));
+  // MGMT, not MGMTS: the normalised list carries .key/.name on both boards. Reading
+  // m.k here emitted data-row="undefined", which set OPEN_ROW to the string
+  // "undefined" and made every drawer unopenable on the crypto side.
+  let rows=MGMT.map(m=>({m, s:fullStats(seriesFor(m.key,pool))}));   // reassigned by rankRows below
+  const scored=rows.filter(r=>r.s.n), unscored=rows.filter(r=>!r.s.n);
+  rows = rankRows(scored,pool).concat(unscored);
+  // A zero-width interval is every observation landing on the same number, not confidence.
+  // It must not take the crown.
+  const winner=rows.find(r=>r.s.n>0);
+  // One trading day cannot produce a meaningful drawdown or streak — there is no order to
+  // speak of. Grey the whole group below 10 days rather than printing numbers that look
+  // like measurements.
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  const dim = days<10 ? ' dimc' : '';
   let html='';
-  rows.forEach((row,i)=>{ const s=row.s; const isBest=i===0&&s.n>0;
-    html+=`<tr class="${isBest?'best':''}"><td>${row.label}</td>`+
-          `<td class="${s.n?cls(s.exp):'mut'}">${s.n?fR(s.exp):'—'}</td>`+
-          `<td>${s.n?Math.round(s.wr*100)+'%':'—'}</td>`+
-          `<td class="${s.n?cls(s.total):'mut'}">${s.n?fR(s.total):'—'}</td>`+
-          `<td class="mut">${s.n||'—'}</td></tr>`; });
-  return `<table class="matrix"><thead><tr><th>Method</th><th>Exp</th><th>Win%</th><th>Tot</th><th>n</th></tr></thead><tbody>${html}</tbody></table>`;
-}
-function riskList(pool){
-  const rows=MGMTS.map(m=>{ const ser=serFor(m.k,pool); return {label:m.label, dd:maxDrawdown(ser), mls:maxLossStreak(ser), n:ser.length}; });
-  rows.sort((a,b)=> ((a.n?0:1)-(b.n?0:1)) || (a.dd-b.dd));
-  let html='';
-  rows.forEach(r=>{ html+=`<div class="rowline"><span>${r.label}</span><span>${r.n?'<span class="neg">-'+r.dd.toFixed(2)+'R</span>':'<span class="mut">—</span>'} <span class="mini">${r.n?'DD · '+r.mls.len+'× in a row':''}</span></span></div>`; });
-  return html;
+  rows.forEach(r=>{
+    const s=r.s, open=OPEN_ROW===r.m.key, isBest=winner&&r.m.key===winner.m.key&&s.n>0;
+    const ci = s.n>1
+      ? `<span class="${s.degenerate?'mut':(s.lo>0?'pos':'')}">[${fR(s.lo)}, ${fR(s.hi)}]</span>${s.degenerate?' <span class="flag" title="Every trade scored the same number — zero variance, not confidence">±0</span>':''}`
+      : '<span class="mut">—</span>';
+    html+=`<tr class="mrow ${isBest?'best':''} ${open?'is-open':''}" data-row="${r.m.key}">`+
+      `<td class="mname"><button class="chev" aria-expanded="${open}" data-row="${r.m.key}">${open?'▾':'▸'}</button>${r.m.name}</td>`+
+      `<td class="${s.n?cls(s.mean):'mut'}">${s.n?fR(s.mean):'—'}</td>`+
+      `<td class="cicol">${ci}</td>`+
+      `<td>${s.n?Math.round(s.winRate*100)+'%':'—'}</td>`+
+      `<td class="${s.n?cls(s.total):'mut'}">${s.n?fR(s.total):'—'}</td>`+
+      `<td class="mut">${s.n||'—'}</td>`+
+      // Path group. Drawdown and streak depend on the ORDER these trades happened in;
+      // expectancy and win% do not. Reshuffle the log and only these two move — so they
+      // sit behind a divider under their own heading rather than reading as peers.
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">none</span>':'<b class="neg">-'+s.dd.toFixed(2)+'R</b>'):'—'}</td>`+
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">—</span>':s.streak+'×'):'—'}</td></tr>`;
+    if(open) html+=methodDrawer(r.m,pool);
+  });
+  const note = days<10
+    ? `Worst run and streak describe the order these ${pool.length} trades happened in, not the strategy — and ${days} trading day${days===1?'':'s'} is not enough order to describe. Reshuffle the log and they change; expectancy and win% do not.`
+    : `Worst run and streak describe the order these trades happened in, not the strategy. Reshuffle the log and they change; expectancy and win% do not.`;
+  return `<table class="matrix"><thead>
+    <tr class="grp"><th></th><th colspan="4">Distribution — order-independent</th><th></th>
+        <th colspan="2" class="pathh${dim}">Path — depends on trade order</th></tr>
+    <tr><th>Method</th><th>Exp</th><th>95% CI</th><th>Win%</th><th>Tot</th><th>n</th>
+        <th class="pathc${dim}">Worst run</th><th class="pathc${dim}">Streak</th></tr>
+    </thead><tbody>${html}</tbody></table>
+    <div class="mnote">${note}</div>`;
 }
 
+function wireMatrix(){
+  document.querySelectorAll('.matrix .chev, .matrix .mrow .mname').forEach(el=>{
+    el.onclick=e=>{ e.stopPropagation();
+      const k=(e.currentTarget.dataset.row)||(e.currentTarget.closest('tr').dataset.row);
+      OPEN_ROW = OPEN_ROW===k ? null : k; render(); };
+  });
+  document.querySelectorAll('.mc-d[data-day]').forEach(c=>{
+    c.onclick=e=>{ e.stopPropagation(); const {cal,day}=e.currentTarget.dataset;
+      SEL_DAY[cal]=day; render(); };
+  });
+  document.querySelectorAll('.mc-b').forEach(b=>{
+    b.onclick=e=>{ e.stopPropagation(); const {cal,mo}=e.currentTarget.dataset;
+      if(mo){ OPEN_MONTH[cal]=mo; render(); } };
+  });
+}
 // Rows that never reach the matrix, counted for the ACTIVE model only — each model reads
 // its own excursion pair, and a row the ladder scores fine can be unscoreable for Super
 // Mario. Excluded = the inputs that model needs are blank. Invalid = Max Adverse is
@@ -282,142 +1024,127 @@ function riskList(pool){
 // counted apart from "excluded" so a mislogged row reads as a logging fault, not a gap.
 // Ladder rows are never gated on Max Adverse — computeR() does not read it.
 function dropCounts(pool){
-  const mario = MODEL==='mario';
+  // Board-agnostic: a row is EXCLUDED when it scores no outcome at all, and INVALID when a
+  // field the scorer depends on is present but impossible. Written against the method keys
+  // rather than one board's column names so the same function runs on both.
   let excluded=0, invalid=0;
   pool.forEach(t=>{
-    const raw=t.raw||{};
-    const MR=num(mario?raw.SMMaxRun:raw.VCLMaxRun), BX=num(mario?raw.SMTrailStop:raw.VCLTrailStop);
-    const MA=num(raw.MaxAdverse);
-    if(mario && MA===0){ invalid++; return; }              // one row, one count
-    if(MR==null||BX==null||(mario&&MA==null)) excluded++;
+    const scored = MGMT.some(m=>RV(t,m.key)!=null);
+    const raw = t.raw||t;
+    const ma  = num(raw.MaxAdverse);
+    if(ma===0){ invalid++; return; }          // a logged zero is a placeholder, not a price
+    if(!scored) excluded++;
   });
   return {excluded, invalid};
 }
-function dropBadge(pool){
-  const {excluded, invalid}=dropCounts(pool);
-  if(!excluded && !invalid) return '';                     // nothing dropped, no badge
-  const parts=[];
-  if(excluded) parts.push(`<div class="midval">${excluded}</div><div class="mini">excluded</div>`);
-  if(invalid)  parts.push(`<div class="midval neg">${invalid}</div><div class="mini">invalid</div>`);
-  const tip = MODEL==='mario'
-    ? 'Excluded: SM Max Run, SM Trail Stop or Max Adverse blank. Invalid: Max Adverse logged as 0, which is not a price.'
-    : 'Excluded: VCL Max Run or VCL Trail Stop blank.';
-  return `<div class="card daysbadge" title="${tip}">${parts.join('<div class="mini">\u00b7</div>')}</div>`;
+let MATRIX_OPEN=true, PRIMER_OPEN=false;
+
+// Replaces the days badge, drop badge, pair-mix card and verdict line — roughly 230px of
+// card chrome to show four integers and a sentence. How much evidence exists has to come
+// BEFORE any claim, and it has to be one glance.
+function evidenceBar(pool, all){
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  // Pairs are derived from the data, not hardcoded — the same component runs on a board
+  // of MNQ/MES/MGC and one of SOL/BTC/ETH. `all` is the unfiltered log, passed in because
+  // the two boards hold it under different names.
+  const src = all || pool;
+  const mix = [...new Set(src.map(t=>t.pair||t.Pair).filter(Boolean))].sort()
+    .map(k=>`${k} ${src.filter(t=>(t.pair||t.Pair)===k).length}`).join(' · ');
+  const drops=dropCounts(pool), dropN=Object.values(drops).reduce((a,b)=>a+b,0);
+  const conflicts=pool.filter(t=>t.l1Conflict).length;
+  const notes=[];
+  if(dropN) notes.push(`${dropN} row${dropN>1?'s':''} excluded from scoring`);
+  if(conflicts) notes.push(`<b class="warn">${conflicts} row${conflicts>1?'s':''}: L1 checkbox disagrees with Max Adverse</b>`);
+  return `<div class="ebar">
+    ${verdictLine(pool)}
+    <div class="eb2">${mix}${PAIR==='all'?'':' · filtered to '+PAIR}${notes.length?' — '+notes.join(' · '):''}</div>
+  </div>`;
 }
 
-function pairMixCard(){
-  const c={}; ALL_TRADES.forEach(t=>{ const p=t.pair||'—'; c[p]=(c[p]||0)+1; });
-  const keys=Object.keys(c).sort();
-  if(keys.length<=1) return '';
+// The three session cards were three cuts of one axis. One table, and per Franklin the
+// "best method by session" column is gone entirely — at two trades a cell it was a
+// recommendation dressed as a finding. Counts are true at any n; a ranking is not.
+function sessionProfile(pool){
+  const ss=[...new Set(pool.map(t=>t.session).filter(Boolean))].sort((a,b)=>sessRank(a)-sessRank(b));
+  if(!ss.length) return '<div class="empty-note">No session tagged yet.</div>';
+  const allDays=new Set(pool.filter(t=>t.date).map(t=>t.date)).size;
   let rows='';
-  keys.forEach(p=>{ const pct=Math.round(c[p]/ALL_TRADES.length*100); rows+=`<div class="rowline"><span>${p}</span><span><b>${c[p]}</b> <span class="mini">${pct}%</span></span></div>`; });
-  return `<div class="card" style="margin-bottom:12px"><div class="lbl">Pair mix (whole log)</div>${rows}<div class="mini" style="margin-top:6px">Use the PAIR toggle in the header to filter to one instrument.</div></div>`;
+  ss.forEach(se=>{
+    const sub=pool.filter(t=>t.session===se);
+    const d=new Set(sub.filter(t=>t.date).map(t=>t.date)).size;
+    const rp=sub.filter(t=>t.rangePct!=null).map(t=>t.rangePct);
+    const avg = rp.length ? (rp.reduce((a,b)=>a+b,0)/rp.length).toFixed(2)+'%' : '—';
+    rows+=`<tr><td><span class="pill">${se}</span></td>
+      <td class="spn"><b>${sub.length}</b></td>
+      <td class="spn"><b>${d?(sub.length/d).toFixed(1):'0'}</b> <span class="mini">/day</span></td>
+      <td class="spn mut">${d}d</td>
+      <td class="spn"><b>${avg}</b></td></tr>`;
+  });
+  // Totals. Two different averages, and they answer different questions: how busy a
+  // trading day is, and how many of those trades a given session accounts for.
+  const perDay = allDays ? (pool.length/allDays).toFixed(1) : '0';
+  const perSession = ss.length ? (pool.length/ss.length).toFixed(1) : '0';
+  const allRp = pool.filter(t=>t.rangePct!=null).map(t=>t.rangePct);
+  const allAvg = allRp.length ? (allRp.reduce((a,b)=>a+b,0)/allRp.length).toFixed(2)+'%' : '—';
+  // Per-session sits beside the trade count, not in the range column — it is a count, and
+  // a count in a column headed "Avg range %" reads as a percentage.
+  rows+=`<tr class="sptot"><td><b>All</b></td>
+      <td class="spn"><b>${pool.length}</b> <span class="mini">${perSession}/session</span></td>
+      <td class="spn"><b>${perDay}</b> <span class="mini">/day</span></td>
+      <td class="spn mut">${allDays}d</td>
+      <td class="spn"><b>${allAvg}</b></td></tr>`;
+  return `<table class="sp"><thead><tr><th>Session</th><th>Trades</th><th>Rate</th><th>Days</th><th>Avg range %</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="mnote">Counts and rates are descriptive at any sample size. Which exit is best <em>per session</em> is deliberately not shown — at these counts every cell would be two or three trades, and a method name in a cell reads as a recommendation.</div>`;
 }
+
+function primerBlock(){
+  return `<div class="card prim">
+    <div class="primhd" id="primTog"><span>How to read this board</span><span class="mini">${PRIMER_OPEN?'– collapse':'+ expand'}</span></div>
+    ${PRIMER_OPEN?`<div class="primbody">
+      <p><b>Every row is the same trades read a different way.</b> Ten exit rules scored against one log — not ten separate samples. Do not add the n column up.</p>
+      <p><b>Two models, two rulers.</b> The VCL ladder enters at fib 0.382 with an L1 at 0.17 and its stop at fib 0; Super Mario is a single order whose stop <em>is</em> fib 0, entering at 0.325 with the TP at 0.65. Both enter at the same price, but <b>ladder 1R is about 1.86× Super Mario 1R</b>. R does not convert across the toggle — never compare a number from one against the other.</p>
+      <p><b>Ranked by the lower bound of the 95% interval</b>, not raw expectancy. A method that pays well because of one outlier has a wide interval and a poor lower bound; one that pays consistently ranks above it. An interval of ±0 means every trade scored the same number — that is zero variance, not confidence, and it cannot take the top spot.</p>
+      <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not.</p>
+    </div>`:''}
+  </div>`;
+}
+
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — Futures.</div></div>'; renderCalendar(); return; }
-  const mstats=MGMTS.map(m=>mgmtStat(m.k,pool));
-  const best=bestOf(mstats);
-  const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
-  let sessRows = sessions.length ? '' : '<div class="empty-note">No Session tagged yet.</div>';
-  sessions.forEach(se=>{ const sub=pool.filter(t=>t.session===se); const b=bestByTotal(MGMTS.map(m=>mgmtStat(m.k,sub)));
-    const lbl=b?(MGMTS.find(m=>m.k===b.mk)||{}).label||b.mk:'—';
-    sessRows+=`<div class="rowline"><span><span class="pill">${se}</span> ${lbl}</span><span class="${b?cls(b.total):'mut'}">${b?fR(b.total):'—'}</span></div>`; });
-  let rangeRows=''; const rp=pool.filter(t=>t.rangePct!=null);
-  if(!rp.length){ rangeRows='<div class="empty-note">No Range % logged yet.</div>'; }
-  else { const groups={}; rp.forEach(t=>{ const k=(t.session||'—'); (groups[k]=groups[k]||[]).push(t); });
-    Object.keys(groups).sort().forEach(k=>{ const g=groups[k]; const wins=g.filter(t=>t.r[RANGE_REF]>0); const src=wins.length?wins:g;
-      const vals=src.map(t=>t.rangePct); const mn=Math.min(...vals), mx=Math.max(...vals);
-      const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-      const band = mn===mx ? mn+'%' : mn+'–'+mx+'%';
-      rangeRows+=`<div class="rowline"><span><span class="pill">${k}</span></span><span><b>${band}</b> <span class="mini">avg ${avg.toFixed(2)}% · ${wins.length?'wins':'all'} n${src.length}</span></span></div>`; }); }
-  const tdays=ss=>new Set(ss.filter(t=>t.date).map(t=>t.date)).size;
-  let freqSess=''; [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{
-    const sub=pool.filter(t=>t.session===se); const d=tdays(sub);
-    freqSess+=`<div class="rowline"><span><span class="pill">${se}</span></span><span><b>${sub.length}</b> <span class="mini">${d?(sub.length/d).toFixed(1):'0'}/day · ${d}d</span></span></div>`;
-  });
-  const totDays=tdays(pool);
-  const pairBadge = PAIR==='all' ? '' : ` <span class="pill" style="margin-left:6px">${PAIR}</span>`;
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — Futures.</div></div>'; return; }
+  const matrixSummary=(()=>{
+    const rows=MGMT.map(m=>statsFor(m.key,pool)).filter(x=>x.n);
+    const clear=rows.filter(x=>x.lo>0).length;
+    return `${MGMT.length} outcomes on the same ${pool.length} trades · ${clear} clear zero`;
+  })();
   board.innerHTML=`
-    <div class="daysbadge-row"><div class="card daysbadge"><div class="midval">${totDays}</div><div class="mini">trading day${totDays===1?'':'s'} logged${pairBadge}</div></div>${dropBadge(pool)}</div>
-    ${pairMixCard()}
+    ${evidenceBar(pool, ALL_TRADES)}
+    ${primerBlock()}
     <div class="grid2">
-      <div><div class="card" style="margin-bottom:12px"><div class="lbl">Best methodology</div><div class="combo-md">${best?(MGMTS.find(m=>m.k===best.mk)||{}).label||best.mk:'—'}</div>${statBlock(best)}</div></div>
-      <div>${recoCard(pool)}</div>
+      <div>${winnerCard(pool)}</div>
+      <div>
+        <div class="card"><div class="lbl">Session profile</div>${sessionProfile(pool)}</div>
+      </div>
     </div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">Expectancy matrix — ranked</div>${matrixTable(pool)}</div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">Risk of ruin — per methodology</div>${riskList(pool)}
-      <div class="mini" style="margin-top:8px">DD = worst peak-to-trough in cumulative R · streak = losing trades in a row · safest → riskiest</div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="primhd" id="matTog"><span>Full numbers — every outcome, ranked</span>
+        <span class="mini">${matrixSummary} &nbsp; ${MATRIX_OPEN?'– collapse':'+ expand'}</span></div>
+      ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
-    <div class="grid2">
-      <div class="card"><div class="lbl">Best method by session</div>${sessRows}</div>
-      <div class="card"><div class="lbl">Optimal Range % · by session</div>${rangeRows}</div>
-    </div>
-    <div class="card" style="margin-bottom:12px"><div class="lbl">Trades by session · avg/day</div>${freqSess}</div>
-    <div class="card cal" id="calCard"></div>`;
-  renderCalendar();
+    <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
+    <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
+    <div class="foot" id="foot"></div>`;
+  const f=document.getElementById('foot'); if(f) f.innerHTML = MODEL==='mario'?FOOT_MARIO:FOOT_LADDER;
+  const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
+  const mt=document.getElementById('matTog'); if(mt) mt.onclick=()=>{MATRIX_OPEN=!MATRIX_OPEN; render();};
+  if(MATRIX_OPEN) wireMatrix();
 }
 
 function ym(d){ return d? d.slice(0,7):null; }
-function calControls(){
-  const mgmtOpts=`<option value="reco" ${CAL_MGMT==='reco'?'selected':''}>★ Strategic Rec</option>`+MGMTS.map(m=>`<option value="${m.k}" ${CAL_MGMT===m.k?'selected':''}>${m.label}</option>`).join('');
-  const sessions=[...new Set(TRADES.map(t=>t.session).filter(Boolean))];
-  const sessOpts=['all',...sessions].map(s=>`<option value="${s}" ${CAL_SESS===s?'selected':''}>${s==='all'?'All sessions':s}</option>`).join('');
-  return `<div class="calfilters">
-    <div class="cf"><span class="cflbl">Method</span><select class="calsel" data-f="mgmt">${mgmtOpts}</select></div>
-    <div class="cf"><span class="cflbl">Session</span><select class="calsel" data-f="sess">${sessOpts}</select></div>
-  </div>`;
-}
-function wireCalControls(){
-  document.querySelectorAll('#calCard .calsel').forEach(sel=>{
-    sel.onchange=()=>{ const f=sel.dataset.f, v=sel.value;
-      if(f==='mgmt') CAL_MGMT=v; else if(f==='sess') CAL_SESS=v;
-      renderCalendar(); };
-  });
-}
-function calTitle(){
-  const parts=[mgmtLabel(CAL_MGMT)];
-  if(CAL_SESS!=='all') parts.push(CAL_SESS);
-  if(PAIR!=='all') parts.push(PAIR);
-  return parts.join(' · ');
-}
-function renderCalendar(){
-  const card=document.getElementById('calCard'); if(!card) return;
-  if(!calDefaulted && TRADES.length){ CAL_MGMT='reco'; CAL_SESS='all'; calDefaulted=true; }
-  const controls=calControls();
-  const filtered=TRADES.filter(t=>(CAL_SESS==='all'||t.session===CAL_SESS));
-  const dated=filtered.filter(t=>t.date);
-  const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
-  if(!months.length){
-    card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>${controls}<div class="empty-note">No trades match this filter yet.</div>`;
-    wireCalControls(); return;
-  }
-  if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
-  const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
-  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
-  const byDay={}; const rmap=CAL_MGMT==='reco'?recoMap(TRADES):null;
-  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{ const d=Number(t.date.slice(8,10)); const rp=rmap?rmap[t.session]:null; const r=rmap?(rp?t.r[rp.mk]:null):t.r[CAL_MGMT];
-    if(r==null) return; (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
-  const monthName=first.toLocaleString('en-US',{month:'long',year:'numeric'});
-  let cells=''; for(let i=0;i<start;i++) cells+='<div class="day empty"></div>';
-  for(let d=1;d<=dim;d++){ const x=byDay[d]; let c='day', body='';
-    if(x){ c+= x.sum>0?' win':(x.sum<0?' loss':''); body=`<div class="dr ${cls(x.sum)}">${fR(x.sum)}</div><div class="dc">${x.n} trade${x.n>1?'s':''}</div>`; }
-    cells+=`<div class="${c}"><div class="dn">${d}</div>${body}</div>`; }
-  card.innerHTML=`<div class="lbl">Calendar — net R (${calTitle()})</div>
-    ${controls}
-    <div class="calhd"><button ${idx<=0?'disabled':''} id="pm">‹</button><div class="month">${monthName}</div><button ${idx>=months.length-1?'disabled':''} id="nm">›</button></div>
-    <div class="dow"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
-    <div class="days">${cells}</div>`;
-  wireCalControls();
-  const pm=document.getElementById('pm'), nm=document.getElementById('nm');
-  if(pm) pm.onclick=()=>{ CAL_MONTH=months[idx-1]; renderCalendar(); };
-  if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
-}
 
 function applyModel(){
   MGMTS = MODEL==='mario' ? MGMTS_MARIO.slice() : MGMTS_LADDER.slice();
-  RANGE_REF = MGMTS[0].k; CAL_MGMT = MGMTS[0].k;
-  const f=document.getElementById('foot'); if(f) f.innerHTML = MODEL==='mario'?FOOT_MARIO:FOOT_LADDER;
+  normalizeMethods();
 }
 function wireModelTg(){
   document.querySelectorAll('#modelTg button').forEach(b=>{
@@ -463,7 +1190,6 @@ async function poll(){
     if(firstLoad){
       st.innerHTML='<span class="err">Worker unreachable: '+(e.message||'')+'</span>';
       document.getElementById('board').innerHTML='<div class="card"><div class="empty-note">Worker unreachable and no cached snapshot available. Retrying every 5s.</div></div>';
-      renderCalendar();
     }
   }
 }

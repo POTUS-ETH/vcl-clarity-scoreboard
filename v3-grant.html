@@ -92,6 +92,99 @@ details.l2 .body{padding:0 14px 14px}
   .matrix th,.matrix td{padding:5px 4px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ── ported with the components above ── */
+.matrix td:first-child,.matrix th:first-child{text-align:left}
+.matrix tr.best td{background:#182335}
+.matrix .mname{display:flex;align-items:center;gap:7px;cursor:pointer}
+.chev{background:none;border:0;color:#7b8494;font:inherit;font-size:11px;cursor:pointer;padding:0;width:13px;position:relative}
+.chev::after{content:'';position:absolute;inset:-11px -7px}
+.mrow.is-open{background:#161b24}
+.matrix .cicol{font-size:11px;white-space:nowrap}
+.flag{font-size:9px;color:#e0b341;border:1px solid #e0b341;border-radius:3px;padding:0 3px;cursor:help}
+tr.dr>td{padding:0;border-bottom:1px solid #232a36;background:#12161d}
+.dr-in{padding:14px 16px 16px;display:flex;flex-direction:column;gap:13px}
+.dr-g{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.dr-b{background:#161b24;border:1px solid #232a36;border-radius:7px;padding:10px 12px}
+.dr-k{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#7b8494;margin-bottom:5px}
+.dr-b p{margin:0;font-size:11.5px;line-height:1.6;color:#c3c9d4}
+.dr-pre{font-size:10.5px;line-height:1.6;color:#7b8494;border-top:1px solid #232a36;padding-top:10px}
+.dr-cal{max-width:340px}
+.mc-h{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#c3c9d4;margin-bottom:6px}
+.mc-b{background:#0e1117;border:1px solid #232a36;color:#c3c9d4;border-radius:4px;cursor:pointer;font-size:10px;padding:1px 6px;margin-left:3px}
+.mc-b:disabled{opacity:.3;cursor:default}
+.mc-w7{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px}
+.mc-w7 i{font-style:normal;font-size:9px;color:#5d6675;text-align:center;letter-spacing:.5px}
+.mc-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mc-d{height:46px;border:1px solid #1d2430;border-radius:4px;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:2px;background:#0e1117}
+.mc-e{border-color:transparent;background:transparent}
+.mc-n{font-size:9.5px;color:#5d6675;line-height:1}
+.mc-r{font-size:10.5px;font-weight:700;line-height:1}
+.mc-w{background:rgba(63,185,80,.14);border-color:rgba(63,185,80,.4)}
+.mc-l{background:rgba(230,103,103,.14);border-color:rgba(230,103,103,.4)}
+.mc-f{background:#161b24}
+.dd-l{max-height:300px;overflow-y:auto;padding-right:4px}
+.dd-l::-webkit-scrollbar{width:6px}
+.dd-l::-webkit-scrollbar-thumb{background:#2a3140;border-radius:3px}
+.dd-l::-webkit-scrollbar-track{background:transparent}
+.dr-cal{max-width:none}
+.dr-hint{font-size:8.5px;color:#5d6675;letter-spacing:0;text-transform:none;margin-left:6px}
+.mc-c{cursor:pointer}
+.mc-c:hover{border-color:#3b4557}
+.mc-s{outline:1.5px solid #4a90d9;outline-offset:-1.5px}
+.dd-h{display:flex;justify-content:space-between;font-size:10.5px;color:#c3c9d4;
+      padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #232a36;font-weight:700}
+.dd-t{border:1px solid #232a36;border-radius:6px;padding:8px 10px;margin-bottom:7px;background:#12161d}
+.dd-t:last-child{margin-bottom:0}
+.dd-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-size:11px}
+.dd-r{font-weight:700;font-size:12px}
+.dd-g{display:grid;grid-template-columns:auto auto auto auto auto auto;gap:4px 16px;font-size:10px;align-items:baseline;justify-content:start}
+.dd-g span{color:#7b8494}
+.dd-g b{color:#e6e8ec;font-weight:600;font-variant-numeric:tabular-nums}
+.dd-warn{margin-top:6px;font-size:10px;color:#e0b341}
+.dd-empty{font-size:11px;color:#7b8494;padding:14px 0}
+.matrix tr.grp th{font-size:8.5px;letter-spacing:1px;color:#5d6675;padding-bottom:2px;
+                  border-bottom:0;text-transform:uppercase;font-weight:500}
+.matrix .pathh, .matrix th.pathc{border-left:1px solid #2a3140}
+.matrix td.pathc{border-left:1px solid #1d2430;text-align:right;white-space:nowrap;font-size:11px}
+.matrix .dimc{opacity:.42}
+.mnote{font-size:10px;color:#7b8494;line-height:1.6;margin-top:9px;max-width:78ch}
+.ebar{border-left:3px solid #3987e5;padding:9px 0 9px 13px;margin-bottom:14px}
+.eb2{font-size:10.5px;color:#7b8494;margin-top:2px}
+.warn{color:#e0b341}
+.sechd{font-size:9.5px;letter-spacing:1.6px;text-transform:uppercase;color:#5d6675;
+       margin:20px 0 9px;padding-bottom:5px;border-bottom:1px solid #232a36}
+.primhd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+        font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;color:#8b93a1}
+.primhd:hover{color:#c3c9d4}
+.primbody{margin-top:11px;display:flex;flex-direction:column;gap:9px}
+.primbody p{margin:0;font-size:11.5px;line-height:1.65;color:#c3c9d4}
+table.sp{width:100%;border-collapse:collapse;font-size:11.5px}
+table.sp th{font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:#5d6675;
+            text-align:right;padding:0 0 6px;font-weight:500}
+table.sp th:first-child{text-align:left}
+table.sp td{padding:7px 0;border-top:1px solid #1d2430}
+table.sp td.spn{text-align:right;font-variant-numeric:tabular-nums}
+table.ptab{width:100%;border-collapse:collapse;font-size:11px}
+table.ptab td{padding:4px 0;border-top:1px solid #1d2430;vertical-align:baseline;white-space:nowrap}
+table.ptab tr:first-child td{border-top:0}
+table.ptab td.pm{width:99%;padding-left:7px;white-space:normal}
+table.ptab td.pr{text-align:right;padding-left:8px;font-weight:700}
+table.ptab td.pci{text-align:right;padding-left:7px;font-size:9.5px}
+table.ptab td.pn{text-align:right;padding-left:7px;font-size:9.5px}
+.ptilt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+       margin-top:11px;padding-top:8px;border-top:1px solid #232a36;font-size:11px}
+table.sp tr.sptot td{border-top:1px solid #2a3140;padding-top:8px}
+table.sp tr.sptot{color:#c3c9d4}
+/* Cards stack full width rather than sitting two-up. A tall answer card beside a short
+   session table left one column half empty and made the two boards read as different
+   products. Declared explicitly on both — this was previously a two-column grid on
+   futures and an accidentally-missing rule on crypto. */
+.grid2{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.grid2 > div{display:flex;flex-direction:column;min-width:0}
+.grid2 > div > .card.answer{flex:none;display:flex;flex-direction:column;margin-bottom:0}
+.grid2 > div > .card:last-child{margin-bottom:0}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
@@ -101,22 +194,7 @@ details.l2 .body{padding:0 14px 14px}
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
-  <details class="primer">
-    <summary>How to read this board</summary>
-    <div class="body">
-      <p><b>What's on this board.</b> A chart-replayed backtest of the VCL V5 single-order fib — no L1, one entry, the same geometry on every pair. Eight exit outcomes are scored on <em>every</em> trade at once. They are not eight strategies competing on separate samples; they are eight ways of pricing the same set of real trades.</p>
-      <p><b>1m and 15s are shown separately, never blended.</b> Pick a timeframe up top; everything below reflects only that timeframe's trades.</p>
-      <p><b>The fib is fixed, so every level is forced.</b> It is drawn stop-to-anchor: <b>fib 0 is the stop</b>, entry 0.325, TP 0.65 — exactly double the entry, so the TP sits at 1.000R by construction. The whole board hangs off four levels: <b>1R = fib 0.65</b> (the TP itself), <b>2R = 0.975</b>, <b>3R = 1.30</b>, <b>5R = 1.95</b>.</p>
-      <p><b>Family 1 — full position, no partial.</b> Four fixed targets, binary by construction: +NR if Max Run reached it, −1R if not. <b>Full TP @ 1R is a pure 1:1 bet</b> whose expectancy is nothing but 2 × win% − 1. The fifth row, <b>Full size → BE + trail</b>, is the no-partial control: same full size, but no ceiling — it takes whatever structure gives.</p>
-      <p><b>Family 2 — 50% off at the 0.68, then the runner.</b> Banking half at the TP locks <b>0.5R</b> (the TP is 1R away, at half size). The remaining half then carries everything. Because it's half size it must make <b>2R to move the position 1R</b> — so the runner needs 3R for a 2R trade (fib 1.30) and 5R for a 3R trade (fib 1.95).</p>
-      <p><b>That's why the two families share price levels.</b> "Full TP @ 3R" and "runner capped at 1.30" are the <em>same line on the chart</em> — they differ only in how much size is still on when price gets there. Same for 5R and 1.95.</p>
-      <p><b>The uncapped trail is the incumbent, kept as a baseline.</b> It's what Grant is running now: half off, then let BOS run with no ceiling. The two capped variants are being tested against it, not against each other.</p>
-      <p><b>Everything is one reach curve.</b> All seven numbers are determined by which R levels Max Run cleared — shown directly in the strip under the headline. The targets don't fail independently, so two outcomes agreeing is <em>not</em> two pieces of evidence.</p>
-      <p><b>The curve under each row</b> is that outcome's cumulative R, trade by trade, in the order they happened. Green and rising means ahead net; red and sinking means behind.</p>
-      <p><b>A green <span class="sig">sig</span> tag</b> means the 95% confidence interval clears zero — the edge holds at 95% on its own. No tag means the interval still crosses zero: read it as this log's best lean so far, not a proven result.</p>
-      <p><b>Max drawdown</b> is the worst peak-to-trough dip in cumulative R. <b>LIS</b> and <b>WIS</b> count the longest runs of consecutive losing or winning trades, regardless of size.</p>
-    </div>
-  </details>
+  
   <div id="board"></div>
 </div>
 <script>
@@ -218,26 +296,26 @@ function equityCurveSVG(series, w, h){
 const FAMILIES_MARIO=[
   {k:'full', label:'Full position · no partial',
    blurb:'Close everything at one fixed target. Binary by construction: +NR if Max Run reached it, -1R if not. No partial, no trail, no breakeven tier.'},
-  {k:'part', label:'50% off at the 0.68, runner capped',
-   blurb:'Bank half at the 0.68 TP (worth 0.5R, since the TP sits at 1R), stop to breakeven, then the runner. Capped variants full-close the runner at the named fib; the baseline lets the BOS trail run uncapped.'},
+  {k:'part', label:'50% off at the 0.65 TP, runner capped',
+   blurb:'Bank half at the 0.65 TP (worth 0.5R, since the TP sits at exactly 1R), stop to breakeven, then the runner. Capped variants full-close the runner at the named fib; the baseline lets the BOS trail run uncapped.'},
 ];
 const MGMT_MARIO=[
-  {key:'smFull1R', fam:'full', name:'Full TP @ 1R',  short:'F1R', lvl:'fib 0.65',
-   desc:'Whole position off at 1R — the 0.68 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
-  {key:'smFull2R', fam:'full', name:'Full TP @ 2R',  short:'F2R', lvl:'fib 0.975',
+  {key:'smFull1R', fam:'full', name:'Full TP @ 0.65 for 1R',  short:'F1R', lvl:'fib 0.65',
+   desc:'Whole position off at 1R — the 0.65 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
+  {key:'smFull2R', fam:'full', name:'Full TP @ 0.975 for 2R',  short:'F2R', lvl:'fib 0.975',
    desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
-  {key:'smFull3R', fam:'full', name:'Full TP @ 3R',  short:'F3R', lvl:'fib 1.30',
+  {key:'smFull3R', fam:'full', name:'Full TP @ 1.30 for 3R',  short:'F3R', lvl:'fib 1.30',
    desc:'Whole position off at 3R, the 1.30 extension.'},
-  {key:'smFull5R', fam:'full', name:'Full TP @ 5R',  short:'F5R', lvl:'fib 1.95',
+  {key:'smFull5R', fam:'full', name:'Full TP @ 1.95 for 5R',  short:'F5R', lvl:'fib 1.95',
    desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
-  {key:'bosExitR', fam:'full', name:'Full size -> BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
-   desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.68.'},
-  {key:'smCap1272', fam:'part', name:'50% -> cap 1.30', short:'C1.30', lvl:'runner 3R = 2R net',
+  {key:'bosExitR', fam:'full', name:'Full size @ BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
+   desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.65 TP.'},
+  {key:'smCap1272', fam:'part', name:'50% @ 0.65 \u2192 cap 1.30 for 2R', short:'C1.30', lvl:'runner 3R = 2R net',
    desc:'Half off at the TP, runner trails on BOS but full-closes at fib 1.30. Caps the trade at +2R; if 1.30 never prints the runner is scored at the real BOS exit.'},
-  {key:'smCap1866', fam:'part', name:'50% -> cap 1.95', short:'C1.95', lvl:'runner 5R = 3R net',
+  {key:'smCap1866', fam:'part', name:'50% @ 0.65 \u2192 cap 1.95 for 3R', short:'C1.95', lvl:'runner 5R = 3R net',
    desc:'Same, capped at fib 1.95 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
-  {key:'tpTrailBOS', fam:'part', name:'50% -> uncapped trail', short:'Trail', lvl:'no ceiling',
-   desc:'The incumbent: half off at 0.68, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
+  {key:'tpTrailBOS', fam:'part', name:'50% @ 0.65 \u2192 trail, uncapped', short:'Trail', lvl:'no ceiling',
+   desc:'The incumbent: half off at the 0.65 TP, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
 ];
 const MGMT=MGMT_MARIO.slice(), FAMILIES=FAMILIES_MARIO.slice();
 const byFam=f=>MGMT.filter(m=>m.fam===f);
@@ -262,6 +340,9 @@ function applyFilters(){
   // Super Mario outcomes arrive already computed from the Notion formulas — this board
   // aggregates them, it does not recompute.
   TRADES = ALL.filter(t => t.Timeframe===TF && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
+  // Adapter. The shared components read t.session / t.pair; this board's payload spells
+  // them Session / Pair. Normalising here means every ported component runs unchanged.
+  TRADES.forEach(t=>{ t.session=t.session||t.Session; t.pair=t.pair||t.Pair; });
 }
 
 /* ============================== L0 — the verdict ==============================
@@ -297,8 +378,9 @@ function verdictLine(pool){
 function winnerCard(pool){
   const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
   if(!rows.length) return '';
-  rows.sort((a,b)=>b.s.mean-a.s.mean);
-  const best=rows[0], up=rows[1], s=best.s;
+  // One definition of the leader, shared with the matrix. Sorting this card by mean while
+  // the table below ranked on the interval put two different winners on the same screen.
+  const LDR=leaderOf(pool); const best=LDR.best, up=LDR.up, order=LDR.order, s=best.s;
   const beatsZero = s.lo>0;
   const margin = up ? paired(up.m.key,best.m.key,pool) : null;
   const beatsNext = margin && margin.n>0 && margin.lo>0;
@@ -340,7 +422,9 @@ function reachLadderSVG(pool){
   // Above ~24 trades the per-trade bars stop being readable, so the same data is
   // drawn as a survival curve instead: what share of trades reached at least X R.
   // Same information, and it gets MORE legible as n grows rather than less.
-  if(pool.length>24) return reachCurveSVG(pool);
+  // Always the survival curve — POTUS chose one format for both boards, and it is the
+  // one that gets MORE legible as n grows. The per-trade bar variant is retired.
+  return reachCurveSVG(pool);
   const dirOf=t=>t.Direction==='Long'?1:-1;
   const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
     return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
@@ -519,19 +603,407 @@ function testBanner(pool){
     Delete every row whose name starts with <b>TEST-</b> in Notion before reading a single figure here.</div></div>`;
 }
 
+const ym=d=>d?d.slice(0,7):null;
+const maxDrawdown=maxDD;
+function serFor(k,pool){return seriesFor(k,pool);}
+function stats(series){const n=series.length;if(!n)return{n:0};const wins=series.filter(r=>r>0).length,total=series.reduce((a,b)=>a+b,0);return {n,wins,wr:wins/n,exp:total/n,total};}
+const rankKey = s => s.degenerate ? (s.mean ?? -999) : (s.lo ?? -999);
+// THE SEAM. Crypto reads outcomes straight off the trade — the Notion formulas wrote
+// them. Futures nests them under t.r because that widget computes both models itself.
+// This one line is the only structural difference between the two boards.
+const RV=(t,k)=>t[k];
+const MGMTS = MGMT;
+let MODEL='mario';
+
+// Per-method copy. `what` is the rule; `test` is which logged field settles the
+// outcome, at which level, and what happens on a miss — the line a reader needs to
+// judge whether a number means anything. Keys are crypto's; the futures board holds
+// the same text under its own keys.
+const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.975, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
+const LADDER_PREAMBLE=MARIO_PREAMBLE;
+const METHOD_INFO={
+  smFull1R:{what:'Close the whole position at the TP, fib 0.65.',
+      test:'Gated by <b>SM Max Run</b> against the TP, with <b>Max Adverse</b> settling the stop-out first.',
+      fail:'The TP is exactly 1R away, so expectancy here is nothing but 2 × win% − 1. It carries no information beyond the win rate, and discards the entire tail.'},
+  smFull2R:{what:'Whole position off at 2R, fib 0.975 — just inside the anchor.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first. A miss is scored at the real trail exit, not a synthetic loss.',
+      fail:'Shares its fate with 3R and 5R on any trade that misses 2R.'},
+  smFull3R:{what:'Whole position off at 3R, fib 1.30.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
+      fail:'Only a minority of trades ever reach it, so it spends most of its life at or below break-even.'},
+  smFull5R:{what:'Whole position off at 5R, fib 1.95 — well past the golden-ratio extension.',
+      test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
+      fail:'Reached rarely. Its drawdown is a property of the target choice, not of the stop.'},
+  bosExitR:{what:'No partial, no ceiling. Hold full size; once price clears the anchor at 2.077R the stop moves to break-even, so the trade cannot finish negative from there. Exit wherever the BoS trail took it.',
+      test:'Gated by <b>SM Max Run</b> for the break-even arming, then <b>entirely by the logged trail exit</b> — a hand-read chart judgement, not a level.',
+      fail:'Cannot be reproduced from the logged row. It inherits whatever the reader’s swing-high discretion was that session.'},
+  smCap1272:{what:'Bank half at the TP (worth 0.5R), stop to break-even, run the remaining half to fib 1.30 and close it there.',
+      test:'Gated by <b>SM Max Run</b> for the partial and the cap; if 1.30 never prints the runner is scored at the <b>logged trail exit</b>.',
+      fail:'Half size at 3R pays +2.00R, not 1.30R — the name is the chart level, not the payout, and it sits in a table of R figures.'},
+  smCap1866:{what:'The same, capped at fib 1.95: half at the TP plus half at 5R.',
+      test:'Identical gates — SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Pays +3.00R maximum, not 1.95R. Differs from cap 1.30 only on trades running past 3R.'},
+  tpTrailBOS:{what:'The incumbent, and the control the capped variants are measured against: half off at the TP, stop to break-even, then let the BoS trail run with no target.',
+      test:'Gated by <b>SM Max Run</b> for the partial, then <b>entirely by the logged trail exit</b> for the runner.',
+      fail:'A hand-read exit that cannot be rebuilt from the logged prices — and it is the baseline, which is where reader drift does the most damage.'}
+};
+
+let OPEN_ROW=null, OPEN_MONTH={}, SEL_DAY={};
+const SESS_ORDER=['Asia','Frankfurt','London','NY AM','NY','NY PM','Late'];
+
+// ── ported from v4-futures-next.html; keep the two in sync ──
+function miniCal(key,pool){
+  const dated=pool.filter(t=>t.date && RV(t,key)!=null);
+  if(!dated.length) return '<div class="mini">No dated trades for this method.</div>';
+  const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
+  const cur=OPEN_MONTH[key]&&months.includes(OPEN_MONTH[key])?OPEN_MONTH[key]:months[months.length-1];
+  const idx=months.indexOf(cur), [Y,M]=cur.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
+  const byDay={};
+  if(!SEL_DAY[key]){ const ds=[...new Set(dated.map(t=>t.date))].sort(); SEL_DAY[key]=ds[ds.length-1]; }
+  dated.filter(t=>ym(t.date)===cur).forEach(t=>{ const d=Number(t.date.slice(8,10)), r=RV(t,key);
+    (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
+  let cells='';
+  for(let i=0;i<start;i++) cells+='<div class="mc-d mc-e"></div>';
+  for(let d=1;d<=dim;d++){ const x=byDay[d];
+    const iso=`${cur}-${String(d).padStart(2,'0')}`, sel=SEL_DAY[key]===iso;
+    cells+=`<div class="mc-d${x?(x.sum>0?' mc-w':(x.sum<0?' mc-l':' mc-f')):''}${sel?' mc-s':''}${x?' mc-c':''}" `+
+           `${x?`data-day="${iso}" data-cal="${key}" title="${fR(x.sum)} · ${x.n} trade${x.n>1?'s':''}"`:''}>`+
+           `<span class="mc-n">${d}</span>${x?`<span class="mc-r ${cls(x.sum)}">${fR(x.sum)}</span>`:''}</div>`; }
+  const nav=months.length>1
+    ? `<button class="mc-b" data-cal="${key}" data-mo="${months[idx-1]||''}" ${idx<=0?'disabled':''}>‹</button>`+
+      `<button class="mc-b" data-cal="${key}" data-mo="${months[idx+1]||''}" ${idx>=months.length-1?'disabled':''}>›</button>` : '';
+  return `<div class="mc-h"><span>${first.toLocaleString('en-US',{month:'long',year:'numeric'})}</span><span>${nav}</span></div>
+    <div class="mc-w7"><i>S</i><i>M</i><i>T</i><i>W</i><i>T</i><i>F</i><i>S</i></div>
+    <div class="mc-g">${cells}</div>`;
+}
+
+// Trades on one day, for the method whose drawer is open. Prices come through tradeFields(), which
+// normalises the two payload shapes: futures nests them under t.raw with model-prefixed
+// names (SMMaxRun / VCLTrailStop), crypto keeps them flat (maxRun / bosExit). A field a
+// board does not have is simply omitted rather than rendered as a dash — crypto has no L1
+// leg and no Max Adverse column, so those rows must not appear there at all.
+function tradeFields(t){
+  const w = t.raw || t;
+  const mario = (typeof MODEL!=='undefined') && MODEL==='mario';
+  const pick = (...ks)=>{ for(const k of ks){ const v=num(w[k]); if(v!=null) return v; } return null; };
+  return {
+    pair: w.Pair || t.pair || null,
+    dir:  w.Direction || t.dir || null,
+    time: w.entryTime || w['Entry Time (HHMM)'] || null,
+    tz:   w.tz || w.Timezone || null,
+    entry:  pick('EntryPrice','entry'),
+    anchor: pick('anchor','1 of Fib Price'),
+    maxRun: pick(mario?'SMMaxRun':'VCLMaxRun','SMMaxRun','VCLMaxRun','maxRun'),
+    exit:   pick(mario?'SMTrailStop':'VCLTrailStop','SMTrailStop','VCLTrailStop','bosExit'),
+    adverse: pick('MaxAdverse'),
+    l1: (t.l1===undefined) ? null : t.l1,
+    l1Src: t.l1Src || null,
+  };
+}
+function dayDetail(key,pool){
+  const day=SEL_DAY[key];
+  const ts=pool.filter(t=>t.date===day && RV(t,key)!=null);
+  if(!day||!ts.length) return `<div class="dd-empty">Select a day with trades.</div>`;
+  const tot=ts.reduce((a,t)=>a+RV(t,key),0);
+  const px=v=>v==null?null:Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const rows=ts.map(t=>{
+    const R=RV(t,key), f=tradeFields(t);
+    const cell=(label,val)=>val==null?'':`<span>${label}</span><b>${val}</b>`;
+    const fields=[
+      cell('entry',px(f.entry)), cell('1 of fib',px(f.anchor)),
+      cell('max run',px(f.maxRun)), cell('exit',px(f.exit)),
+      cell('max adverse',px(f.adverse)),
+      f.l1==null?'':cell('L1 filled',`${f.l1?'yes':'no'} <span class="mini">${f.l1Src==='maxAdverse'?'measured':'checkbox'}</span>`),
+    ].filter(Boolean).join('');
+    return `<div class="dd-t">
+      <div class="dd-hd">
+        <span><span class="pill">${f.pair||'—'}</span> <b>${f.dir||'—'}</b>
+          <span class="mini">${t.session||''}${f.time?' · '+f.time:''}${f.tz?' '+f.tz:''}</span></span>
+        <span class="dd-r ${cls(R)}">${fR(R)}</span>
+      </div>
+      <div class="dd-g">${fields}</div>${t.l1Conflict?'<div class="dd-warn">L1 checkbox disagrees with Max Adverse on this row.</div>':''}
+    </div>`;}).join('');
+  return `<div class="dd-h"><span>${day}</span><span class="${cls(tot)}">${fR(tot)} · ${ts.length} trade${ts.length>1?'s':''}</span></div>`+
+         `<div class="dd-l">${rows}</div>`;
+}
+
+function methodDrawer(m,pool){
+  const inf=METHOD_INFO[m.key]||{}, s=fullStats(seriesFor(m.key,pool));
+  const pre = String(m.key).startsWith('m_') ? MARIO_PREAMBLE : LADDER_PREAMBLE;
+  return `<tr class="dr" data-drawer="${m.key}"><td colspan="8"><div class="dr-in">
+    <div class="dr-g">
+      <div class="dr-b"><div class="dr-k">What it is</div><p>${inf.what||'<span class="mut">Not yet described.</span>'}</p></div>
+      <div class="dr-b"><div class="dr-k">How it is tested</div><p>${inf.test||'<span class="mut">—</span>'}</p></div>
+    </div>
+    <div class="dr-b dr-cal"><div class="dr-k">By day — this method only <span class="dr-hint">click a day</span></div>${miniCal(m.key,pool)}</div>
+    <div class="dr-b dr-day"><div class="dr-k">Trades on the selected day</div>${dayDetail(m.key,pool)}</div>
+    <div class="dr-pre">${pre}</div>
+  </div></td></tr>`;
+}
+
+function matrixTable(pool){
+  // MGMT, not MGMTS: the normalised list carries .key/.name on both boards. Reading
+  // m.k here emitted data-row="undefined", which set OPEN_ROW to the string
+  // "undefined" and made every drawer unopenable on the crypto side.
+  let rows=MGMT.map(m=>({m, s:fullStats(seriesFor(m.key,pool))}));   // reassigned by rankRows below
+  const scored=rows.filter(r=>r.s.n), unscored=rows.filter(r=>!r.s.n);
+  rows = rankRows(scored,pool).concat(unscored);
+  // A zero-width interval is every observation landing on the same number, not confidence.
+  // It must not take the crown.
+  const winner=rows.find(r=>r.s.n>0);
+  // One trading day cannot produce a meaningful drawdown or streak — there is no order to
+  // speak of. Grey the whole group below 10 days rather than printing numbers that look
+  // like measurements.
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  const dim = days<10 ? ' dimc' : '';
+  let html='';
+  rows.forEach(r=>{
+    const s=r.s, open=OPEN_ROW===r.m.key, isBest=winner&&r.m.key===winner.m.key&&s.n>0;
+    const ci = s.n>1
+      ? `<span class="${s.degenerate?'mut':(s.lo>0?'pos':'')}">[${fR(s.lo)}, ${fR(s.hi)}]</span>${s.degenerate?' <span class="flag" title="Every trade scored the same number — zero variance, not confidence">±0</span>':''}`
+      : '<span class="mut">—</span>';
+    html+=`<tr class="mrow ${isBest?'best':''} ${open?'is-open':''}" data-row="${r.m.key}">`+
+      `<td class="mname"><button class="chev" aria-expanded="${open}" data-row="${r.m.key}">${open?'▾':'▸'}</button>${r.m.name}</td>`+
+      `<td class="${s.n?cls(s.mean):'mut'}">${s.n?fR(s.mean):'—'}</td>`+
+      `<td class="cicol">${ci}</td>`+
+      `<td>${s.n?Math.round(s.winRate*100)+'%':'—'}</td>`+
+      `<td class="${s.n?cls(s.total):'mut'}">${s.n?fR(s.total):'—'}</td>`+
+      `<td class="mut">${s.n||'—'}</td>`+
+      // Path group. Drawdown and streak depend on the ORDER these trades happened in;
+      // expectancy and win% do not. Reshuffle the log and only these two move — so they
+      // sit behind a divider under their own heading rather than reading as peers.
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">none</span>':'<b class="neg">-'+s.dd.toFixed(2)+'R</b>'):'—'}</td>`+
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">—</span>':s.streak+'×'):'—'}</td></tr>`;
+    if(open) html+=methodDrawer(r.m,pool);
+  });
+  const note = days<10
+    ? `Worst run and streak describe the order these ${pool.length} trades happened in, not the strategy — and ${days} trading day${days===1?'':'s'} is not enough order to describe. Reshuffle the log and they change; expectancy and win% do not.`
+    : `Worst run and streak describe the order these trades happened in, not the strategy. Reshuffle the log and they change; expectancy and win% do not.`;
+  return `<table class="matrix"><thead>
+    <tr class="grp"><th></th><th colspan="4">Distribution — order-independent</th><th></th>
+        <th colspan="2" class="pathh${dim}">Path — depends on trade order</th></tr>
+    <tr><th>Method</th><th>Exp</th><th>95% CI</th><th>Win%</th><th>Tot</th><th>n</th>
+        <th class="pathc${dim}">Worst run</th><th class="pathc${dim}">Streak</th></tr>
+    </thead><tbody>${html}</tbody></table>
+    <div class="mnote">${note}</div>`;
+}
+
+function wireMatrix(){
+  document.querySelectorAll('.matrix .chev, .matrix .mrow .mname').forEach(el=>{
+    el.onclick=e=>{ e.stopPropagation();
+      const k=(e.currentTarget.dataset.row)||(e.currentTarget.closest('tr').dataset.row);
+      OPEN_ROW = OPEN_ROW===k ? null : k; render(); };
+  });
+  document.querySelectorAll('.mc-d[data-day]').forEach(c=>{
+    c.onclick=e=>{ e.stopPropagation(); const {cal,day}=e.currentTarget.dataset;
+      SEL_DAY[cal]=day; render(); };
+  });
+  document.querySelectorAll('.mc-b').forEach(b=>{
+    b.onclick=e=>{ e.stopPropagation(); const {cal,mo}=e.currentTarget.dataset;
+      if(mo){ OPEN_MONTH[cal]=mo; render(); } };
+  });
+}
+
+function evidenceBar(pool, all){
+  const days=new Set(pool.map(t=>t.date).filter(Boolean)).size;
+  // Pairs are derived from the data, not hardcoded — the same component runs on a board
+  // of MNQ/MES/MGC and one of SOL/BTC/ETH. `all` is the unfiltered log, passed in because
+  // the two boards hold it under different names.
+  const src = all || pool;
+  const mix = [...new Set(src.map(t=>t.pair||t.Pair).filter(Boolean))].sort()
+    .map(k=>`${k} ${src.filter(t=>(t.pair||t.Pair)===k).length}`).join(' · ');
+  const drops=dropCounts(pool), dropN=Object.values(drops).reduce((a,b)=>a+b,0);
+  const conflicts=pool.filter(t=>t.l1Conflict).length;
+  const notes=[];
+  if(dropN) notes.push(`${dropN} row${dropN>1?'s':''} excluded from scoring`);
+  if(conflicts) notes.push(`<b class="warn">${conflicts} row${conflicts>1?'s':''}: L1 checkbox disagrees with Max Adverse</b>`);
+  return `<div class="ebar">
+    ${verdictLine(pool)}
+    <div class="eb2">${mix}${PAIR==='all'?'':' · filtered to '+PAIR}${notes.length?' — '+notes.join(' · '):''}</div>
+  </div>`;
+}
+
+function sessionProfile(pool){
+  const ss=[...new Set(pool.map(t=>t.session).filter(Boolean))].sort((a,b)=>sessRank(a)-sessRank(b));
+  if(!ss.length) return '<div class="empty-note">No session tagged yet.</div>';
+  const allDays=new Set(pool.filter(t=>t.date).map(t=>t.date)).size;
+  let rows='';
+  ss.forEach(se=>{
+    const sub=pool.filter(t=>t.session===se);
+    const d=new Set(sub.filter(t=>t.date).map(t=>t.date)).size;
+    const rp=sub.filter(t=>t.rangePct!=null).map(t=>t.rangePct);
+    const avg = rp.length ? (rp.reduce((a,b)=>a+b,0)/rp.length).toFixed(2)+'%' : '—';
+    rows+=`<tr><td><span class="pill">${se}</span></td>
+      <td class="spn"><b>${sub.length}</b></td>
+      <td class="spn"><b>${d?(sub.length/d).toFixed(1):'0'}</b> <span class="mini">/day</span></td>
+      <td class="spn mut">${d}d</td>
+      <td class="spn"><b>${avg}</b></td></tr>`;
+  });
+  // Totals. Two different averages, and they answer different questions: how busy a
+  // trading day is, and how many of those trades a given session accounts for.
+  const perDay = allDays ? (pool.length/allDays).toFixed(1) : '0';
+  const perSession = ss.length ? (pool.length/ss.length).toFixed(1) : '0';
+  const allRp = pool.filter(t=>t.rangePct!=null).map(t=>t.rangePct);
+  const allAvg = allRp.length ? (allRp.reduce((a,b)=>a+b,0)/allRp.length).toFixed(2)+'%' : '—';
+  // Per-session sits beside the trade count, not in the range column — it is a count, and
+  // a count in a column headed "Avg range %" reads as a percentage.
+  rows+=`<tr class="sptot"><td><b>All</b></td>
+      <td class="spn"><b>${pool.length}</b> <span class="mini">${perSession}/session</span></td>
+      <td class="spn"><b>${perDay}</b> <span class="mini">/day</span></td>
+      <td class="spn mut">${allDays}d</td>
+      <td class="spn"><b>${allAvg}</b></td></tr>`;
+  return `<table class="sp"><thead><tr><th>Session</th><th>Trades</th><th>Rate</th><th>Days</th><th>Avg range %</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="mnote">Counts and rates are descriptive at any sample size. Which exit is best <em>per session</em> is deliberately not shown — at these counts every cell would be two or three trades, and a method name in a cell reads as a recommendation.</div>`;
+}
+
+function primerBlock(){
+  return `<div class="card prim">
+    <div class="primhd" id="primTog"><span>How to read this board</span><span class="mini">${PRIMER_OPEN?'– collapse':'+ expand'}</span></div>
+    ${PRIMER_OPEN?`<div class="primbody">
+      <p><b>Every row is the same trades read a different way.</b> Ten exit rules scored against one log — not ten separate samples. Do not add the n column up.</p>
+      <p><b>Two models, two rulers.</b> The VCL ladder enters at fib 0.382 with an L1 at 0.17 and its stop at fib 0; Super Mario is a single order whose stop <em>is</em> fib 0, entering at 0.325 with the TP at 0.65. Both enter at the same price, but <b>ladder 1R is about 1.86× Super Mario 1R</b>. R does not convert across the toggle — never compare a number from one against the other.</p>
+      <p><b>Ranked by the lower bound of the 95% interval</b>, not raw expectancy. A method that pays well because of one outlier has a wide interval and a poor lower bound; one that pays consistently ranks above it. An interval of ±0 means every trade scored the same number — that is zero variance, not confidence, and it cannot take the top spot.</p>
+      <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not.</p>
+    </div>`:''}
+  </div>`;
+}
+
+// Ranking, tie-aware. The lower bound decides who is in contention — it penalises an
+// edge that rests on one outlier. But it must not DECIDE between methods the data cannot
+// separate: on the crypto log it put `cap 1.95` above `uncapped trail` on a 0.0198R
+// difference in lower bound, while a paired test of the two on the same trades returned
+// [-0.152, +0.249] — no separation at all. So: take the best lower bound, gather everything
+// statistically tied with it (paired difference straddling zero), and order that group by
+// expectancy. Ties resolve on the number a reader is actually comparing.
+function rankRows(rows, pool){
+  if(rows.length<2) return rows;
+  const sorted=[...rows].sort((a,b)=>rankKey(b.s)-rankKey(a.s));
+  const head=sorted[0];
+  // TWO conditions, not one. A paired test alone is not enough: at small n nothing
+  // separates from anything, the "tied" group becomes every method, and ordering it by
+  // expectancy silently degrades into ranking by expectancy — which puts the widest,
+  // most outlier-driven method on top. On the 4-trade futures log that returned
+  // Full TP @ 5R, interval [-2.02, +5.26], to first place.
+  // So a method is tied only if it ALSO sits within a trading-meaningful distance of the
+  // head on the ranking key. 0.10R: below that the two are the same trade in practice.
+  const TIE_R = 0.10;
+  const tied=sorted.filter(r=>{
+    if(r===head) return true;
+    if(Math.abs(rankKey(head.s)-rankKey(r.s)) > TIE_R) return false;
+    const p=paired(head.m.key, r.m.key, pool);
+    return !(p.n>0 && (p.lo>0 || p.hi<0));     // close AND not separated => tied
+  });
+  tied.sort((a,b)=>(b.s.mean??-999)-(a.s.mean??-999));
+  return tied.concat(sorted.filter(r=>!tied.includes(r)));
+}
+
+function leaderOf(pool){
+  const rows=MGMT.map(m=>({m,s:statsFor(m.key,pool)})).filter(x=>x.s.n);
+  if(!rows.length) return null;
+  const order=rankRows(rows,pool);
+  return {best:order[0], up:order[1], order};
+}
+
+function recoCard(pool){
+  const sessions=[...new Set(pool.map(t=>t.session).filter(Boolean))];
+  const rx=sessions.map(se=>({se,b:bestMethod(pool.filter(t=>t.session===se))})).filter(x=>x.b).sort((a,b)=>sessRank(a.se)-sessRank(b.se));
+  const rser=recoSeries(pool), rs=stats(rser), rdd=maxDrawdown(rser), rmls=maxLossStreak(rser);
+  if(!rx.length) return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div><div class="empty-note">No trades yet.</div></div>`;
+  let sess='';
+  rx.forEach(x=>{ const weak=x.b.exp<0.2, thin=x.b.n<5;
+    sess+=`<tr><td><span class="pill">${x.se}</span></td>
+      <td class="pm">${x.b.label}${weak?' <span class="mini" style="color:#e0b341">weak</span>':''}${thin?' <span class="mini">thin</span>':''}</td>
+      <td class="pr ${cls(x.b.exp)}">${fR(x.b.exp)}</td>
+      <td class="pci mut">${x.b.deg?'<span class="flag">±0</span>':`[${fR(x.b.lo)}, ${fR(x.b.hi)}]`}</td>
+      <td class="pn mut">n${x.b.n}</td></tr>`; });
+  // Tilt is measured on whatever method currently leads, not a hardcoded one — `hyA`
+  // does not exist on the crypto board.
+  const tk=(leaderOf(pool)||{}).best, TK=tk?tk.m.key:(MGMT[0]||{}).key;
+  const dirOf=t=>t.dir||t.Direction;
+  const L=stats(pool.filter(t=>dirOf(t)==='Long').map(t=>RV(t,TK)).filter(x=>x!=null));
+  const S=stats(pool.filter(t=>dirOf(t)==='Short').map(t=>RV(t,TK)).filter(x=>x!=null));
+  let tilt=''; if(L.n&&S.n){ const fav=L.exp>S.exp?'Long':'Short'; tilt=`<div class="ptilt"><span class="lbl">Direction tilt</span><span>L <b class="${cls(L.exp)}">${fR(L.exp)}</b> · S <b class="${cls(S.exp)}">${fR(S.exp)}</b> → <b>${fav}</b></span></div>`; }
+  // Reported as a DELTA against simply running the leader throughout. As its own headline
+  // number it competed with the answer card and lost, which read as a second opinion
+  // rather than as the answer to the question it actually asks: is switching by session
+  // worth anything over not switching?
+  const LD=leaderOf(pool), lead=LD?LD.best:null, leadExp=lead?lead.s.mean:null;
+  const delta = (leadExp!=null && rs.exp!=null) ? rs.exp-leadExp : null;
+  const verdict = delta==null ? ''
+    : Math.abs(delta)<0.05 ? 'no different from not switching at all'
+    : delta>0 ? `better than <b>${lead.m.name}</b> alone`
+              : `<b>worse</b> than <b>${lead.m.name}</b> alone`;
+  const recoStats=`<div class="band" style="margin:4px 0 2px">
+      <div class="bandnum ${delta==null?'mut':cls(delta)}">${delta==null?'—':(delta>=0?'+':'')+delta.toFixed(2)+'R'}</div>
+      <div class="bandci">per trade vs the leader · ${verdict}</div></div>
+    <div class="mini" style="margin-bottom:6px">${fR(rs.exp)} switching · ${leadExp==null?'—':fR(leadExp)} not switching · n${rs.n}</div>`;
+  return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 5px">By session, in order</div><table class="ptab">${sess}</table>${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
+}
+
+function recoMap(pool){ const map={};
+  [...new Set(pool.map(t=>t.session).filter(Boolean))].forEach(se=>{ const b=bestMethod(pool.filter(t=>t.session===se)); if(b) map[se]={mk:b.mk}; });
+  return map; }
+
+function recoSeries(pool){ const m=recoMap(pool); return pool.map(t=>{ const p=m[t.session]; return p?RV(t,p.mk):null; }).filter(x=>x!=null); }
+
+function bestMethod(rows){
+  let best=null;
+  // Reads through MGMT + RV, never t.r[m.k]: that shape is one board's, and this function
+  // runs on both.
+  MGMT.forEach(m=>{
+    const s=fullStats(rows.map(t=>RV(t,m.key)).filter(x=>x!=null));
+    if(!s.n) return;
+    if(!best || rankKey(s) > rankKey(best.s))
+      best={mk:m.key,label:m.name,n:s.n,exp:s.mean,lo:s.lo,hi:s.hi,deg:s.degenerate,tot:s.total,wr:s.winRate,s};
+  });
+  return best; }
+
+function sessRank(s){ const i=SESS_ORDER.indexOf(s); return i<0?99:i; }
+
+function dropCounts(pool){
+  // Board-agnostic: a row is EXCLUDED when it scores no outcome at all, and INVALID when a
+  // field the scorer depends on is present but impossible. Written against the method keys
+  // rather than one board's column names so the same function runs on both.
+  let excluded=0, invalid=0;
+  pool.forEach(t=>{
+    const scored = MGMT.some(m=>RV(t,m.key)!=null);
+    const raw = t.raw||t;
+    const ma  = num(raw.MaxAdverse);
+    if(ma===0){ invalid++; return; }          // a logged zero is a placeholder, not a price
+    if(!scored) excluded++;
+  });
+  return {excluded, invalid};
+}
+
+let MATRIX_OPEN=true, PRIMER_OPEN=false;
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML=testBanner(ALL)+'<div class="card"><div class="empty-note">No VCL V5 trades logged for this pair yet.</div></div>'; return; }
-  board.innerHTML = testBanner(pool) +
-    verdictLine(pool) +
-    winnerCard(pool) +
-    `<div class="sectionhd">Full numbers — every outcome, ranked</div>` + rankedTable(pool) +
-    reachLadderSVG(pool) +
-    intervalStripSVG(pool) +
-    `<div class="foot">Every outcome is paired on identical trades. R comes straight from the Notion formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
-  document.querySelectorAll('#board details, .primer').forEach(d=>{
-    if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
-  });
+  const matrixSummary=(()=>{
+    const rows=MGMT.map(m=>statsFor(m.key,pool)).filter(x=>x.n);
+    return `${MGMT.length} outcomes on the same ${pool.length} trades · ${rows.filter(x=>x.lo>0).length} clear zero`;
+  })();
+  board.innerHTML = testBanner(pool) + `
+    ${evidenceBar(pool, ALL)}
+    ${primerBlock()}
+    <div class="grid2">
+      <div>${winnerCard(pool)}</div>
+      <div>
+        <div class="card"><div class="lbl">Session profile</div>${sessionProfile(pool)}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="primhd" id="matTog"><span>Full numbers — every outcome, ranked</span>
+        <span class="mini">${matrixSummary} &nbsp; ${MATRIX_OPEN?'– collapse':'+ expand'}</span></div>
+      ${MATRIX_OPEN?matrixTable(pool):''}
+    </div>
+    <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
+    <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
+    <div class="foot">Every outcome is paired on identical trades — the same ${pool.length} trades read a different way, not eight separate samples. Trades cluster by trading day; treat n as an upper bound on independent evidence.</div>`;
+  const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
+  const mt=document.getElementById('matTog'); if(mt) mt.onclick=()=>{MATRIX_OPEN=!MATRIX_OPEN; render();};
+  if(MATRIX_OPEN) wireMatrix();
 }
 
 /* ============================== data + wiring ============================== */

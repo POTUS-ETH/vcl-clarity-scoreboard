@@ -464,8 +464,11 @@ async function computeGrant(token) {
       notes:     getProp(t, 'Notes'),
       // Crypto is Super Mario only (2026-08-25). The VCL ladder was retired from this board
       // because the L1 leg forces range-sized trades and creates a leverage problem in crypto.
-      // Trailing BOS Exit and Max Adverse were the two fields the ladder scorer needed and
-      // neither existed on this schema — the reads are removed rather than renamed.
+      // Max Adverse genuinely does not exist on this schema, so no ladder stop can be
+      // settled here — that read stays out. The trail exit DOES exist, as `Trailing/Stop
+      // Exit` (renamed from `Trailing BOS Exit`); it is the price behind bosExitR and the
+      // per-method drawer shows it, so read it under its current name rather than dropping it.
+      bosExit:      getProp(t, 'Trailing/Stop Exit'),
       avwapTouches: getProp(t, 'AVWAP Touches Before Entry'),
       // the eight outcomes, straight off the Notion formulas
       maxRunR:     getProp(t, 'Max Run R'),
