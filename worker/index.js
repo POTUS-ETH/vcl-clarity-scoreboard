@@ -389,10 +389,6 @@ async function computeCraig(token) {
       l1:        getProp(t, 'L1 Price'),
       sl:        getProp(t, 'SL Price'),
       maxRun:    getProp(t, 'Max Run'),
-      // Max Adverse: present on this schema and now sent. The widget's stop test prefers
-      // it and falls back to the trail exit only where it is blank — the fallback can see
-      // a trade that ENDED through the stop but not one that dipped through and recovered.
-      maxAdverse: getProp(t, 'Max Adverse'),
       anchor:    getProp(t, '1 of Fib Price'),   // fib 1.0 — drives the BE move on all 18
       t1618:     getProp(t, '1.618 Price'),
       t2272:     getProp(t, '2.272 Price'),
@@ -459,6 +455,10 @@ async function computeGrant(token) {
       entry:     getProp(t, 'Entry Price'),
       anchor:    getProp(t, '1 of Fib Price'),
       maxRun:    getProp(t, 'Max Run'),
+      // Max Adverse: present on this schema and now sent. The widget's stop test prefers
+      // it and falls back to the trail exit only where it is blank — the fallback can see
+      // a trade that ENDED through the stop but not one that dipped through and recovered.
+      maxAdverse: getProp(t, 'Max Adverse'),
       // solved geometry, exposed so a consumer can re-derive any R independently
       fib0:      getProp(t, 'Fib 0 Price'),
       stop:      getProp(t, 'Stop Price'),
