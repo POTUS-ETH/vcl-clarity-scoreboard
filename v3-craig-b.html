@@ -24,6 +24,25 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
 .lbl{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--mut);margin-bottom:7px}
 .pos{color:var(--pos)}.neg{color:var(--neg)}.mut{color:var(--mut)}.na{color:#3d4553}
+.cal{margin-top:4px}
+.calfilters{display:flex;flex-direction:column;gap:7px;margin:8px 0 14px}
+.cf{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.cflbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);width:74px;flex:none}
+.calsel{background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:6px;padding:4px 9px;font:inherit;font-size:11px;cursor:pointer}
+.cal .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal .calhd button{border:1px solid var(--border);background:var(--card);color:var(--ink);border-radius:6px;padding:3px 9px;cursor:pointer;font:inherit;font-size:12px}
+.cal .calhd button[disabled]{opacity:.35;cursor:default}
+.cal .month{font-size:13px;font-weight:700}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.dow div{font-size:9px;color:var(--mut);text-align:center;letter-spacing:.5px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day{aspect-ratio:1/.82;border:1px solid var(--border);border-radius:7px;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;background:#12161e}
+.day.empty{background:transparent;border:0}
+.day .dn{font-size:9px;color:var(--mut)}
+.day .dr{font-size:12px;font-weight:700}
+.day .dc{font-size:8px;color:var(--mut)}
+.day.win{background:rgba(57,135,229,.12);border-color:rgba(57,135,229,.45)}
+.day.loss{background:rgba(230,103,103,.12);border-color:rgba(230,103,103,.45)}
 
 /* ---- primer ---- */
 .primer{border:1px solid #2a3140;margin-bottom:10px}
@@ -160,6 +179,9 @@ const nameOf=m=>`${MGSHORT[m.mg]} · ${m.tgt}`;
 const findM=(mg,tgt)=>METH.find(m=>m.mg===mg&&m.tgt===tgt);
 
 let TRADES=[], ALL=[], ASSET='all', TF='1m', firstLoad=true, lastOk=null;
+// Calendar state. Its own selectors, deliberately independent of the board's other
+// filters — the question "which days did this method lose on" is asked per method.
+let CAL_METH='best', CAL_MODE='blend', CAL_SESS='all', CAL_MONTH=null;
 const OPEN=new Set();
 
 /* ============================== stats primitives ============================== */
@@ -498,6 +520,78 @@ function disclosure(id,title,bodyHtml){
   const open=OPEN.has(id);
   return `<details class="l2" id="${id}" ${open?'open':''}><summary>${title}</summary><div class="body">${bodyHtml}</div></details>`;
 }
+/* ============================== calendar ============================== */
+const ym=d=>d?String(d).slice(0,7):null;
+// Highest expectancy in the current pool under the selected mode. Mirrors the board's own
+// ranking rather than inventing a second definition of "best".
+function bestMethFor(pool, mode){
+  let best=null, bestE=-Infinity;
+  METH.forEach(m=>{ const st=statsFor(m,pool,mode); if(st.n && st.mean>bestE){ bestE=st.mean; best=m; } });
+  return best;
+}
+function calMeth(pool){
+  return CAL_METH==='best' ? bestMethFor(pool,CAL_MODE) : (METH.find(m=>m.k===CAL_METH)||METH[0]);
+}
+function calControls(pool){
+  const methOpts=`<option value="best" ${CAL_METH==='best'?'selected':''}>\u2605 Best by expectancy</option>`
+    +METH.map(m=>`<option value="${m.k}" ${CAL_METH===m.k?'selected':''}>${nameOf(m)}</option>`).join('');
+  const modeOpts=[['blend','Blended by fill'],['sc','50% off at the anchor']]
+    .map(([v,l])=>`<option value="${v}" ${CAL_MODE===v?'selected':''}>${l}</option>`).join('');
+  const sessions=[...new Set(pool.map(t=>t.Session).filter(Boolean))].sort((a,b)=>(SESRANK[a]??9)-(SESRANK[b]??9));
+  const sessOpts=['all',...sessions].map(x=>`<option value="${x}" ${CAL_SESS===x?'selected':''}>${x==='all'?'All sessions':x}</option>`).join('');
+  return `<div class="calfilters">
+    <div class="cf"><span class="cflbl">Method</span><select class="calsel" data-f="meth">${methOpts}</select></div>
+    <div class="cf"><span class="cflbl">Mode</span><select class="calsel" data-f="mode">${modeOpts}</select></div>
+    <div class="cf"><span class="cflbl">Session</span><select class="calsel" data-f="sess">${sessOpts}</select></div>
+  </div>`;
+}
+function wireCalControls(){
+  document.querySelectorAll('#calCard .calsel').forEach(sel=>{
+    sel.onchange=()=>{ const f=sel.dataset.f, v=sel.value;
+      if(f==='meth') CAL_METH=v; else if(f==='mode') CAL_MODE=v; else if(f==='sess') CAL_SESS=v;
+      renderCalendar(); };
+  });
+}
+function calTitle(m){
+  const parts=[(CAL_METH==='best'?'\u2605 ':'')+(m?nameOf(m):'\u2014')];
+  if(CAL_MODE==='sc') parts.push('50% off');
+  if(CAL_SESS!=='all') parts.push(CAL_SESS);
+  if(ASSET!=='all') parts.push(ASSET.toUpperCase());
+  return parts.join(' \u00b7 ');
+}
+function renderCalendar(){
+  const card=document.getElementById('calCard'); if(!card) return;
+  const pool=TRADES.filter(t=>CAL_SESS==='all'||t.Session===CAL_SESS);
+  const m=calMeth(pool);
+  const head=`<div class="lbl">Calendar \u2014 net R (${calTitle(m)})</div>`;
+  const controls=calControls(TRADES);
+  const dated=m?pool.filter(t=>t.date&&tradeR(t,m,CAL_MODE)!=null):[];
+  const months=[...new Set(dated.map(t=>ym(t.date)))].sort();
+  if(!months.length){
+    card.innerHTML=head+controls+`<div class="empty-note">No scored trades match this filter yet.</div>`;
+    wireCalControls(); return;
+  }
+  if(!CAL_MONTH||!months.includes(CAL_MONTH)) CAL_MONTH=months[months.length-1];
+  const idx=months.indexOf(CAL_MONTH), [Y,M]=CAL_MONTH.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
+  const byDay={};
+  dated.filter(t=>ym(t.date)===CAL_MONTH).forEach(t=>{
+    const d=Number(String(t.date).slice(8,10)), r=tradeR(t,m,CAL_MODE);
+    (byDay[d]=byDay[d]||{sum:0,n:0}); byDay[d].sum+=r; byDay[d].n++; });
+  let cells=''; for(let i=0;i<start;i++) cells+='<div class="day empty"></div>';
+  for(let d=1;d<=dim;d++){ const x=byDay[d]; let c='day', body='';
+    if(x){ c+= x.sum>0.005?' win':(x.sum<-0.005?' loss':''); body=`<div class="dr ${cls(x.sum)}">${fR(x.sum)}</div><div class="dc">${x.n} trade${x.n>1?'s':''}</div>`; }
+    cells+=`<div class="${c}"><div class="dn">${d}</div>${body}</div>`; }
+  card.innerHTML=head+controls+
+    `<div class="calhd"><button ${idx<=0?'disabled':''} id="pm">\u2039</button><div class="month">${first.toLocaleString('en-US',{month:'long',year:'numeric'})}</div><button ${idx>=months.length-1?'disabled':''} id="nm">\u203a</button></div>
+    <div class="dow"><div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div></div>
+    <div class="days">${cells}</div>`;
+  wireCalControls();
+  const pm=document.getElementById('pm'), nm=document.getElementById('nm');
+  if(pm) pm.onclick=()=>{ CAL_MONTH=months[idx-1]; renderCalendar(); };
+  if(nm) nm.onclick=()=>{ CAL_MONTH=months[idx+1]; renderCalendar(); };
+}
+
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet.</div></div>'; return; }
@@ -507,7 +601,9 @@ function render(){
     cubeBlock(pool) +
     `<div class="twocol">${insuranceBlock(pool)}${beMoveBlock(pool)}</div>` +
     integrityStrip(pool) +
+    `<div class="card cal" id="calCard"></div>` +
     `<div class="foot">Every comparison on this board is paired on identical trades, because outcomes here differ by 0.1–0.4R and unmatched row sets alone can move a mean by more than that. R comes straight from the Notion outcome formulas; this board aggregates, it does not recompute. Trades cluster by trading day — treat n as an upper bound on independent evidence, not the real one.</div>`;
+  renderCalendar();
   document.querySelectorAll('#board details, .primer').forEach(d=>{
     if(d.classList.contains('l2')) d.addEventListener('toggle',()=>{ if(d.open) OPEN.add(d.id); else OPEN.delete(d.id); });
   });
