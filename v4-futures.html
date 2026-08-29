@@ -209,16 +209,16 @@ table.sp tr.sptot{color:#c3c9d4}
 // Two models scored off the SAME logged row. They share the fib geometry and differ only
 // in where the stop sits and whether there is an L1 leg — so one set of typed prices
 // settles both, and neither is a counterfactual needing bar data to reconstruct.
-const MGMTS_LADDER=[{k:'f1',label:'Full TP @ 0.552 for 1R',fam:'full',short:'F1'},{k:'p1',label:'50% @ 0.552 \u2192 trail, uncapped',fam:'part',short:'P1'},{k:'hyA',label:'Hybrid A \u00b7 entry FTP / L1 50%',fam:'full',short:'HyA'},{k:'hyB',label:'Hybrid B \u00b7 entry 50% / L1 FTP',fam:'part',short:'HyB'},
+const MGMTS_LADDER=[{k:'f1',label:'Full TP @ 0.55 for 1R',fam:'full',short:'F1'},{k:'p1',label:'50% @ 0.55 \u2192 trail, uncapped',fam:'part',short:'P1'},{k:'hyA',label:'Hybrid A \u00b7 entry FTP / L1 50%',fam:'full',short:'HyA'},{k:'hyB',label:'Hybrid B \u00b7 entry 50% / L1 FTP',fam:'part',short:'HyB'},
   // Full TP @ 2R/3R/5R and 50% + N-R runner variants. Miss defaults to posExit (BoS trail),
   // NOT SM-style -1R — the ladder always has a BoS exit whereas Mario non-TP outcomes are
   // by definition stop-outs. Ladder rows must stay consistent with existing f1/p1.
-  {k:'f2',label:'Full TP @ 0.828 for 2R',short:'F2'},{k:'f3',label:'Full TP @ 1.104 for 3R',short:'F3'},{k:'f5',label:'Full TP @ 1.656 for 5R',short:'F5'},
-  {k:'p3',label:'50% @ 0.552 \u2192 cap 1.104 for 2R',short:'P3'},{k:'p5',label:'50% @ 0.552 \u2192 cap 1.656 for 3R',short:'P5'},{k:'p7',label:'50% @ 0.552 \u2192 cap 2.208 for 4R',short:'P7'},{k:'p9',label:'50% @ 0.552 \u2192 cap 2.760 for 5R',short:'P9'}];
+  {k:'f2',label:'Full TP @ 0.83 for 2R',short:'F2'},{k:'f3',label:'Full TP @ 1.1 for 3R',short:'F3'},{k:'f5',label:'Full TP @ 1.66 for 5R',short:'F5'},
+  {k:'p3',label:'50% @ 0.55 \u2192 cap 1.1 for 2R',short:'P3'},{k:'p5',label:'50% @ 0.55 \u2192 cap 1.66 for 3R',short:'P5'},{k:'p7',label:'50% @ 0.55 \u2192 cap 2.21 for 4R',short:'P7'},{k:'p9',label:'50% @ 0.55 \u2192 cap 2.76 for 5R',short:'P9'}];
 const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half',label:'50% \u2192 uncapped trail'},
   {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
   {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
-const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse. Full @2R/3R/5R hold the whole position for a further target and exit on BoS if it never trades there \u2014 they never book a synthetic \u22121R. 50% + N-R runner locks half at 1R and aims the runner at the higher target; the runner exits on BoS if it doesn\u2019t trade there. Because entry-only trades run at half size, their targets sit at roughly double the distance: with L1 filled 2R/3R/5R are fib 0.828 / 1.104 / 1.656, entry-only 1.486 / 2.038 / 3.142.';
+const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse. Full @2R/3R/5R hold the whole position for a further target and exit on BoS if it never trades there \u2014 they never book a synthetic \u22121R. 50% + N-R runner locks half at 1R and aims the runner at the higher target; the runner exits on BoS if it doesn\u2019t trade there. Because entry-only trades run at half size, their targets sit at roughly double the distance: with L1 filled 2R/3R/5R are fib 0.83 / 1.104 / 1.656, entry-only 1.486 / 2.038 / 3.142.';
 const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM Trail Stop</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
@@ -340,7 +340,7 @@ function computeR(row){
     r.p3 = peakR>=1 ? (peakR>=3 ? 0.5+0.5*3 : 0.5+0.5*posExit) : posExit;
     r.p5 = peakR>=1 ? (peakR>=5 ? 0.5+0.5*5 : 0.5+0.5*posExit) : posExit;
     // Delivered NR needs the runner to reach 2N-1, because only half the position remains:
-    // 4R = runner 7R (fib 2.208), 5R = runner 9R (fib 2.760).
+    // 4R = runner 7R (fib 2.21), 5R = runner 9R (fib 2.76).
     r.p7 = peakR>=1 ? (peakR>=7 ? 0.5+0.5*7 : 0.5+0.5*posExit) : posExit;
     r.p9 = peakR>=1 ? (peakR>=9 ? 0.5+0.5*9 : 0.5+0.5*posExit) : posExit;
   }
@@ -385,30 +385,30 @@ const LADDER_PREAMBLE='Two limit orders: entry at fib 0.382, L1 at 0.17, stop at
 const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.975, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
 const METHOD_INFO={
   f1:{what:'Close the entire position the moment price trades 1R in profit. If it never does, the trade exits wherever the break-of-structure trail actually took it.',
-      test:'Gated by <b>VCL Max Run</b> against fib 0.552 (L1 filled) or 0.934 (entry-only). On a miss, scored at the <b>logged VCL Trail Stop</b> — a hand-read price, not a computed level.',
+      test:'Gated by <b>VCL Max Run</b> against fib 0.55 (L1 filled) or 0.934 (entry-only). On a miss, scored at the <b>logged VCL Trail Stop</b> — a hand-read price, not a computed level.',
       fail:'Caps every winner at exactly +1R, so a 6R trade and a 1R trade score identically. It tells you nothing about the tail.'},
-  f2:{what:'Same rule held to 2R: fib 0.828 with L1 filled, 1.486 entry-only.',
+  f2:{what:'Same rule held to 2R: fib 0.83 with L1 filled, 1.486 entry-only.',
       test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>, never a synthetic −1R.',
       fail:'On any trade that misses 2R this row is identical to Full @3R and @5R — three of four live trades score the same in all three columns.'},
-  f3:{what:'Whole position held to 3R: fib 1.104 with L1 filled, 2.038 entry-only.',
+  f3:{what:'Whole position held to 3R: fib 1.1 with L1 filled, 2.038 entry-only.',
       test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>.',
       fail:'Same fate-sharing as Full @2R, and at four trades its entire lead comes from one trade that ran 6.6R.'},
-  f5:{what:'Whole position held to 5R: fib 1.656 with L1 filled, 3.142 entry-only.',
+  f5:{what:'Whole position held to 5R: fib 1.66 with L1 filled, 3.142 entry-only.',
       test:'Gated by <b>VCL Max Run</b>; a miss exits at the <b>logged VCL Trail Stop</b>.',
       fail:'Ranks top on raw expectancy off a single trade. Remove that trade and it ranks below Full @1R — and its interval is the widest on the board.'},
   p1:{what:'Bank half at 1R, then let the remainder ride the BoS trail with no further target. If 1R never trades, nothing is banked and the whole position is scored at the trail exit.',
       test:'Gated by <b>VCL Max Run</b> for the partial, then <b>entirely by the logged VCL Trail Stop</b> for the runner.',
       fail:'The runner is not floored at break-even, so a trade that reaches 1R and gives it all back books 0.5 plus half a negative number.'},
-  p3:{what:'Bank half at 1R (worth 0.5R), runner to fib 1.104 \u2014 the 3R level. Half size reaching 3R pays 1.5R, so the position tops out at +2.00R.',
+  p3:{what:'Bank half at 1R (worth 0.5R), runner to fib 1.1 \u2014 the 3R level. Half size reaching 3R pays 1.5R, so the position tops out at +2.00R.',
       test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
-      fail:'Distinguishable from the uncapped variant only on trades running past fib 1.104 — one in four here.'},
-  p5:{what:'Bank half at 1R (worth 0.5R), runner to fib 1.656 \u2014 the 5R level. Half size reaching 5R pays 2.5R, so the position tops out at +3.00R.',
+      fail:'Distinguishable from the uncapped variant only on trades running past fib 1.1 — one in four here.'},
+  p5:{what:'Bank half at 1R (worth 0.5R), runner to fib 1.66 \u2014 the 5R level. Half size reaching 5R pays 2.5R, so the position tops out at +3.00R.',
       test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
-      fail:'Distinguishable only on trades running past fib 1.656, and its rank rests on the single 6.6R trade.'},
-  p7:{what:'Bank half at 1R (worth 0.5R), runner to fib 2.208 \u2014 the 7R level. Half size reaching 7R pays 3.5R, so the position tops out at +4.00R.',
+      fail:'Distinguishable only on trades running past fib 1.66, and its rank rests on the single 6.6R trade.'},
+  p7:{what:'Bank half at 1R (worth 0.5R), runner to fib 2.21 \u2014 the 7R level. Half size reaching 7R pays 3.5R, so the position tops out at +4.00R.',
       test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
       fail:'On this log every trade reaching 7R also reaches 9R, so this and the 5R delivery are the same result under two names until a trade lands between them.'},
-  p9:{what:'Bank half at 1R (worth 0.5R), runner to fib 2.760 \u2014 the 9R level. Half size reaching 9R pays 4.5R, so the position tops out at +5.00R.',
+  p9:{what:'Bank half at 1R (worth 0.5R), runner to fib 2.76 \u2014 the 9R level. Half size reaching 9R pays 4.5R, so the position tops out at +5.00R.',
       test:'Same gates: <b>VCL Max Run</b>, then the <b>logged VCL Trail Stop</b> on a miss.',
       fail:'Reached by one trade in ten here.'},
   hyA:{what:'Picks the exit per trade by how the ladder filled: L1 filled → 50% @1R with a runner; entry-only → Full @1R. The V3 live default.',

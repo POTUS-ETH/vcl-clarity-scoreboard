@@ -302,7 +302,7 @@ const FAMILIES_MARIO=[
 const MGMT_MARIO=[
   {key:'smFull1R', fam:'full', name:'Full TP @ 0.65 for 1R',  short:'F1R', lvl:'fib 0.65',
    desc:'Whole position off at 1R — the 0.65 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
-  {key:'smFull2R', fam:'full', name:'Full TP @ 0.975 for 2R',  short:'F2R', lvl:'fib 0.975',
+  {key:'smFull2R', fam:'full', name:'Full TP @ 0.98 for 2R',  short:'F2R', lvl:'fib 0.98',
    desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
   {key:'smFull3R', fam:'full', name:'Full TP @ 1.30 for 3R',  short:'F3R', lvl:'fib 1.30',
    desc:'Whole position off at 3R, the 1.30 extension.'},
@@ -619,13 +619,13 @@ let MODEL='mario';
 // outcome, at which level, and what happens on a miss — the line a reader needs to
 // judge whether a number means anything. Keys are crypto's; the futures board holds
 // the same text under its own keys.
-const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.975, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
+const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.98, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
 const LADDER_PREAMBLE=MARIO_PREAMBLE;
 const METHOD_INFO={
   smFull1R:{what:'Close the whole position at the TP, fib 0.65.',
       test:'Gated by <b>SM Max Run</b> against the TP, with <b>Max Adverse</b> settling the stop-out first.',
       fail:'The TP is exactly 1R away, so expectancy here is nothing but 2 × win% − 1. It carries no information beyond the win rate, and discards the entire tail.'},
-  smFull2R:{what:'Whole position off at 2R, fib 0.975 — just inside the anchor.',
+  smFull2R:{what:'Whole position off at 2R, fib 0.98 — just inside the anchor.',
       test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first. A miss is scored at the real trail exit, not a synthetic loss.',
       fail:'Shares its fate with 3R and 5R on any trade that misses 2R.'},
   smFull3R:{what:'Whole position off at 3R, fib 1.30.',
