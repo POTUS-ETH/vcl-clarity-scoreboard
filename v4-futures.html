@@ -215,9 +215,17 @@ const MGMTS_LADDER=[{k:'f1',label:'Full TP @ 0.55 for 1R',fam:'full',short:'F1'}
   // by definition stop-outs. Ladder rows must stay consistent with existing f1/p1.
   {k:'f2',label:'Full TP @ 0.83 for 2R',short:'F2'},{k:'f3',label:'Full TP @ 1.1 for 3R',short:'F3'},{k:'f5',label:'Full TP @ 1.66 for 5R',short:'F5'},
   {k:'p3',label:'50% @ 0.55 \u2192 cap 1.1 for 2R',short:'P3'},{k:'p5',label:'50% @ 0.55 \u2192 cap 1.66 for 3R',short:'P5'},{k:'p7',label:'50% @ 0.55 \u2192 cap 2.21 for 4R',short:'P7'},{k:'p9',label:'50% @ 0.55 \u2192 cap 2.76 for 5R',short:'P9'}];
-const MGMTS_MARIO=[{k:'m_trail',label:'Full size \u2192 BE + trail'},{k:'m_half',label:'50% \u2192 uncapped trail'},
-  {k:'m_cap3',label:'50% \u2192 cap 1.30'},{k:'m_cap5',label:'50% \u2192 cap 1.95'},
-  {k:'m_f1',label:'Full TP @ 1R'},{k:'m_f2',label:'Full TP @ 2R'},{k:'m_f3',label:'Full TP @ 3R'},{k:'m_f5',label:'Full TP @ 5R'}];
+const MGMTS_MARIO=[
+  {k:'m_f1',label:'Full TP @ 0.65 for 1R',short:'F1R'},
+  {k:'m_f2',label:'Full TP @ 0.98 for 2R',short:'F2R'},
+  {k:'m_f3',label:'Full TP @ 1.30 for 3R',short:'F3R'},
+  {k:'m_f5',label:'Full TP @ 1.95 for 5R',short:'F5R'},
+  {k:'m_trail',label:'Full size @ BE + trail',short:'FTrail'},
+  {k:'m_cap3',label:'50% @ 0.65 \u2192 cap 1.30 for 2R',short:'C2R'},
+  {k:'m_cap5',label:'50% @ 0.65 \u2192 cap 1.95 for 3R',short:'C3R'},
+  {k:'m_cap7',label:'50% @ 0.65 \u2192 cap 2.60 for 4R',short:'C4R'},
+  {k:'m_cap9',label:'50% @ 0.65 \u2192 cap 3.25 for 5R',short:'C5R'},
+  {k:'m_half',label:'50% @ 0.65 \u2192 trail, uncapped',short:'Trail'}];
 const FOOT_LADDER='R math: 1R = full-ladder risk |avg(entry,L1) \u2212 SL|. Losses are full \u22121R (L1 always fills before the stop). Entry-only trades (L1 not filled) are scored at half size, so a "hit 1R" target requires the run to reach that <em>profit</em> \u2014 roughly twice the distance. Full @1R closes the whole position at 1R; 50% @1R banks half at 1R and trails the rest on BoS. Hybrid A picks per-trade by fill type: L1 filled \u2192 50% @1R + runner, entry-only \u2192 Full @1R (the V3 live default). Hybrid B is the inverse. Full @2R/3R/5R hold the whole position for a further target and exit on BoS if it never trades there \u2014 they never book a synthetic \u22121R. 50% + N-R runner locks half at 1R and aims the runner at the higher target; the runner exits on BoS if it doesn\u2019t trade there. Because entry-only trades run at half size, their targets sit at roughly double the distance: with L1 filled 2R/3R/5R are fib 0.83 / 1.104 / 1.656, entry-only 1.486 / 2.038 / 3.142.';
 const FOOT_MARIO='R math: single order, no L1 leg. The fib is drawn stop-to-anchor \u2014 <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = TP, 1.0 = anchor \u2014 so the TP is exactly double the entry and sits at 1.000R by construction, which is why Full TP @ 1R is a pure 1:1 bet. Excursions come from <b>SM Max Run / SM Trail Stop</b>, never the ladder\u2019s pair \u2014 the SM trail arms earlier, so the two models close at different moments. <b>Max Adverse decides every stop-out</b>: it is compared against fib 0, and a row without it (or with a 0, which is not a price) is left unscored rather than assumed to have survived \u2014 log it. Clearing the anchor moves the stop to break-even, so the trail cannot finish negative after that. 2R/3R/5R are fib 0.975 / 1.30 / 1.95.';
 let MGMTS=MGMTS_LADDER.slice();
@@ -240,16 +248,24 @@ function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 // grazed the stop score as stop-outs; Super Mario comes out slightly pessimistic rather
 // than neutral, which is the correct direction to be wrong in for a backtest.
 const TICK={MNQ:0.25, MES:0.25, MGC:0.10};
+const MA_REQUIRED=true;   // VCL-logged rows: only Max Adverse can settle the tighter SM stop
 function marioR(row){
   const E=num(row.EntryPrice), A=num(row.anchor), MR_raw=num(row.SMMaxRun),
         BX=num(row.SMTrailStop), MA_raw=num(row.MaxAdverse);
-  const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_half:null};
+  const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_cap7:null,m_cap9:null,m_half:null};
   if(E==null||A==null||MR_raw==null||BX==null) return out;
   // Max Adverse settles the tighter stop and nothing else can stand in for it. Unknown
   // (null) leaves the row unscoreable; 0 is not "never went adverse" — Max Adverse is a
   // PRICE, and 0 would satisfy the Long breach test and book a full loss. Both exit here
   // rather than being assumed survived or assumed stopped.
-  if(MA_raw==null||MA_raw===0) return out;
+  // MA_REQUIRED is the one honest difference between the two boards, and it is about
+  // EVIDENCE, not preference. Futures rows were logged under the VCL ladder, whose stop
+  // sits below the Super Mario stop — such a row can read "survived" and still have
+  // breached fib 0 on the way, so only Max Adverse settles it and without it the row is
+  // unscoreable. Crypto rows were logged natively against this exact fib, so the logged
+  // trail exit is real evidence of where the trade ended. Max Adverse still wins wherever
+  // it is present, on either board.
+  if((MA_raw==null||MA_raw===0) && MA_REQUIRED) return out;
   // Fib redrawn 2026-08-24 so the stop IS fib 0: entry 0.325, TP 0.65 = exactly double it.
   // Same prices as the old 0.085/0.382/0.68 labelling — they agree to 3 cents on a 77pt
   // range — but the TP now lands on 1.000R by construction rather than 1.003R.
@@ -268,14 +284,18 @@ function marioR(row){
   // matches the intent (floor-Long / ceil-Short). If POTUS confirms the literal wording,
   // flip these two Math calls and re-audit.
   const tick=TICK[row.Pair]||null;
-  const MA = tick==null ? MA_raw
+  const MA = (MA_raw==null||MA_raw===0) ? null
+           : tick==null ? MA_raw
            : dir>0 ? Math.floor(MA_raw/tick)*tick   // away from entry (down for Long)
                    : Math.ceil(MA_raw/tick)*tick;
   const MR = tick==null ? MR_raw
            : dir>0 ? Math.floor(MR_raw/tick)*tick   // toward entry (down for Long)
                    : Math.ceil(MR_raw/tick)*tick;
   const R=p=>dir*(p-E)/oneR;
-  const stopped = dir*(MA-stop)<=0;                    // compare exactly, no epsilon
+  // Max Adverse is the direct measurement; the exit price is the fallback and only tells
+  // us the trade ENDED at or through the stop. It cannot see an excursion the trade
+  // recovered from, so a board running the fallback can still miss a real stop-out.
+  const stopped = MA!=null ? dir*(MA-stop)<=0 : dir*(BX-stop)<=0;
   if(stopped){ for(const k in out) out[k]=-1; return out; }
   const mr=R(MR), be=R(BX), tp=R(at(0.65));
   const hit=N=>mr>=N, tpHit=mr>=tp;                    // exact comparison — no TOL
@@ -294,7 +314,7 @@ function marioR(row){
   out.m_f1=hit(1)?1:be; out.m_f2=hit(2)?2:be; out.m_f3=hit(3)?3:be; out.m_f5=hit(5)?5:be;
   // Clearing the anchor moves the stop to break-even, so the trail cannot finish negative.
   out.m_trail = mr>=R(at(1)) ? Math.max(be,0) : be;
-  out.m_cap3=runner(3); out.m_cap5=runner(5);
+  out.m_cap3=runner(3); out.m_cap5=runner(5); out.m_cap7=runner(7); out.m_cap9=runner(9);
   out.m_half = tpHit ? 0.5*tp+0.5*be : be;
   return out;
 }
@@ -438,6 +458,12 @@ const METHOD_INFO={
   m_cap5:{what:'The same, capped at fib 1.95: half at the TP plus half at 5R.',
       test:'Identical gates — SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
       fail:'Pays +3.00R maximum, not 1.95R. Differs from cap 1.30 only on trades running past 3R.'},
+  m_cap7:{what:'The same, capped at fib 2.60 \u2014 the 7R level. A half-size runner reaching 7R pays 3.5R, so the position tops out at +4.00R.',
+      test:'Identical gates \u2014 SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Differs from cap 1.95 only on trades running past 5R.'},
+  m_cap9:{what:'The same, capped at fib 3.25 \u2014 the 9R level. A half-size runner reaching 9R pays 4.5R, so the position tops out at +5.00R.',
+      test:'Identical gates \u2014 SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Differs from cap 2.60 only on trades running past 7R. At small n it will read identically to the uncapped trail.'},
   m_half:{what:'The incumbent, and the control the capped variants are measured against: half off at the TP, stop to break-even, then let the BoS trail run with no target.',
       test:'Gated by <b>SM Max Run</b> for the partial, then <b>entirely by the logged trail exit</b> for the runner.',
       fail:'A hand-read exit that cannot be rebuilt from the logged prices — and it is the baseline, which is where reader drift does the most damage.'},
@@ -639,35 +665,16 @@ function verdictLine(pool){
 // worse methods: in Asia it preferred 50% @1R at +0.65R over Full @1R at +1.00R purely
 // because the better one had no spread. The ±0 flag still marks it, because zero observed
 // variance in 2-4 binary outcomes is a short streak, not consistency.
-const rankKey = s => s.degenerate ? (s.mean ?? -999) : (s.lo ?? -999);
-
-// Ranking, tie-aware. The lower bound decides who is in contention — it penalises an
-// edge that rests on one outlier. But it must not DECIDE between methods the data cannot
-// separate: on the crypto log it put `cap 1.95` above `uncapped trail` on a 0.0198R
-// difference in lower bound, while a paired test of the two on the same trades returned
-// [-0.152, +0.249] — no separation at all. So: take the best lower bound, gather everything
-// statistically tied with it (paired difference straddling zero), and order that group by
-// expectancy. Ties resolve on the number a reader is actually comparing.
+// Ranking is by expectancy — mean R per trade — POTUS's call 2026-08-29. It answers the
+// question the board is actually asked: over many trades, which management earns the most
+// per trade? The confidence interval stays printed on every row, so how much of that mean
+// rests on one outlier is still visible — it just no longer decides the order. Exact ties
+// fall back to the lower bound, so equal earners are led by the steadier one.
+const rankKey = s => s.mean ?? -999;
 function rankRows(rows, pool){
   if(rows.length<2) return rows;
-  const sorted=[...rows].sort((a,b)=>rankKey(b.s)-rankKey(a.s));
-  const head=sorted[0];
-  // TWO conditions, not one. A paired test alone is not enough: at small n nothing
-  // separates from anything, the "tied" group becomes every method, and ordering it by
-  // expectancy silently degrades into ranking by expectancy — which puts the widest,
-  // most outlier-driven method on top. On the 4-trade futures log that returned
-  // Full TP @ 5R, interval [-2.02, +5.26], to first place.
-  // So a method is tied only if it ALSO sits within a trading-meaningful distance of the
-  // head on the ranking key. 0.10R: below that the two are the same trade in practice.
-  const TIE_R = 0.10;
-  const tied=sorted.filter(r=>{
-    if(r===head) return true;
-    if(Math.abs(rankKey(head.s)-rankKey(r.s)) > TIE_R) return false;
-    const p=paired(head.m.key, r.m.key, pool);
-    return !(p.n>0 && (p.lo>0 || p.hi<0));     // close AND not separated => tied
-  });
-  tied.sort((a,b)=>(b.s.mean??-999)-(a.s.mean??-999));
-  return tied.concat(sorted.filter(r=>!tied.includes(r)));
+  return [...rows].sort((a,b)=>
+    (rankKey(b.s)-rankKey(a.s)) || ((b.s.lo??-999)-(a.s.lo??-999)));
 }
 
 function leaderOf(pool){

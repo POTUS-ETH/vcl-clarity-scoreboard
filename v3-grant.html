@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VCL V5 Tracker · one fib, eight outcomes</title>
+<title>VCL V5 Tracker · one fib, ten outcomes</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:14px;font-size:13px}
@@ -300,21 +300,25 @@ const FAMILIES_MARIO=[
    blurb:'Bank half at the 0.65 TP (worth 0.5R, since the TP sits at exactly 1R), stop to breakeven, then the runner. Capped variants full-close the runner at the named fib; the baseline lets the BOS trail run uncapped.'},
 ];
 const MGMT_MARIO=[
-  {key:'smFull1R', fam:'full', name:'Full TP @ 0.65 for 1R',  short:'F1R', lvl:'fib 0.65',
+  {key:'m_f1', fam:'full', name:'Full TP @ 0.65 for 1R',  short:'F1R', lvl:'fib 0.65',
    desc:'Whole position off at 1R — the 0.65 TP itself. A pure 1:1 bet; expectancy is just 2 x win% - 1.'},
-  {key:'smFull2R', fam:'full', name:'Full TP @ 0.98 for 2R',  short:'F2R', lvl:'fib 0.98',
+  {key:'m_f2', fam:'full', name:'Full TP @ 0.98 for 2R',  short:'F2R', lvl:'fib 0.98',
    desc:'Whole position off at 2R, just under the 1-of-fib anchor.'},
-  {key:'smFull3R', fam:'full', name:'Full TP @ 1.30 for 3R',  short:'F3R', lvl:'fib 1.30',
+  {key:'m_f3', fam:'full', name:'Full TP @ 1.30 for 3R',  short:'F3R', lvl:'fib 1.30',
    desc:'Whole position off at 3R, the 1.30 extension.'},
-  {key:'smFull5R', fam:'full', name:'Full TP @ 1.95 for 5R',  short:'F5R', lvl:'fib 1.95',
+  {key:'m_f5', fam:'full', name:'Full TP @ 1.95 for 5R',  short:'F5R', lvl:'fib 1.95',
    desc:'Whole position off at 5R. Needs a run well past the golden-ratio extension.'},
-  {key:'bosExitR', fam:'full', name:'Full size @ BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
-   desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Scored at the real logged trail exit, same as the incumbent -- the only difference is that no half was banked at the 0.65 TP.'},
-  {key:'smCap1272', fam:'part', name:'50% @ 0.65 \u2192 cap 1.30 for 2R', short:'C1.30', lvl:'runner 3R = 2R net',
-   desc:'Half off at the TP, runner trails on BOS but full-closes at fib 1.30. Caps the trade at +2R; if 1.30 never prints the runner is scored at the real BOS exit.'},
-  {key:'smCap1866', fam:'part', name:'50% @ 0.65 \u2192 cap 1.95 for 3R', short:'C1.95', lvl:'runner 5R = 3R net',
-   desc:'Same, capped at fib 1.95 instead. Caps the trade at +3R, giving the runner more room before it is taken off.'},
-  {key:'tpTrailBOS', fam:'part', name:'50% @ 0.65 \u2192 trail, uncapped', short:'Trail', lvl:'no ceiling',
+  {key:'m_trail', fam:'full', name:'Full size @ BE + trail', short:'FTrail', lvl:'no partial, no ceiling',
+   desc:'No partial at all. Full size to breakeven, then trail on BOS and take whatever structure gives. Clearing the anchor moves the stop to breakeven, so this cannot finish negative once the anchor prints.'},
+  {key:'m_cap3', fam:'part', name:'50% @ 0.65 → cap 1.30 for 2R', short:'C2R', lvl:'runner 3R = 2R net',
+   desc:'Half off at the TP, runner trails on BOS but full-closes at fib 1.30. Delivers +2R; if 1.30 never prints the runner is scored at the real BOS exit.'},
+  {key:'m_cap5', fam:'part', name:'50% @ 0.65 → cap 1.95 for 3R', short:'C3R', lvl:'runner 5R = 3R net',
+   desc:'Same, capped at fib 1.95 instead. Delivers +3R, giving the runner more room before it is taken off.'},
+  {key:'m_cap7', fam:'part', name:'50% @ 0.65 → cap 2.60 for 4R', short:'C4R', lvl:'runner 7R = 4R net',
+   desc:'Capped at fib 2.60. A half-size runner must reach 7R for the position to deliver 4R.'},
+  {key:'m_cap9', fam:'part', name:'50% @ 0.65 → cap 3.25 for 5R', short:'C5R', lvl:'runner 9R = 5R net',
+   desc:'Capped at fib 3.25. A half-size runner must reach 9R for the position to deliver 5R.'},
+  {key:'m_half', fam:'part', name:'50% @ 0.65 → trail, uncapped', short:'Trail', lvl:'no ceiling',
    desc:'The incumbent: half off at the 0.65 TP, then let the BOS trail run with no target at all. Included as the baseline the capped variants are being tested against.', baseline:true},
 ];
 const MGMT=MGMT_MARIO.slice(), FAMILIES=FAMILIES_MARIO.slice();
@@ -325,10 +329,10 @@ const TF='1m';  // this board tests 1m only, across SOL/BTC/ETH
 const OPEN=new Set();
 
 /* ============================== series / stats over Grant's precomputed R fields ============================== */
-function seriesFor(prop, pool){ return pool.map(t=>num(t[prop])).filter(x=>x!=null); }
-function statsFor(prop, pool){ return fullStats(seriesFor(prop,pool)); }
-function paired(propA, propB, pool){
-  const d=[]; pool.forEach(t=>{const a=num(t[propA]),b=num(t[propB]); if(a!=null&&b!=null) d.push(b-a);});
+function seriesFor(prop,pool){ return pool.map(t=>RV(t,prop)).filter(v=>v!=null&&!isNaN(v)); }
+function statsFor(prop,pool){ return fullStats(seriesFor(prop,pool)); }
+function paired(a,b,pool){
+  const d=[]; pool.forEach(t=>{const x=RV(t,a),y=RV(t,b); if(x!=null&&y!=null) d.push(y-x);});
   return ci95(d);
 }
 
@@ -336,13 +340,95 @@ function paired(propA, propB, pool){
 const SESRANK={'Asia':0,'London':1,'NY AM':2,'NY PM':3};
 const chrono=(a,b)=>String(a.date||'').localeCompare(String(b.date||'')) ||
   ((SESRANK[a.Session]??9)-(SESRANK[b.Session]??9)) || String(a.created||'').localeCompare(String(b.created||''));
+// Tick grid, derived from the logged price precision rather than assumed: every row on
+// this board is SOL and every price is quoted to 0.01.
+const TICK={SOL:0.01, BTC:0.1, ETH:0.01};
+const MA_REQUIRED=false;  // SM-native log: the trade was managed against this exact stop
+function marioR(row){
+  const E=num(row.EntryPrice), A=num(row.anchor), MR_raw=num(row.SMMaxRun),
+        BX=num(row.SMTrailStop), MA_raw=num(row.MaxAdverse);
+  const out={m_f1:null,m_f2:null,m_f3:null,m_f5:null,m_trail:null,m_cap3:null,m_cap5:null,m_cap7:null,m_cap9:null,m_half:null};
+  if(E==null||A==null||MR_raw==null||BX==null) return out;
+  // Max Adverse settles the tighter stop and nothing else can stand in for it. Unknown
+  // (null) leaves the row unscoreable; 0 is not "never went adverse" — Max Adverse is a
+  // PRICE, and 0 would satisfy the Long breach test and book a full loss. Both exit here
+  // rather than being assumed survived or assumed stopped.
+  // MA_REQUIRED is the one honest difference between the two boards, and it is about
+  // EVIDENCE, not preference. Futures rows were logged under the VCL ladder, whose stop
+  // sits below the Super Mario stop — such a row can read "survived" and still have
+  // breached fib 0 on the way, so only Max Adverse settles it and without it the row is
+  // unscoreable. Crypto rows were logged natively against this exact fib, so the logged
+  // trail exit is real evidence of where the trade ended. Max Adverse still wins wherever
+  // it is present, on either board.
+  if((MA_raw==null||MA_raw===0) && MA_REQUIRED) return out;
+  // Fib redrawn 2026-08-24 so the stop IS fib 0: entry 0.325, TP 0.65 = exactly double it.
+  // Same prices as the old 0.085/0.382/0.68 labelling — they agree to 3 cents on a 77pt
+  // range — but the TP now lands on 1.000R by construction rather than 1.003R.
+  const range=(A-E)/(1-0.325), zero=E-0.325*range, at=f=>zero+f*range;
+  const dir=range>0?1:-1, stop=zero, oneR=Math.abs(E-stop);
+  if(!oneR) return out;
+  // Tick-grid rounding per audit §9 (Max Adverse) and §13 (Max Run). Both round in the
+  // pessimistic direction so grid-alignment never manufactures a hit or manufactures a
+  // survival.
+  //   Max Adverse: AWAY from entry — floor for Long (adverse is below), ceil for Short.
+  //   Max Run:     TOWARD entry — floor for Long (favourable is above; rounding down keeps
+  //                us from crediting a target the raw print didn't reach), ceil for Short.
+  // Note (§13 literal vs intent): §13's operation words say "ceiling for Long, floor for
+  // Short" on Max Run, but the stated intent is "toward entry, never credit unless
+  // genuinely reached" and "complement of Max Adverse". The operation implemented here
+  // matches the intent (floor-Long / ceil-Short). If POTUS confirms the literal wording,
+  // flip these two Math calls and re-audit.
+  const tick=TICK[row.Pair]||null;
+  const MA = (MA_raw==null||MA_raw===0) ? null
+           : tick==null ? MA_raw
+           : dir>0 ? Math.floor(MA_raw/tick)*tick   // away from entry (down for Long)
+                   : Math.ceil(MA_raw/tick)*tick;
+  const MR = tick==null ? MR_raw
+           : dir>0 ? Math.floor(MR_raw/tick)*tick   // toward entry (down for Long)
+                   : Math.ceil(MR_raw/tick)*tick;
+  const R=p=>dir*(p-E)/oneR;
+  // Max Adverse is the direct measurement; the exit price is the fallback and only tells
+  // us the trade ENDED at or through the stop. It cannot see an excursion the trade
+  // recovered from, so a board running the fallback can still miss a real stop-out.
+  const stopped = MA!=null ? dir*(MA-stop)<=0 : dir*(BX-stop)<=0;
+  if(stopped){ for(const k in out) out[k]=-1; return out; }
+  const mr=R(MR), be=R(BX), tp=R(at(0.65));
+  const hit=N=>mr>=N, tpHit=mr>=tp;                    // exact comparison — no TOL
+  // Same correction on the partial family. If the TP never printed there was no partial,
+  // so the whole position rode the trail — score the real exit. The old -1R put a full
+  // loss on trades that never lost: a row surviving its stop and trailing out at +0.26R
+  // scored -1.00R here, a 1.26R error.
+  const runner=cap=>tpHit?0.5*tp+0.5*(hit(cap)?cap:be):be;
+  // A missed target is NOT a loss. The `stopped` branch above already booked every real
+  // stop-out at -1R, so anything reaching here survived its stop and was closed on the
+  // trail — score it there. Booking -1R would assert a stop-out that never traded: on the
+  // current log 0 of 4 rows hit the SM stop, yet the old rule printed -1R in six cells.
+  // (The ladder side has always scored misses this way; this makes the two agree.)
+  // Caveat kept in view: the trail exit is a proxy. A fixed-target rule does not trail, so
+  // live this position would still be open at session end. It is the closest logged price.
+  out.m_f1=hit(1)?1:be; out.m_f2=hit(2)?2:be; out.m_f3=hit(3)?3:be; out.m_f5=hit(5)?5:be;
+  // Clearing the anchor moves the stop to break-even, so the trail cannot finish negative.
+  out.m_trail = mr>=R(at(1)) ? Math.max(be,0) : be;
+  out.m_cap3=runner(3); out.m_cap5=runner(5); out.m_cap7=runner(7); out.m_cap9=runner(9);
+  out.m_half = tpHit ? 0.5*tp+0.5*be : be;
+  return out;
+}
+
 function applyFilters(){
-  // Super Mario outcomes arrive already computed from the Notion formulas — this board
-  // aggregates them, it does not recompute.
+  // This board scores its own trades. It used to read eight precomputed Notion formula
+  // columns; those coerced a blank Max Run to 0 and so booked a full -1R loss on all 32
+  // imported rows that have no outcome data yet, and drove the BE+trail method to a -127R
+  // mean out of raw price arithmetic. Scoring here returns null for a row without
+  // evidence, and the drop counter reports it, so an unfilled row is visibly absent
+  // rather than silently counted as a loss.
   TRADES = ALL.filter(t => t.Timeframe===TF && (PAIR==='all' || t.Pair===PAIR)).sort(chrono);
   // Adapter. The shared components read t.session / t.pair; this board's payload spells
   // them Session / Pair. Normalising here means every ported component runs unchanged.
-  TRADES.forEach(t=>{ t.session=t.session||t.Session; t.pair=t.pair||t.Pair; });
+  TRADES.forEach(t=>{
+    t.session=t.session||t.Session; t.pair=t.pair||t.Pair;
+    t.r = marioR({EntryPrice:t.entry, anchor:t.anchor, SMMaxRun:t.maxRun,
+                  SMTrailStop:t.bosExit, MaxAdverse:t.maxAdverse, Pair:t.Pair});
+  });
 }
 
 /* ============================== L0 — the verdict ==============================
@@ -607,11 +693,13 @@ const ym=d=>d?d.slice(0,7):null;
 const maxDrawdown=maxDD;
 function serFor(k,pool){return seriesFor(k,pool);}
 function stats(series){const n=series.length;if(!n)return{n:0};const wins=series.filter(r=>r>0).length,total=series.reduce((a,b)=>a+b,0);return {n,wins,wr:wins/n,exp:total/n,total};}
-const rankKey = s => s.degenerate ? (s.mean ?? -999) : (s.lo ?? -999);
-// THE SEAM. Crypto reads outcomes straight off the trade — the Notion formulas wrote
-// them. Futures nests them under t.r because that widget computes both models itself.
-// This one line is the only structural difference between the two boards.
-const RV=(t,k)=>t[k];
+// Ranking is by expectancy — mean R per trade — POTUS's call 2026-08-29. It answers the
+// question the board is actually asked: over many trades, which management earns the most
+// per trade? The confidence interval stays printed on every row, so how much of that mean
+// rests on one outlier is still visible — it just no longer decides the order. Exact ties
+// fall back to the lower bound, so equal earners are led by the steadier one.
+const rankKey = s => s.mean ?? -999;
+const RV=(t,k)=>(t&&t.r)?t.r[k]:null;
 const MGMTS = MGMT;
 let MODEL='mario';
 
@@ -622,28 +710,34 @@ let MODEL='mario';
 const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.98, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
 const LADDER_PREAMBLE=MARIO_PREAMBLE;
 const METHOD_INFO={
-  smFull1R:{what:'Close the whole position at the TP, fib 0.65.',
+  m_f1:{what:'Close the whole position at the TP, fib 0.65.',
       test:'Gated by <b>SM Max Run</b> against the TP, with <b>Max Adverse</b> settling the stop-out first.',
       fail:'The TP is exactly 1R away, so expectancy here is nothing but 2 × win% − 1. It carries no information beyond the win rate, and discards the entire tail.'},
-  smFull2R:{what:'Whole position off at 2R, fib 0.98 — just inside the anchor.',
+  m_f2:{what:'Whole position off at 2R, fib 0.98 — just inside the anchor.',
       test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first. A miss is scored at the real trail exit, not a synthetic loss.',
       fail:'Shares its fate with 3R and 5R on any trade that misses 2R.'},
-  smFull3R:{what:'Whole position off at 3R, fib 1.30.',
+  m_f3:{what:'Whole position off at 3R, fib 1.30.',
       test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
       fail:'Only a minority of trades ever reach it, so it spends most of its life at or below break-even.'},
-  smFull5R:{what:'Whole position off at 5R, fib 1.95 — well past the golden-ratio extension.',
+  m_f5:{what:'Whole position off at 5R, fib 1.95 — well past the golden-ratio extension.',
       test:'Gated by <b>SM Max Run</b>; <b>Max Adverse</b> settles the stop first.',
       fail:'Reached rarely. Its drawdown is a property of the target choice, not of the stop.'},
-  bosExitR:{what:'No partial, no ceiling. Hold full size; once price clears the anchor at 2.077R the stop moves to break-even, so the trade cannot finish negative from there. Exit wherever the BoS trail took it.',
+  m_trail:{what:'No partial, no ceiling. Hold full size; once price clears the anchor at 2.077R the stop moves to break-even, so the trade cannot finish negative from there. Exit wherever the BoS trail took it.',
       test:'Gated by <b>SM Max Run</b> for the break-even arming, then <b>entirely by the logged trail exit</b> — a hand-read chart judgement, not a level.',
       fail:'Cannot be reproduced from the logged row. It inherits whatever the reader’s swing-high discretion was that session.'},
-  smCap1272:{what:'Bank half at the TP (worth 0.5R), stop to break-even, runner to fib 1.30 \u2014 the 3R level \u2014 and close it there. The runner is half size, so reaching 3R pays 1.5R; with the banked half the position tops out at +2.00R. That is what the name states: the level the runner exits at, and what the trade delivers.',
+  m_cap3:{what:'Bank half at the TP (worth 0.5R), stop to break-even, runner to fib 1.30 \u2014 the 3R level \u2014 and close it there. The runner is half size, so reaching 3R pays 1.5R; with the banked half the position tops out at +2.00R. That is what the name states: the level the runner exits at, and what the trade delivers.',
       test:'Gated by <b>SM Max Run</b> for the partial and the cap; if 1.30 never prints the runner is scored at the <b>logged trail exit</b>.',
       fail:'Identical to the uncapped variant on any trade that clears the TP but not fib 1.30.'},
-  smCap1866:{what:'The same, runner to fib 1.95 \u2014 the 5R level. Half size reaching 5R pays 2.5R, so the position tops out at +3.00R.',
+  m_cap5:{what:'The same, runner to fib 1.95 \u2014 the 5R level. Half size reaching 5R pays 2.5R, so the position tops out at +3.00R.',
       test:'Identical gates — SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
       fail:'Distinguishable from the 2R delivery only on trades running past fib 1.30.'},
-  tpTrailBOS:{what:'The incumbent, and the control the capped variants are measured against: half off at the TP, stop to break-even, then let the BoS trail run with no target.',
+  m_cap7:{what:'The same, capped at fib 2.60 \u2014 the 7R level. A half-size runner reaching 7R pays 3.5R, so the position tops out at +4.00R.',
+      test:'Identical gates \u2014 SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Differs from cap 1.95 only on trades running past 5R.'},
+  m_cap9:{what:'The same, capped at fib 3.25 \u2014 the 9R level. A half-size runner reaching 9R pays 4.5R, so the position tops out at +5.00R.',
+      test:'Identical gates \u2014 SM Max Run for the partial and the cap, logged trail exit on a cap miss.',
+      fail:'Differs from cap 2.60 only on trades running past 7R. At small n it will read identically to the uncapped trail.'},
+  m_half:{what:'The incumbent, and the control the capped variants are measured against: half off at the TP, stop to break-even, then let the BoS trail run with no target.',
       test:'Gated by <b>SM Max Run</b> for the partial, then <b>entirely by the logged trail exit</b> for the runner.',
       fail:'A hand-read exit that cannot be rebuilt from the logged prices — and it is the baseline, which is where reader drift does the most damage.'}
 };
@@ -878,24 +972,8 @@ function primerBlock(){
 // expectancy. Ties resolve on the number a reader is actually comparing.
 function rankRows(rows, pool){
   if(rows.length<2) return rows;
-  const sorted=[...rows].sort((a,b)=>rankKey(b.s)-rankKey(a.s));
-  const head=sorted[0];
-  // TWO conditions, not one. A paired test alone is not enough: at small n nothing
-  // separates from anything, the "tied" group becomes every method, and ordering it by
-  // expectancy silently degrades into ranking by expectancy — which puts the widest,
-  // most outlier-driven method on top. On the 4-trade futures log that returned
-  // Full TP @ 5R, interval [-2.02, +5.26], to first place.
-  // So a method is tied only if it ALSO sits within a trading-meaningful distance of the
-  // head on the ranking key. 0.10R: below that the two are the same trade in practice.
-  const TIE_R = 0.10;
-  const tied=sorted.filter(r=>{
-    if(r===head) return true;
-    if(Math.abs(rankKey(head.s)-rankKey(r.s)) > TIE_R) return false;
-    const p=paired(head.m.key, r.m.key, pool);
-    return !(p.n>0 && (p.lo>0 || p.hi<0));     // close AND not separated => tied
-  });
-  tied.sort((a,b)=>(b.s.mean??-999)-(a.s.mean??-999));
-  return tied.concat(sorted.filter(r=>!tied.includes(r)));
+  return [...rows].sort((a,b)=>
+    (rankKey(b.s)-rankKey(a.s)) || ((b.s.lo??-999)-(a.s.lo??-999)));
 }
 
 function leaderOf(pool){
