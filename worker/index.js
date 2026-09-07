@@ -617,7 +617,7 @@ async function computeV4Futures(token) {
     'Entry Price','L1 Price','SL Price',
     'VCL Max Run','VCL Trail Stop','SM Max Run','SM Trail Stop',
     'L1 before Max Run','L1 after Max Run','Range %','Date',
-    'Max Adverse','1 of Fib Price','200 EMA at Entry','OB Timeframe',
+    'Max Adverse','1 of Fib Price','200 EMA Position','OB Timeframe',
     'Entry Time (HHMM)','Anchor Time (HHMM)','Exit Time (HHMM)','Timezone',
   ]);
   const rows = [];
@@ -649,11 +649,11 @@ async function computeV4Futures(token) {
       // specific, and it is precisely what discriminates the two stops.
       MaxAdverse:   getProp(t, 'Max Adverse'),
       anchor:       getProp(t, '1 of Fib Price'),
-      // Raw price of the 200 EMA at the entry candle. Logged as a number, never as a
-      // category: above/below/at-AVWAP and inside/outside the killbox are all solvable
-      // from this plus Entry Price and the anchor, and a number can be re-bucketed later
-      // while a category cannot be un-bucketed.
-      ema200:       getProp(t, '200 EMA at Entry'),
+      // Where the 200 EMA sat at entry, as a select: Above / At / Below the AVWAP, or
+      // outside the killbox. Logged raw — what the chart plainly shows — and NOT as
+      // behind/in-front, because that flip depends on Direction and is the bit a human
+      // gets wrong on a short. The widget does the orientation instead.
+      ema200Pos:    getProp(t, '200 EMA Position'),
       // Which timeframe's order block the setup was taken from. A free-form select in
       // Notion — the board derives its buckets from the values actually present rather
       // than a hardcoded list, so adding an option there cannot silently drop trades here.

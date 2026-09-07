@@ -370,7 +370,7 @@ function computeR(row){
   Object.assign(r, marioR(row));   // both models on the same row; the toggle only picks keys
   // raw is carried so the board can count what dropped out of scoring without either
   // scorer having to report it — see dropCounts().
-  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', ema200:num(row.ema200), obTf:row.obTf||null, entry:E, anchor:num(row.anchor), r, raw:row};
+  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', ema200Pos:row.ema200Pos||null, obTf:row.obTf||null, entry:E, anchor:num(row.anchor), r, raw:row};
 }
 
 function applyFilters(){
@@ -566,33 +566,30 @@ function recoCard(pool){
 //   entry = fib0 + 0.382·(anchor − fib0)  ⟹  fib0 = (entry − 0.382·anchor) / 0.618
 // A 200 outside that envelope is not interacting with the setup at all, which is why it
 // is its own bucket rather than a wider "above".
-const EMA_FIB_ENTRY = 0.382;
-// Direction-RELATIVE, not raw price. "Above the AVWAP" means opposite things on a long and
-// a short: a long feeds down into the AVWAP so a 200 below it is the backstop, while a short
-// feeds up into the AVWAP so a 200 above it is. Labelling by raw price put structurally
-// identical setups in opposite buckets, which mixed two different situations in each bucket
-// and halved the sample for both. Oriented to the trade, they merge.
-//   Behind entry     — the 200 is on the far side of entry from the target, backing the trade
+// The log records the RAW position — what the chart plainly shows — and this converts it
+// to the trade's frame. That split is deliberate: reading "the 200 is above the AVWAP" off
+// a chart is instant and never wrong, whereas deciding whether that is protection or a
+// headwind depends on Direction and is exactly what a human gets backwards on a short.
+//
+//   Behind entry      — the 200 is on the far side of entry from the target, backing the trade
 //   In front of entry — the 200 sits between entry and the target, in the path of the run
+//
+// A long feeds DOWN into the AVWAP, so a 200 below it is the backstop; a short feeds UP
+// into it, so a 200 above it is. Labelling by raw price put structurally identical setups
+// in opposite buckets, mixing the protected case with the headwind case in each.
 const EMA_STATES = ['Behind entry','At AVWAP','In front of entry','Outside box'];
 function emaState(t){
-  const e=t.ema200, E=t.entry, A=t.anchor;
-  if(e==null||E==null||A==null||isNaN(e)) return null;
+  const v=t.ema200Pos;
+  if(!v) return null;
+  // These two carry no side, so they pass through untouched and need no direction.
+  if(v==='Outside box'||v==='At AVWAP') return v;
+  const above = v==='Above AVWAP';
+  if(!above && v!=='Below AVWAP') return null;   // an option this code has never seen
   // Without a direction there is no "front" — leave the row unscored rather than guess.
   const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
   if(d==null) return null;
-  const fib0=(E-EMA_FIB_ENTRY*A)/(1-EMA_FIB_ENTRY);
-  const lo=Math.min(fib0,A), hi=Math.max(fib0,A);
-  // Tolerance is one tick, not a percentage: the logged prices sit on the instrument's
-  // tick grid, so anything finer than a tick is below the resolution of the data.
-  // EPS absorbs binary float error, not real price distance: on MGC a one-tick gap
-  // evaluates to 0.10000000000000142, which is > 0.10 and pushed an exactly-on-the-AVWAP
-  // reading into "Above". It is 8 orders of magnitude under the smallest tick.
-  const tick=TICK[t.pair]||0, EPS=1e-9;
-  if(e<lo-tick-EPS || e>hi+tick+EPS) return 'Outside box';
-  if(Math.abs(e-E)<=tick+EPS) return 'At AVWAP';
-  // (e-E)*d > 0 puts the 200 on the target side of entry: in the path of the run.
-  return (e-E)*d > 0 ? 'In front of entry' : 'Behind entry';
+  // Above on a long, or below on a short, puts the 200 on the target side: in the path.
+  return above === (d===1) ? 'In front of entry' : 'Behind entry';
 }
 // ── shared bucket card ───────────────────────────────────────────────────────
 // One categorical split of the same trades, scored the same way every time. The 200 EMA
@@ -637,8 +634,8 @@ function bucketCard({pool, label, keyFn, order, note, emptyNote}){
 }
 function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
-    note:'oriented to the trade, not to price — behind means the 200 backs the entry (below it on a long, above it on a short), in front means it sits between entry and target · outside box = beyond the fib 1.0–0 envelope',
-    emptyNote:'No trade carries a 200 EMA reading yet. Fill <b>200 EMA at Entry</b> on Trade Log — Futures and the buckets appear here.'});
+    note:'you log what the chart shows (above / at / below the AVWAP); the board orients it to the trade — behind means the 200 backs the entry, below it on a long and above it on a short',
+    emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — Futures and the buckets appear here.'});
 }
 // ── OB timeframe ─────────────────────────────────────────────────────────────
 // Buckets come from the values present in the log, never a hardcoded list: OB Timeframe is
