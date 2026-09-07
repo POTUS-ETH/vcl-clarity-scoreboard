@@ -199,6 +199,7 @@ table.sp tr.sptot{color:#c3c9d4}
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="tg" id="modelTg"><button data-m="ladder" class="on">VCL LADDER</button><button data-m="mario">SUPER MARIO</button></div>
       <div class="tg" id="pairTg"><button data-p="all" class="on">ALL</button><button data-p="MNQ">MNQ</button><button data-p="MES">MES</button><button data-p="MGC">MGC</button></div>
+      <div class="tg" id="obTg"></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -232,6 +233,8 @@ let MGMTS=MGMTS_LADDER.slice();
 let MODEL='ladder';
 let ALL_TRADES=[], TRADES=[];
 let PAIR='all';
+// OB timeframe filter. Options are built from the log at load, not declared here.
+let OBTF='all';
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
@@ -367,10 +370,15 @@ function computeR(row){
   Object.assign(r, marioR(row));   // both models on the same row; the toggle only picks keys
   // raw is carried so the board can count what dropped out of scoring without either
   // scorer having to report it — see dropCounts().
-  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', r, raw:row};
+  return {pair:row.Pair||null, session:row.Session||null, rangePct:num(row.RangePct), date:row.date||null, dir, l1, l1Conflict, l1Src:bMeasured===null?'checkbox':'maxAdverse', ema200:num(row.ema200), obTf:row.obTf||null, entry:E, anchor:num(row.anchor), r, raw:row};
 }
 
-function applyPairFilter(){ TRADES = decorate(PAIR==='all' ? ALL_TRADES.slice() : ALL_TRADES.filter(t=>t.pair===PAIR)); }
+function applyFilters(){
+  let pool=ALL_TRADES.slice();
+  if(PAIR!=='all') pool=pool.filter(t=>t.pair===PAIR);
+  if(OBTF!=='all') pool=pool.filter(t=>obKey(t)===OBTF);
+  TRADES = decorate(pool);
+}
 
 // ── stats engine, shared verbatim with the crypto board ──────────────────────
 // Futures previously had no interval of any kind: stats() returned n/wins/wr/exp/total.
@@ -545,6 +553,104 @@ function recoCard(pool){
       <div class="bandci">per trade vs the leader · ${verdict}</div></div>
     <div class="mini" style="margin-bottom:6px">${fR(rs.exp)} switching · ${leadExp==null?'—':fR(leadExp)} not switching · n${rs.n}</div>`;
   return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 5px">By session, in order</div><table class="ptab">${sess}</table>${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
+}
+// ── 200 EMA at entry ─────────────────────────────────────────────────────────
+// The log stores ONE number — the 200 EMA's price on the entry candle. Every state the
+// board reports is solved from it, because a number can be re-bucketed later and a
+// category cannot be un-bucketed.
+//
+// Entry is fib 0.382, one tick beyond the AVWAP, so "above/below the AVWAP we entered on"
+// and "above/below Entry Price" are the same comparison to within a tick — there is no
+// separate VWAP field to log. The killbox is the fib envelope, 1.0 (the anchor) down to
+// 0, and fib 0 is solved from the two prices already typed:
+//   entry = fib0 + 0.382·(anchor − fib0)  ⟹  fib0 = (entry − 0.382·anchor) / 0.618
+// A 200 outside that envelope is not interacting with the setup at all, which is why it
+// is its own bucket rather than a wider "above".
+const EMA_FIB_ENTRY = 0.382;
+const EMA_STATES = ['Above AVWAP','At AVWAP','Below AVWAP','Outside box'];
+function emaState(t){
+  const e=t.ema200, E=t.entry, A=t.anchor;
+  if(e==null||E==null||A==null||isNaN(e)) return null;
+  const fib0=(E-EMA_FIB_ENTRY*A)/(1-EMA_FIB_ENTRY);
+  const lo=Math.min(fib0,A), hi=Math.max(fib0,A);
+  // Tolerance is one tick, not a percentage: the logged prices sit on the instrument's
+  // tick grid, so anything finer than a tick is below the resolution of the data.
+  // EPS absorbs binary float error, not real price distance: on MGC a one-tick gap
+  // evaluates to 0.10000000000000142, which is > 0.10 and pushed an exactly-on-the-AVWAP
+  // reading into "Above". It is 8 orders of magnitude under the smallest tick.
+  const tick=TICK[t.pair]||0, EPS=1e-9;
+  if(e<lo-tick-EPS || e>hi+tick+EPS) return 'Outside box';
+  return Math.abs(e-E)<=tick+EPS ? 'At AVWAP' : (e>E ? 'Above AVWAP' : 'Below AVWAP');
+}
+// ── shared bucket card ───────────────────────────────────────────────────────
+// One categorical split of the same trades, scored the same way every time. The 200 EMA
+// card and the OB timeframe card ask an identical question — does this split separate? —
+// so they must answer it with identical statistics, or the board offers two standards of
+// evidence on one screen.
+//
+// Scored on whatever method currently leads, the same key the direction tilt uses, so this
+// can never name a method the rest of the board has just ranked last.
+function bucketCard({pool, label, keyFn, order, note, emptyNote}){
+  const scored=pool.filter(t=>keyFn(t)!=null);
+  const missing=pool.length-scored.length;
+  if(!scored.length) return `<div class="card" style="margin-bottom:12px"><div class="lbl">${label}</div>
+    <div class="empty-note">${emptyNote}</div></div>`;
+  const LD=leaderOf(pool), TK=LD?LD.best.m.key:(MGMT[0]||{}).key, tname=LD?LD.best.m.name:'';
+  const keys = order || [...new Set(scored.map(keyFn))];
+  const rows=keys.map(k=>({k, s:fullStats(scored.filter(t=>keyFn(t)===k).map(t=>RV(t,TK)).filter(x=>x!=null))}))
+                 .filter(x=>x.s.n);
+  const ranked=[...rows].sort((a,b)=>(rankKey(b.s)-rankKey(a.s))||((b.s.lo??-999)-(a.s.lo??-999)));
+  const top=ranked[0];
+  // A winner is only named when the bucket is not thin AND its interval clears zero.
+  // The failure mode this exists to stop is a 100% win rate off one trade reading as edge.
+  const solid = top && top.s.n>=5 && top.s.lo>0 && !top.s.degenerate;
+  const head = solid
+    ? `<div class="band" style="margin:4px 0 2px">
+         <div class="bandnum ${cls(top.s.mean)}">${top.k}</div>
+         <div class="bandci">best of the set · ${fR(top.s.mean)} per trade · 95% CI [${fR(top.s.lo)}, ${fR(top.s.hi)}] · n${top.s.n}</div></div>`
+    : `<div class="band" style="margin:4px 0 2px">
+         <div class="bandnum mut">${top?top.k:'—'}</div>
+         <div class="bandci">leading so far — <b>not</b> yet an edge${top?` · ${fR(top.s.mean)} on n${top.s.n}${top.s.n<5?', needs 5+':(top.s.lo<=0?', interval still spans zero':'')}`:''}</div></div>`;
+  let body='';
+  rows.forEach(x=>{ const thin=x.s.n<5;
+    body+=`<tr><td><span class="pill">${x.k}</span></td>
+      <td class="pm">${Math.round(x.s.winRate*100)}% win <span class="mini">${x.s.wins}/${x.s.scratches}/${x.s.losses}</span>${thin?' <span class="mini">thin</span>':''}</td>
+      <td class="pr ${cls(x.s.mean)}">${fR(x.s.mean)}</td>
+      <td class="pci mut">${x.s.n<2?'<span class="flag">no interval</span>':x.s.degenerate?'<span class="flag">±0</span>':`[${fR(x.s.lo)}, ${fR(x.s.hi)}]`}</td>
+      <td class="pn mut">n${x.s.n}</td></tr>`; });
+  return `<div class="card" style="margin-bottom:12px"><div class="lbl">${label}</div>${head}
+    <div class="mini" style="margin-bottom:6px">scored on <b>${tname}</b> · ${scored.length} of ${pool.length} trades carry a reading${missing?` · ${missing} unfilled` : ''}</div>
+    <table class="ptab">${body}</table>
+    <div class="mini" style="margin-top:8px">win column is W/scratch/L · thin = &lt;5 trades · ${note}</div></div>`;
+}
+function emaCard(pool){
+  return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
+    note:'above/below is measured against Entry Price, which is the AVWAP to within a tick · outside box = beyond the fib 1.0–0 envelope',
+    emptyNote:'No trade carries a 200 EMA reading yet. Fill <b>200 EMA at Entry</b> on Trade Log — Futures and the buckets appear here.'});
+}
+// ── OB timeframe ─────────────────────────────────────────────────────────────
+// Buckets come from the values present in the log, never a hardcoded list: OB Timeframe is
+// an editable select in Notion, and a `1m` option added there after this shipped would be
+// silently dropped by a fixed list — the trades would vanish from the card without a count
+// changing anywhere visible.
+const obKey = t => t.obTf || null;
+// Numeric timeframes ascending first, then the non-numeric labels (Both/None) alphabetically.
+// Ordering by trade count instead would reshuffle the rows every time a trade is logged.
+function obOrder(pool){
+  const mins=k=>{ const m=/^(\d+(?:\.\d+)?)\s*([smhd])$/i.exec(k.trim()); if(!m) return null;
+    const v=+m[1]; return v*({s:1/60,m:1,h:60,d:1440})[m[2].toLowerCase()]; };
+  return [...new Set(pool.map(obKey).filter(Boolean))].sort((a,b)=>{
+    const x=mins(a), y=mins(b);
+    if(x!=null&&y!=null) return x-y;
+    if(x!=null) return -1;
+    if(y!=null) return 1;
+    return a.localeCompare(b);
+  });
+}
+function obCard(pool){
+  return bucketCard({pool, label:'Order block timeframe', keyFn:obKey, order:obOrder(pool),
+    note:'buckets are read from the log, so a new option in Notion appears here on its own',
+    emptyNote:'No trade carries an OB Timeframe yet. Fill <b>OB Timeframe</b> on Trade Log — Futures and the buckets appear here.'});
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -1070,7 +1176,7 @@ function evidenceBar(pool, all){
   if(conflicts) notes.push(`<b class="warn">${conflicts} row${conflicts>1?'s':''}: L1 checkbox disagrees with Max Adverse</b>`);
   return `<div class="ebar">
     ${verdictLine(pool)}
-    <div class="eb2">${mix}${PAIR==='all'?'':' · filtered to '+PAIR}${notes.length?' — '+notes.join(' · '):''}</div>
+    <div class="eb2">${mix}${PAIR==='all'?'':' · filtered to '+PAIR}${OBTF==='all'?'':' · OB '+OBTF}${notes.length?' — '+notes.join(' · '):''}</div>
   </div>`;
 }
 
@@ -1144,6 +1250,8 @@ function render(){
         <span class="mini">${matrixSummary} &nbsp; ${MATRIX_OPEN?'– collapse':'+ expand'}</span></div>
       ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
+    ${obCard(pool)}
+    ${emaCard(pool)}
     <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
     <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
     <div class="foot" id="foot"></div>`;
@@ -1170,10 +1278,45 @@ function wirePairTg(){
   document.querySelectorAll('#pairTg button').forEach(b=>{
     b.onclick=()=>{ const v=b.dataset.p; if(v===PAIR) return;
       document.querySelectorAll('#pairTg button').forEach(x=>x.classList.toggle('on',x===b));
-      PAIR=v; applyPairFilter(); render(); };
+      PAIR=v; applyFilters(); writeStatus(); render(); };
+  });
+}
+// Built from the log rather than declared in the markup, for the same reason the card's
+// buckets are: a new OB option in Notion must reach the toggle without a code change.
+// Rebuilt on every poll, so an option's first trade makes its button appear.
+function buildObTg(){
+  const el=document.getElementById('obTg'); if(!el) return;
+  const opts=obOrder(ALL_TRADES);
+  // A filter offering exactly one choice is not a filter. Hide it until the log
+  // actually holds more than one OB timeframe.
+  if(opts.length<2){ el.innerHTML=''; el.style.display='none'; return; }
+  el.style.display='';
+  // A selected option can disappear when the log changes underneath the filter — fall back
+  // to ALL rather than silently showing an empty board.
+  if(OBTF!=='all' && !opts.includes(OBTF)) OBTF='all';
+  const sig=['all',...opts].join('|');
+  if(el.dataset.sig===sig){
+    el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.o===OBTF));
+    return;
+  }
+  el.dataset.sig=sig;
+  el.innerHTML=['all',...opts].map(o=>
+    `<button data-o="${o}"${o===OBTF?' class="on"':''}>${o==='all'?'ALL OB':o}</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{ const v=b.dataset.o; if(v===OBTF) return;
+      el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+      OBTF=v; applyFilters(); writeStatus(); render(); };
   });
 }
 
+// Header count is written from one place. It used to be written only inside poll(), so a
+// filter click showed the unfiltered count until the next 5s tick — the number on screen
+// disagreed with the board under it.
+let LAST_SRC='live';
+function writeStatus(){
+  const st=document.getElementById('status'); if(!st) return;
+  st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${OBTF==='all'?'':' · OB '+OBTF} · ${LAST_SRC} · ${new Date().toLocaleTimeString()}`;
+}
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v4-futures';
 let firstLoad=true;
 async function fetchTrades(){
@@ -1195,8 +1338,9 @@ async function poll(){
     const {j,src}=await fetchTrades();
     const rows=(j&&j.trades)||[];
     ALL_TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    applyPairFilter();
-    st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()} · ${src} · ${new Date().toLocaleTimeString()}`;
+    buildObTg();   // may reset OBTF if its option vanished — must run before filtering
+    applyFilters();
+    LAST_SRC=src; writeStatus();
     render();
     firstLoad=false;
   }catch(e){

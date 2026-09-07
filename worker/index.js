@@ -617,7 +617,7 @@ async function computeV4Futures(token) {
     'Entry Price','L1 Price','SL Price',
     'VCL Max Run','VCL Trail Stop','SM Max Run','SM Trail Stop',
     'L1 before Max Run','L1 after Max Run','Range %','Date',
-    'Max Adverse','1 of Fib Price',
+    'Max Adverse','1 of Fib Price','200 EMA at Entry','OB Timeframe',
     'Entry Time (HHMM)','Anchor Time (HHMM)','Exit Time (HHMM)','Timezone',
   ]);
   const rows = [];
@@ -649,6 +649,15 @@ async function computeV4Futures(token) {
       // specific, and it is precisely what discriminates the two stops.
       MaxAdverse:   getProp(t, 'Max Adverse'),
       anchor:       getProp(t, '1 of Fib Price'),
+      // Raw price of the 200 EMA at the entry candle. Logged as a number, never as a
+      // category: above/below/at-AVWAP and inside/outside the killbox are all solvable
+      // from this plus Entry Price and the anchor, and a number can be re-bucketed later
+      // while a category cannot be un-bucketed.
+      ema200:       getProp(t, '200 EMA at Entry'),
+      // Which timeframe's order block the setup was taken from. A free-form select in
+      // Notion — the board derives its buckets from the values actually present rather
+      // than a hardcoded list, so adding an option there cannot silently drop trades here.
+      obTf:         getProp(t, 'OB Timeframe'),
       // Times are plain HHMM text plus a Timezone select — a calendar picker per row was
       // too slow to log during a session.
       entryTime:    getProp(t, 'Entry Time (HHMM)'),
