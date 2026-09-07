@@ -331,6 +331,11 @@ const V3_DB = '1c62f731085940f095b489598b0f55c0';           // futures (MES/MNQ)
 // ?view=v3 had been silently reporting an empty log while 116 trades sat in it.
 const V3_DATA_SOURCE = 'a9821f82-d4cc-4652-a6ad-46969c4fc0da';
 const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 — CRYPTO (ETH+SOL, Pair-tagged)
+// VCL Finality V6 — OBVS (Order Block VWAP Scalp). Crypto and futures in ONE log, single
+// fill, Super Mario fib. Rows are logged natively against this fib, so unlike V4 there is
+// no Max Adverse here — the logged Trail Stop is real evidence of where the trade ended.
+const V6_OBVS_DATA_SOURCE = '26f37e26-6963-4d38-8e7b-51d421f522c9';
+const V6_OBVS_DB = '2d8c0fefabca400ab563beab37ac8c9a';
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
@@ -669,6 +674,48 @@ async function computeV4Futures(token) {
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
 }
 
+async function computeV6Obvs(token) {
+  // Same both-endpoints belt-and-braces as V4: /data_sources and /databases have disagreed
+  // about this workspace's logs before, and an empty answer from one is indistinguishable
+  // from an empty log. Take whichever yields more rows and report both counts.
+  const [dsRows, dbRows] = await Promise.all([
+    queryAllDataSource(V6_OBVS_DATA_SOURCE, token).catch(() => []),
+    queryAll(V6_OBVS_DB, token).catch(() => []),
+  ]);
+  const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
+  const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
+  assertSchema(trades, 'v6-obvs', [
+    '#','Trade','Date','Session','Pair','Direction','Timeframe',
+    '200 EMA Position','OB Timeframe',
+    '1 of Fib Price','Entry Price','Trail Stop','Max Run','Notes',
+  ]);
+  const rows = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (title.toUpperCase().startsWith('TEST')) continue;  // scaffolding, not a trade
+    if (getProp(t, 'Entry Price') == null) continue;       // an empty "+ New" row
+    rows.push({
+      id:        t.id,
+      n:         getProp(t, '#'),
+      Trade:     title,
+      date:      getProp(t, 'Date'),
+      Session:   getProp(t, 'Session'),
+      Pair:      getProp(t, 'Pair'),
+      Direction: getProp(t, 'Direction'),
+      Timeframe: getProp(t, 'Timeframe'),
+      ema200Pos: getProp(t, '200 EMA Position'),
+      obTf:      getProp(t, 'OB Timeframe'),
+      anchor:    getProp(t, '1 of Fib Price'),
+      EntryPrice:getProp(t, 'Entry Price'),
+      TrailStop: getProp(t, 'Trail Stop'),
+      MaxRun:    getProp(t, 'Max Run'),
+      Notes:     getProp(t, 'Notes'),
+    });
+  }
+  rows.sort((a, b) => (a.n ?? 1e9) - (b.n ?? 1e9));
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
+}
+
 // ── Prop Firm Rotation Tracker (live Notion-backed dashboard) ─────────
 // Read: GET ?view=prop returns accounts + trade log + payout log.
 // Write: POST { token, action, ...} — token must match env.WRITE_TOKEN.
@@ -971,6 +1018,7 @@ export default {
         v3:          () => computeV3Raw(env.NOTION_TOKEN, V3_DB),
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
         'v4-futures': () => computeV4Futures(env.NOTION_TOKEN),
+        'v6-obvs':    () => computeV6Obvs(env.NOTION_TOKEN),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
         'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),
