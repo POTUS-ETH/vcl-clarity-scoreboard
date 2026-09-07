@@ -661,16 +661,23 @@ function verdictLine(pool){
 // worse methods: in Asia it preferred 50% @1R at +0.65R over Full @1R at +1.00R purely
 // because the better one had no spread. The ±0 flag still marks it, because zero observed
 // variance in 2-4 binary outcomes is a short streak, not consistency.
-// Ranking is by expectancy — mean R per trade — POTUS's call 2026-08-29. It answers the
+// Ranking is by the lower bound of the 95% interval — POTUS's call 2026-09-07. It answers the
 // question the board is actually asked: over many trades, which management earns the most
 // per trade? The confidence interval stays printed on every row, so how much of that mean
 // rests on one outlier is still visible — it just no longer decides the order. Exact ties
 // fall back to the lower bound, so equal earners are led by the steadier one.
-const rankKey = s => s.mean ?? -999;
+// Ranked on the LOWER BOUND of the 95% interval, not the mean — POTUS's call 2026-09-07.
+// The mean rewards whichever method happened to catch the fattest tail: Full @4R has the
+// highest mean on this log AND the widest spread of the nine, so it tops a mean ranking
+// while being the least dependable. The lower bound asks the other question — what does
+// this method clear even on an unlucky read of the same evidence — and drops it to fourth.
+// A zero-width interval still cannot win (see rankKey), because that is not confidence,
+// it is every observation landing on the same number.
+const rankKey = s => (s.degenerate ? -999 : (s.lo ?? -999));
 function rankRows(rows, pool){
   if(rows.length<2) return rows;
   return [...rows].sort((a,b)=>
-    (rankKey(b.s)-rankKey(a.s)) || ((b.s.lo??-999)-(a.s.lo??-999)));
+    (rankKey(b.s)-rankKey(a.s)) || ((b.s.mean??-999)-(a.s.mean??-999)));
 }
 
 function leaderOf(pool){
