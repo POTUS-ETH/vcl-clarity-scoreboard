@@ -567,10 +567,20 @@ function recoCard(pool){
 // A 200 outside that envelope is not interacting with the setup at all, which is why it
 // is its own bucket rather than a wider "above".
 const EMA_FIB_ENTRY = 0.382;
-const EMA_STATES = ['Above AVWAP','At AVWAP','Below AVWAP','Outside box'];
+// Direction-RELATIVE, not raw price. "Above the AVWAP" means opposite things on a long and
+// a short: a long feeds down into the AVWAP so a 200 below it is the backstop, while a short
+// feeds up into the AVWAP so a 200 above it is. Labelling by raw price put structurally
+// identical setups in opposite buckets, which mixed two different situations in each bucket
+// and halved the sample for both. Oriented to the trade, they merge.
+//   Behind entry     — the 200 is on the far side of entry from the target, backing the trade
+//   In front of entry — the 200 sits between entry and the target, in the path of the run
+const EMA_STATES = ['Behind entry','At AVWAP','In front of entry','Outside box'];
 function emaState(t){
   const e=t.ema200, E=t.entry, A=t.anchor;
   if(e==null||E==null||A==null||isNaN(e)) return null;
+  // Without a direction there is no "front" — leave the row unscored rather than guess.
+  const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
+  if(d==null) return null;
   const fib0=(E-EMA_FIB_ENTRY*A)/(1-EMA_FIB_ENTRY);
   const lo=Math.min(fib0,A), hi=Math.max(fib0,A);
   // Tolerance is one tick, not a percentage: the logged prices sit on the instrument's
@@ -580,7 +590,9 @@ function emaState(t){
   // reading into "Above". It is 8 orders of magnitude under the smallest tick.
   const tick=TICK[t.pair]||0, EPS=1e-9;
   if(e<lo-tick-EPS || e>hi+tick+EPS) return 'Outside box';
-  return Math.abs(e-E)<=tick+EPS ? 'At AVWAP' : (e>E ? 'Above AVWAP' : 'Below AVWAP');
+  if(Math.abs(e-E)<=tick+EPS) return 'At AVWAP';
+  // (e-E)*d > 0 puts the 200 on the target side of entry: in the path of the run.
+  return (e-E)*d > 0 ? 'In front of entry' : 'Behind entry';
 }
 // ── shared bucket card ───────────────────────────────────────────────────────
 // One categorical split of the same trades, scored the same way every time. The 200 EMA
@@ -625,7 +637,7 @@ function bucketCard({pool, label, keyFn, order, note, emptyNote}){
 }
 function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
-    note:'above/below is measured against Entry Price, which is the AVWAP to within a tick · outside box = beyond the fib 1.0–0 envelope',
+    note:'oriented to the trade, not to price — behind means the 200 backs the entry (below it on a long, above it on a short), in front means it sits between entry and target · outside box = beyond the fib 1.0–0 envelope',
     emptyNote:'No trade carries a 200 EMA reading yet. Fill <b>200 EMA at Entry</b> on Trade Log — Futures and the buckets appear here.'});
 }
 // ── OB timeframe ─────────────────────────────────────────────────────────────
