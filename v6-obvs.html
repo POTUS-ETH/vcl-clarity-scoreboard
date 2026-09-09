@@ -518,7 +518,7 @@ function bucketCard({pool, label, keyFn, order, note, emptyNote}){
 function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
     note:'you log what the chart shows (above / at / below the AVWAP); the board orients it to the trade — behind means the 200 backs the entry, below it on a long and above it on a short',
-    emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — OBVS and the buckets appear here.'});
+    emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — VCS and the buckets appear here.'});
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -1098,7 +1098,7 @@ function primerBlock(){
 
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — OBVS.</div></div>'; return; }
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — VCS.</div></div>'; return; }
   const matrixSummary=(()=>{
     const rows=MGMT.map(m=>statsFor(m.key,pool)).filter(x=>x.n);
     const clear=rows.filter(x=>x.lo>0).length;
