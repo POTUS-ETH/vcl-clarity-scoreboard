@@ -265,7 +265,7 @@ function computeR(row){
   const r={f1:null,f2:null,f3:null,f4:null,a2:null,a3:null,a4:null,b3:null,b4:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
-              ema200Pos:row.ema200Pos||null,
+              ema200Pos:row.ema200Pos||null, mfSignal:row.mfSignal||null,
               entry:E, anchor:A, r, raw:row};
   if(E==null||A==null||MR_raw==null||BX==null) return base;
   const range=(A-E)/(1-0.325), zero=E-0.325*range;
@@ -519,6 +519,26 @@ function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
     note:'you log what the chart shows (above / at / below the AVWAP); the board orients it to the trade — behind means the 200 backs the entry, below it on a long and above it on a short',
     emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — VCS and the buckets appear here.'});
+}
+// ── money flow signal ────────────────────────────────────────────────────────
+// Logged raw as the indicator prints it — Buy or Sell — and oriented here, for the same
+// reason the 200 EMA is: "the signal said Sell" is a fact you read off the chart, while
+// "the signal agreed with me" depends on Direction and is the bit a human gets backwards
+// on a short. Raw Buy/Sell buckets would also answer the wrong question: they would mix
+// a Sell you shorted (agreement) with a Sell you longed (a fade) in one row.
+const MF_STATES = ['Signal with trade','Signal against trade'];
+function mfState(t){
+  const v=t.mfSignal;
+  if(v!=='Buy'&&v!=='Sell') return null;         // unfilled, or an option this code has never seen
+  // Without a direction there is no agreement to measure — leave the row unscored.
+  const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
+  if(d==null) return null;
+  return (v==='Buy') === (d===1) ? 'Signal with trade' : 'Signal against trade';
+}
+function mfCard(pool){
+  return bucketCard({pool, label:'Money flow signal', keyFn:mfState, order:MF_STATES,
+    note:'you log what the indicator printed (Buy / Sell); the board orients it to the trade — with means Buy on a long or Sell on a short',
+    emptyNote:'No trade carries a money flow reading yet. Set <b>Money Flow Signal</b> on Trade Log — VCS and the buckets appear here.'});
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -1119,6 +1139,7 @@ function render(){
       ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
     ${emaCard(pool)}
+    ${mfCard(pool)}
     <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
     <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
     <div class="foot" id="foot"></div>`;

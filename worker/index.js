@@ -686,7 +686,7 @@ async function computeV6Obvs(token) {
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'v6-obvs', [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
-    '200 EMA Position',
+    '200 EMA Position','Money Flow Signal',
     '1 of Fib Price','Entry Price','Trail Stop','Max Run','Notes',
   ]);
   const rows = [];
@@ -704,6 +704,10 @@ async function computeV6Obvs(token) {
       Direction: getProp(t, 'Direction'),
       Timeframe: getProp(t, 'Timeframe'),
       ema200Pos: getProp(t, '200 EMA Position'),
+      // What the money flow indicator printed at entry: Buy or Sell, logged raw. The
+      // board turns it into agreement with the trade, because that flip depends on
+      // Direction and is the bit a human gets backwards on a short.
+      mfSignal:  getProp(t, 'Money Flow Signal'),
       anchor:    getProp(t, '1 of Fib Price'),
       EntryPrice:getProp(t, 'Entry Price'),
       TrailStop: getProp(t, 'Trail Stop'),
