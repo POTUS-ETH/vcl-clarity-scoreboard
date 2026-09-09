@@ -686,7 +686,7 @@ async function computeV6Obvs(token) {
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'v6-obvs', [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
-    '200 EMA Position','OB Timeframe',
+    '200 EMA Position',
     '1 of Fib Price','Entry Price','Trail Stop','Max Run','Notes',
   ]);
   const rows = [];
@@ -704,7 +704,6 @@ async function computeV6Obvs(token) {
       Direction: getProp(t, 'Direction'),
       Timeframe: getProp(t, 'Timeframe'),
       ema200Pos: getProp(t, '200 EMA Position'),
-      obTf:      getProp(t, 'OB Timeframe'),
       anchor:    getProp(t, '1 of Fib Price'),
       EntryPrice:getProp(t, 'Entry Price'),
       TrailStop: getProp(t, 'Trail Stop'),

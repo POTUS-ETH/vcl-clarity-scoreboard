@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>VCL Finality V6 — OBVS</title>
+<title>VCS Simplicity V6</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;background:#0e1117;color:#e6e8ec;padding:16px;font-size:13px}
@@ -195,7 +195,7 @@ table.sp tr.sptot{color:#c3c9d4}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>VCL FINALITY V6 — OBVS</h1><div class="sub">Order Block VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / 0.325 entry / 0.65 = 1R</div></div>
+    <div><h1>VCS SIMPLICITY V6</h1><div class="sub">VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / 0.325 entry / 0.65 = 1R</div></div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="tg" id="classTg"><button data-c="all" class="on">ALL</button><button data-c="futures">FUTURES</button><button data-c="crypto">CRYPTO</button></div>
       <div class="tg" id="pairTg"></div>
@@ -265,7 +265,7 @@ function computeR(row){
   const r={f1:null,f2:null,f3:null,f4:null,a2:null,a3:null,a4:null,b3:null,b4:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
-              ema200Pos:row.ema200Pos||null, obTf:row.obTf||null,
+              ema200Pos:row.ema200Pos||null,
               entry:E, anchor:A, r, raw:row};
   if(E==null||A==null||MR_raw==null||BX==null) return base;
   const range=(A-E)/(1-0.325), zero=E-0.325*range;
@@ -477,10 +477,8 @@ function emaState(t){
   return above === (d===1) ? 'In front of entry' : 'Behind entry';
 }
 // ── shared bucket card ───────────────────────────────────────────────────────
-// One categorical split of the same trades, scored the same way every time. The 200 EMA
-// card and the OB timeframe card ask an identical question — does this split separate? —
-// so they must answer it with identical statistics, or the board offers two standards of
-// evidence on one screen.
+// One categorical split of the same trades, scored the same way every time. Kept generic
+// so a second split can be added later without inventing a second standard of evidence.
 //
 // Scored on whatever method currently leads, the same key the direction tilt uses, so this
 // can never name a method the rest of the board has just ranked last.
@@ -521,30 +519,6 @@ function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
     note:'you log what the chart shows (above / at / below the AVWAP); the board orients it to the trade — behind means the 200 backs the entry, below it on a long and above it on a short',
     emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — OBVS and the buckets appear here.'});
-}
-// ── OB timeframe ─────────────────────────────────────────────────────────────
-// Buckets come from the values present in the log, never a hardcoded list: OB Timeframe is
-// an editable select in Notion, and a `1m` option added there after this shipped would be
-// silently dropped by a fixed list — the trades would vanish from the card without a count
-// changing anywhere visible.
-const obKey = t => t.obTf || null;
-// Numeric timeframes ascending first, then the non-numeric labels (Both/None) alphabetically.
-// Ordering by trade count instead would reshuffle the rows every time a trade is logged.
-function obOrder(pool){
-  const mins=k=>{ const m=/^(\d+(?:\.\d+)?)\s*([smhd])$/i.exec(k.trim()); if(!m) return null;
-    const v=+m[1]; return v*({s:1/60,m:1,h:60,d:1440})[m[2].toLowerCase()]; };
-  return [...new Set(pool.map(obKey).filter(Boolean))].sort((a,b)=>{
-    const x=mins(a), y=mins(b);
-    if(x!=null&&y!=null) return x-y;
-    if(x!=null) return -1;
-    if(y!=null) return 1;
-    return a.localeCompare(b);
-  });
-}
-function obCard(pool){
-  return bucketCard({pool, label:'Order block timeframe', keyFn:obKey, order:obOrder(pool),
-    note:'buckets are read from the log, so a new option in Notion appears here on its own',
-    emptyNote:'No trade carries an OB Timeframe yet. Fill <b>OB Timeframe</b> on Trade Log — OBVS and the buckets appear here.'});
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -1144,7 +1118,6 @@ function render(){
         <span class="mini">${matrixSummary} &nbsp; ${MATRIX_OPEN?'– collapse':'+ expand'}</span></div>
       ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
-    ${obCard(pool)}
     ${emaCard(pool)}
     <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
     <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
