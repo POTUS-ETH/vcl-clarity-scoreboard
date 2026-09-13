@@ -582,7 +582,14 @@ function rangeCard(pool){
   if(!eligible.length) return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
     <div class="empty-note">Needs 6+ scored trades on one instrument before its range terciles mean anything${skipped.length?` — so far: ${skipped.join(', ')}`:''}.</div></div>`;
   const terc=t=>{ const c=cuts[t.pair]; return t.rangePct<c[0]?'Small':t.rangePct<c[1]?'Medium':'Large'; };
-  const bounds=Object.keys(cuts).map(pr=>`${pr} &lt;${cuts[pr][0].toFixed(2)}% / &lt;${cuts[pr][1].toFixed(2)}%`);
+  // Column heads: when one instrument is in view the thirds have real numbers, so print
+  // them. With several instruments mixed each has its own cut points, so the heads fall
+  // back to "smallest / middle / largest third" and the line beneath lists each instrument.
+  const prs=Object.keys(cuts), one=prs.length===1?cuts[prs[0]]:null;
+  const heads = one
+    ? [`box &lt; ${one[0].toFixed(2)}%`, `${one[0].toFixed(2)}–${one[1].toFixed(2)}%`, `box ≥ ${one[1].toFixed(2)}%`]
+    : ['smallest ⅓ of boxes','middle ⅓','largest ⅓'];
+  const bounds=prs.map(pr=>`${pr}: thirds split at ${cuts[pr][0].toFixed(2)}% and ${cuts[pr][1].toFixed(2)}%`);
   let body='';
   MGMT.forEach(mm=>{
     const cells=RANGE_TERCILES.map(k=>fullStats(eligible.filter(t=>terc(t)===k).map(t=>RV(t,mm.key)).filter(x=>x!=null)));
@@ -592,9 +599,9 @@ function rangeCard(pool){
       : `<td class="pr mut">—</td>`).join('')+`</tr>`;
   });
   return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
-    <div class="mini" style="margin-bottom:6px">terciles per instrument · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div>
-    <table class="ptab"><tr><td></td>${RANGE_TERCILES.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}</table>
-    <div class="mini" style="margin-top:8px">box = entry to stop as % of entry · best cell per method highlighted once it has 3+ trades</div></div>`;
+    <div class="mini" style="margin-bottom:6px">does a method earn more on tight boxes or wide ones? · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div>
+    <table class="ptab"><tr><td></td>${heads.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}</table>
+    <div class="mini" style="margin-top:8px">box = entry to stop, as a % of entry price · each instrument is split into thirds on its own scale · best cell per method highlighted once it has 3+ trades</div></div>`;
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
@@ -1187,23 +1194,22 @@ function render(){
   board.innerHTML=`
     ${evidenceBar(pool, ALL_TRADES)}
     ${primerBlock()}
-    <div class="grid2">
-      <div>${winnerCard(pool)}</div>
-      <div>
-        <div class="card"><div class="lbl">Session profile</div>${sessionProfile(pool)}</div>
-      </div>
-    </div>
+    ${winnerCard(pool)}
     <div class="card" style="margin-bottom:12px">
       <div class="primhd" id="matTog"><span>Full numbers — every outcome, ranked</span>
         <span class="mini">${matrixSummary} &nbsp; ${MATRIX_OPEN?'– collapse':'+ expand'}</span></div>
       ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
+    <div class="card" style="margin-bottom:12px"><div class="lbl">Session profile</div>${sessionProfile(pool)}</div>
+    <div class="card" style="margin-bottom:12px">
+      ${intervalStripSVG(pool)}
+      <div style="height:1px;background:#1d2430;margin:14px 0"></div>
+      ${reachLadderSVG(pool)}
+    </div>
+    ${rangeCard(pool)}
     ${emaCard(pool)}
     ${mfCard(pool)}
     ${poiCard(pool)}
-    ${rangeCard(pool)}
-    <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
-    <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
     <div class="foot" id="foot"></div>`;
   const f=document.getElementById('foot'); if(f) f.innerHTML = FOOT_OBVS;
   const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
