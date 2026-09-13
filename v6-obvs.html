@@ -177,6 +177,7 @@ table.ptab tr:first-child td{border-top:0}
 table.ptab td.pm{width:99%;padding-left:7px;white-space:normal}
 table.ptab td.pr{text-align:right;padding-left:8px;font-weight:700}
 table.ptab td.pci{text-align:right;padding-left:7px;font-size:9.5px}
+table.ptab td.best{background:#182335;outline:1px solid #2a3a55;outline-offset:-1px}
 table.ptab td.pn{text-align:right;padding-left:7px;font-size:9.5px}
 .ptilt{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
        margin-top:11px;padding-top:8px;border-top:1px solid #232a36;font-size:11px}
@@ -195,7 +196,7 @@ table.sp tr.sptot{color:#c3c9d4}
 </style></head><body>
 <div class="wrap">
   <div class="hd">
-    <div><h1>VCS SIMPLICITY V6</h1><div class="sub">VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / 0.325 entry / 0.65 = 1R</div></div>
+    <div><h1>VCS SIMPLICITY V6</h1><div class="sub">VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / fib 1 entry / XR at fib X+1</div></div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="tg" id="classTg"><button data-c="all" class="on">ALL</button><button data-c="futures">FUTURES</button><button data-c="crypto">CRYPTO</button></div>
       <div class="tg" id="pairTg"></div>
@@ -213,18 +214,22 @@ table.sp tr.sptot{color:#c3c9d4}
 // banked before the runner sets off, so only half the position is still working:
 //   partial at 1R -> delivering NR needs the runner at 2N-1
 //   partial at 2R -> delivering NR needs the runner at 2N-2
-// Every R level is a fib level, because 1R IS 0.325 fib units: XR sits at fib 0.325*(X+1).
+// The fib is drawn stop-to-entry, so the box IS 1R and XR sits at fib X+1. Runner caps:
+// on the 1R-partial fib the cap delivering N is fib 2N; on the 2R-partial fib it is 2N-1.
 const MGMTS_OBVS=[
-  {k:'f1',label:'Full @ 1R · fib 0.65',short:'F1'},
-  {k:'f2',label:'Full @ 2R · fib 0.975',short:'F2'},
-  {k:'f3',label:'Full @ 3R · fib 1.30',short:'F3'},
-  {k:'f4',label:'Full @ 4R · fib 1.625',short:'F4'},
-  {k:'a2',label:'50% @1R → 2R · runner fib 1.30',short:'A2'},
-  {k:'a3',label:'50% @1R → 3R · runner fib 1.95',short:'A3'},
-  {k:'a4',label:'50% @1R → 4R · runner fib 2.60',short:'A4'},
-  {k:'b3',label:'50% @2R → 3R · runner fib 1.625',short:'B3'},
-  {k:'b4',label:'50% @2R → 4R · runner fib 2.275',short:'B4'}];
-const FOOT_OBVS='R math: one order, one stop, no L1 leg — 1R is simply |entry − stop|, so nothing here may be cross-compared against a two-fill ladder board. The fib is drawn stop-to-anchor: <b>fib 0 = stop</b>, 0.325 = entry, 0.65 = 1R, 1.0 = anchor. Every R level is a fib level — <b>XR sits at fib 0.325 × (X+1)</b> — which is why the runner fibs climb so fast once a partial is banked. Stop-outs are read off the <b>logged Trail Stop</b> reaching fib 0: these rows were logged natively against this exact fib, so the trail exit is real evidence of where the trade ended and no Max Adverse column is needed. A target that never printed is <b>not</b> a loss — the position exits at the logged Trail Stop.';
+  {k:'f1',label:'Full @ 1R · fib 2',short:'F1'},
+  {k:'f2',label:'Full @ 2R · fib 3',short:'F2'},
+  {k:'f3',label:'Full @ 3R · fib 4',short:'F3'},
+  {k:'f4',label:'Full @ 4R · fib 5',short:'F4'},
+  {k:'f5',label:'Full @ 5R · fib 6',short:'F5'},
+  {k:'a2',label:'50% @1R → 2R · runner fib 4',short:'A2'},
+  {k:'a3',label:'50% @1R → 3R · runner fib 6',short:'A3'},
+  {k:'a4',label:'50% @1R → 4R · runner fib 8',short:'A4'},
+  {k:'a5',label:'50% @1R → 5R · runner fib 10',short:'A5'},
+  {k:'b3',label:'50% @2R → 3R · runner fib 5',short:'B3'},
+  {k:'b4',label:'50% @2R → 4R · runner fib 7',short:'B4'},
+  {k:'b5',label:'50% @2R → 5R · runner fib 9',short:'B5'}];
+const FOOT_OBVS='R math: one order, one stop, no L1 leg — 1R is simply |entry − stop|, so nothing here may be cross-compared against a two-fill ladder board. The stop is <b>typed from structure</b>, not solved from a ratio; the fib is drawn stop-to-entry as a reading aid only, so <b>fib 0 = stop, fib 1 = entry, and XR sits at fib X+1</b>. Both ends are on-grid prices, so no tick rounding is applied anywhere. Stop-outs are read off the <b>logged Trail Stop</b> reaching the stop — there is no break-even move, the stop only steps on a break of structure — so the trail exit is complete evidence of where the trade ended and no Max Adverse column is needed. A target that never printed is <b>not</b> a loss — the position exits at the logged Trail Stop.';
 let MGMTS=MGMTS_OBVS.slice();
 // Instrument class filter — futures and crypto share this log, so the top toggle splits
 // them. 'all' is legitimate: the R math is identical, only the tick grid differs.
@@ -236,61 +241,52 @@ let PAIR='all';
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
-// Super Mario (VCL V5). Geometry solves from the two prices already typed: entry sits at
-// fib 0.325 of the span from fib 0 to the anchor, so fib0 = E - 0.325*range.
-// Excursions come from SM Max Run / SM Trail Stop and NEVER from the ladder's VCL Max Run /
-// VCL Trail Stop: the SM trail arms earlier because its levels sit nearer entry, so on the same
-// trade the two models close at different moments and their excursions are different
-// numbers. Falling back to the ladder's pair scores a trade neither model would have taken.
-// Per-instrument tick grid. Notion now stores SL/SM Stop/L1 rounded to the tick (stops
-// away from entry, L1 toward entry) — so we round Max Adverse to the same grid in the
-// ADVERSE direction and compare exactly. No tolerance: with both sides on the grid and
-// both rounded conservatively, a breach either happened or it didn't. Trades that merely
-// grazed the stop score as stop-outs; Super Mario comes out slightly pessimistic rather
-// than neutral, which is the correct direction to be wrong in for a backtest.
-// Futures sit on a tick grid; crypto is quoted finely enough that snapping would be
-// invented precision, so it gets no grid and stays at two decimals.
-const TICK={MNQ:0.25, MES:0.25, MGC:0.10};
-// ── OBVS scorer ──────────────────────────────────────────────────────────────
-// One order, one stop. The fib is drawn stop-to-anchor: fib 0 = stop, 0.325 = entry,
-// 0.65 = 1R. Everything is solved from the two logged prices plus Max Run and Trail Stop.
+// ── VCS scorer ────────────────────────────────────────────────────────────────
+// One order, one stop. The stop is TYPED from market structure — a swing point — and 1R is
+// simply |entry − stop|. Every target is a whole multiple of it, so with both ends on-grid
+// nothing needs rounding and no tolerance exists. The fib is a reading aid only: drawn
+// stop-to-entry, fib 0 = stop, fib 1 = entry, XR at fib X+1.
 //
-// Unlike the V4 board there is no Max Adverse here and none is needed: these rows were
-// logged natively against THIS fib, so the logged Trail Stop reaching fib 0 is real
-// evidence the trade ended at the stop. (V4 rows were logged against the wider ladder
-// stop, which is why that board cannot settle a stop-out without Max Adverse.)
+// No Max Adverse here and none is needed: the stop only moves on a break of structure
+// (there is no break-even step), so the logged Trail Stop reaching the stop is complete
+// evidence of a stop-out, and a Trail Stop above it is complete evidence of survival.
 function computeR(row){
-  const E=num(row.EntryPrice), A=num(row.anchor),
-        MR_raw=num(row.MaxRun), BX=num(row.TrailStop);
-  const r={f1:null,f2:null,f3:null,f4:null,a2:null,a3:null,a4:null,b3:null,b4:null};
+  const E=num(row.EntryPrice), S=num(row.StopPrice),
+        MR=num(row.MaxRun), BX=num(row.TrailStop);
+  const r={f1:null,f2:null,f3:null,f4:null,f5:null,a2:null,a3:null,a4:null,a5:null,b3:null,b4:null,b5:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
-              ema200Pos:row.ema200Pos||null, mfSignal:row.mfSignal||null,
-              entry:E, anchor:A, r, raw:row};
-  if(E==null||A==null||MR_raw==null||BX==null) return base;
-  const range=(A-E)/(1-0.325), zero=E-0.325*range;
-  const dir=range>0?1:-1, oneR=Math.abs(E-zero);
-  if(!oneR) return base;
-  // Same grid convention as the Notion formulas: stop rounds AWAY from entry, Max Run
-  // rounds TOWARD entry, so grid alignment can never manufacture a survival or a target.
-  const tick=TICK[row.Pair]||0, EPS=1e-9;
-  const stop = !tick ? Math.round(zero*100)/100
-             : dir>0 ? Math.floor(zero/tick+EPS)*tick : Math.ceil(zero/tick-EPS)*tick;
-  const MR = !tick ? MR_raw
-           : dir>0 ? Math.floor(MR_raw/tick)*tick : Math.ceil(MR_raw/tick)*tick;
-  const R=p=>dir*(p-E)/oneR;
-  base.stop=stop;
-  // Trail Stop at or through fib 0 IS the stop-out. Everything books -1R.
-  if(dir*(BX-stop)<=EPS){ for(const k in r) r[k]=-1; base.stopped=true; return base; }
-  const mr=R(MR), be=R(BX), hit=N=>mr>=N;
+              ema200:num(row.ema200), mfSignal:row.mfSignal||null,
+              poi:Array.isArray(row.poi)?row.poi:[], poiTf:row.poiTf||null, sweep:row.sweep===true,
+              entry:E, stop:S, r, raw:row};
+  if(E==null||S==null||MR==null||BX==null) return base;
+  // Direction is logged, not inferred from the prices: a stop typed on the wrong side of
+  // entry is a logging error and must read as unscored, not silently flip the trade.
+  const dir = row.Direction==='Long' ? 1 : row.Direction==='Short' ? -1 : null;
+  if(dir==null) return base;
+  if(dir*(E-S)<=0){ base.badStop=true; return base; }
+  // The stop is typed from structure. 1R is the box, both ends are on-grid prices, and
+  // every target is a whole multiple of it — so no tick rounding is needed and none is done.
+  const oneR=Math.abs(E-S), EPS=1e-9, R=p=>dir*(p-E)/oneR;
+  // Trail Stop at or through the stop IS a stop-out — but it is NOT "everything books -1R".
+  // Max Run is the furthest favourable price BEFORE the position closed, so a target it
+  // reached printed before the stop did. With no break-even move this case is real: hit
+  // 1R, reverse, stop at the original level. Full @1R closed at +1R before any of that;
+  // a 1R partial banked half and lost the runner, 0.5 + 0.5*(-1) = 0R. Only a method whose
+  // first target never printed takes the full -1R. `be` is simply -1 (or worse, on a gap)
+  // and every formula below already does the right thing with it — so no short-circuit.
+  base.stopped = dir*(BX-S)<=EPS;
+  const mr=R(MR), be=R(BX), hit=N=>mr>=N-EPS;
   // A target that never printed is NOT a loss — the position rode the trail to its
-  // logged exit. Booking -1R there would assert a stop-out that never traded.
+  // logged exit. There is no break-even move: if the runner came back to the original
+  // stop with no BoS, `be` is -1 and a 1R partial scores 0.5 + 0.5*(-1) = 0R. That is
+  // the real cost of the partial without BE, and it must show.
   const runA=c=>hit(1)?0.5*1+0.5*(hit(c)?c:be):be;   // partial banked at 1R
   const runB=c=>hit(2)?0.5*2+0.5*(hit(c)?c:be):be;   // partial banked at 2R
-  r.f1=hit(1)?1:be; r.f2=hit(2)?2:be; r.f3=hit(3)?3:be; r.f4=hit(4)?4:be;
-  r.a2=runA(3); r.a3=runA(5); r.a4=runA(7);          // deliver N off a 1R partial => 2N-1
-  r.b3=runB(4); r.b4=runB(6);                        // deliver N off a 2R partial => 2N-2
-  base.maxRunR=mr; base.stopped=false;
+  r.f1=hit(1)?1:be; r.f2=hit(2)?2:be; r.f3=hit(3)?3:be; r.f4=hit(4)?4:be; r.f5=hit(5)?5:be;
+  r.a2=runA(3); r.a3=runA(5); r.a4=runA(7); r.a5=runA(9);   // deliver N off a 1R partial => runner 2N-1
+  r.b3=runB(4); r.b4=runB(6); r.b5=runB(8);                 // deliver N off a 2R partial => runner 2N-2
+  base.maxRunR=mr; base.exitR=be;
   return base;
 }
 
@@ -331,35 +327,44 @@ function fullStats(series){
 // settles this outcome, at which level, and what happens on a miss. A reader cannot judge
 // a number without knowing what produced it.
 const LADDER_PREAMBLE='Two limit orders: entry at fib 0.382, L1 at 0.17, stop at fib 0. <b>1R is always the full two-fill ladder risk</b> — 0.552 of the range — whether or not L1 filled. Entry-only trades are on at half size, so every target sits at roughly double the distance. Because L1 sits between entry and stop, price cannot reach the stop without filling L1 first, so a stop-out is always a full −1R.';
-const MARIO_PREAMBLE='One order, no ladder leg. The fib is drawn stop-to-anchor: <b>fib 0 is the stop</b>, 0.325 entry, 0.65 TP, 1.0 anchor. The TP is exactly double the entry, so it sits at <b>1.000R by construction</b>. 2R = fib 0.975, 3R = 1.30, 5R = 1.95. Max Adverse decides every stop-out.';
+const MARIO_PREAMBLE='One order, no ladder leg. The stop is <b>typed from market structure</b> — a swing point, not a ratio — and the fib is drawn stop-to-entry only to read the chart: <b>fib 0 is the stop, fib 1 is the entry, XR sits at fib X+1</b>. Runner caps land on fib 2N (1R partial) or 2N−1 (2R partial). The logged Trail Stop settles every stop-out; no break-even move exists.';
 const METHOD_INFO={
-  f1:{what:'Close the whole position the moment price trades 1R — fib 0.65. If it never does, the trade exits at the logged Trail Stop.',
-      test:'Gated by <b>Max Run</b> against fib 0.65. A miss is scored at the <b>logged Trail Stop</b>, never a synthetic −1R.',
+  f1:{what:'Close the whole position the moment price trades 1R — fib 2. If it never does, the trade exits at the logged Trail Stop.',
+      test:'Gated by <b>Max Run</b> against fib 2. A miss is scored at the <b>logged Trail Stop</b>, never a synthetic −1R.',
       fail:'Caps every winner at exactly +1R while every loser still costs a full one, so a 6R trade and a 1R trade score identically. It discards the entire tail.'},
-  f2:{what:'Whole position held to 2R — fib 0.975, just under the anchor.',
+  f2:{what:'Whole position held to 2R — fib 3.',
       test:'Gated by <b>Max Run</b>; a miss exits at the <b>logged Trail Stop</b>.',
-      fail:'On any trade that misses 2R this row is identical to Full @3R and @4R, so the three share a fate more often than they look independent.'},
-  f3:{what:'Whole position held to 3R — fib 1.30.',
+      fail:'On any trade that misses 2R this row is identical to every further full target, so the five share a fate more often than they look independent.'},
+  f3:{what:'Whole position held to 3R — fib 4.',
       test:'Gated by <b>Max Run</b>; a miss exits at the <b>logged Trail Stop</b>.',
       fail:'Same fate-sharing as Full @2R. Its edge over @2R rests on a small number of trades that ran a long way.'},
-  f4:{what:'Whole position held to 4R — fib 1.625.',
+  f4:{what:'Whole position held to 4R — fib 5.',
       test:'Gated by <b>Max Run</b>; a miss exits at the <b>logged Trail Stop</b>.',
-      fail:'The furthest target on the board, so it is the most exposed to a handful of outliers. Check how much of its total comes from the top two trades before believing it.'},
-  a2:{what:'Half off at 1R, runner to 3R — delivering 2R on the whole position. Runner fib 1.30.',
+      fail:'Exposed to a handful of outliers. Check how much of its total comes from the top two trades before believing it.'},
+  f5:{what:'Whole position held to 5R — fib 6.',
+      test:'Gated by <b>Max Run</b>; a miss exits at the <b>logged Trail Stop</b>.',
+      fail:'The furthest target on the board. At small n it will read identically to Full @4R until a trade actually prints fib 6.'},
+  a2:{what:'Half off at 1R (fib 2), runner to 3R — delivering 2R on the whole position. Runner cap fib 4.',
       test:'Partial gated by <b>Max Run</b> ≥ 1R; runner gated at 3R, otherwise scored at the <b>logged Trail Stop</b>.',
-      fail:'Banking half at 1R caps the good trades early. Its win rate is high and its expectancy is not.'},
-  a3:{what:'Half off at 1R, runner to 5R — delivering 3R. Runner fib 1.95.',
+      fail:'Banking half at 1R caps the good trades early. And with no break-even move, a runner that comes back to the stop scores the trade at 0R, not +0.5R.'},
+  a3:{what:'Half off at 1R (fib 2), runner to 5R — delivering 3R. Runner cap fib 6.',
       test:'Partial at 1R, runner gated at 5R, miss scored at the <b>logged Trail Stop</b>.',
       fail:'Needs the runner five times the risk to deliver three, because only half the position is still working.'},
-  a4:{what:'Half off at 1R, runner to 7R — delivering 4R. Runner fib 2.60.',
+  a4:{what:'Half off at 1R (fib 2), runner to 7R — delivering 4R. Runner cap fib 8.',
       test:'Partial at 1R, runner gated at 7R, miss scored at the <b>logged Trail Stop</b>.',
       fail:'A 7R runner is a rare print. Most of the time this scores exactly the same as the shorter @1R variants.'},
-  b3:{what:'Half off at 2R, runner to 4R — delivering 3R. Runner fib 1.625.',
+  a5:{what:'Half off at 1R (fib 2), runner to 9R — delivering 5R. Runner cap fib 10.',
+      test:'Partial at 1R, runner gated at 9R, miss scored at the <b>logged Trail Stop</b>.',
+      fail:'A 9R runner. Until one prints, this row is a copy of A4.'},
+  b3:{what:'Half off at 2R (fib 3), runner to 4R — delivering 3R. Runner cap fib 5.',
       test:'Partial gated by <b>Max Run</b> ≥ 2R; runner gated at 4R, miss scored at the <b>logged Trail Stop</b>.',
       fail:'The partial only fires if price reaches 2R, so trades that stall between 1R and 2R ride the trail with no partial at all.'},
-  b4:{what:'Half off at 2R, runner to 6R — delivering 4R. Runner fib 2.275.',
+  b4:{what:'Half off at 2R (fib 3), runner to 6R — delivering 4R. Runner cap fib 7.',
       test:'Partial at 2R, runner gated at 6R, miss scored at the <b>logged Trail Stop</b>.',
       fail:'Same 2R gate as B3, plus a 6R runner. Two conditions have to land for it to deliver its name.'},
+  b5:{what:'Half off at 2R (fib 3), runner to 8R — delivering 5R. Runner cap fib 9.',
+      test:'Partial at 2R, runner gated at 8R, miss scored at the <b>logged Trail Stop</b>.',
+      fail:'An 8R runner off a 2R partial. Until one prints, this row is a copy of B4.'},
 };
 
 // ── THE SEAM ─────────────────────────────────────────────────────────────────
@@ -462,19 +467,19 @@ function recoCard(pool){
 // A long feeds DOWN into the AVWAP, so a 200 below it is the backstop; a short feeds UP
 // into it, so a 200 above it is. Labelling by raw price put structurally identical setups
 // in opposite buckets, mixing the protected case with the headwind case in each.
-const EMA_STATES = ['Behind entry','At AVWAP','In front of entry','Outside box'];
+const EMA_STATES = ['In front of entry','Inside box','Beyond stop'];
 function emaState(t){
-  const v=t.ema200Pos;
-  if(!v) return null;
-  // These two carry no side, so they pass through untouched and need no direction.
-  if(v==='Outside box'||v==='At AVWAP') return v;
-  const above = v==='Above AVWAP';
-  if(!above && v!=='Below AVWAP') return null;   // an option this code has never seen
-  // Without a direction there is no "front" — leave the row unscored rather than guess.
+  // The 200 EMA is logged as a PRICE. Its position is worked out here against the box
+  // (stop → entry), oriented to the trade, so the logger never has to decide whether it
+  // was protection or a headwind — that flips with direction and is the bit a human gets
+  // backwards on a short.
+  const p=t.ema200, E=t.entry, S=t.stop;
+  if(p==null||E==null||S==null) return null;
   const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
   if(d==null) return null;
-  // Above on a long, or below on a short, puts the 200 on the target side: in the path.
-  return above === (d===1) ? 'In front of entry' : 'Behind entry';
+  if(d*(p-E)>0) return 'In front of entry';   // on the target side of entry
+  if(d*(p-S)<0) return 'Beyond stop';         // behind the box entirely
+  return 'Inside box';                        // between stop and entry
 }
 // ── shared bucket card ───────────────────────────────────────────────────────
 // One categorical split of the same trades, scored the same way every time. Kept generic
@@ -482,14 +487,17 @@ function emaState(t){
 //
 // Scored on whatever method currently leads, the same key the direction tilt uses, so this
 // can never name a method the rest of the board has just ranked last.
-function bucketCard({pool, label, keyFn, order, note, emptyNote}){
-  const scored=pool.filter(t=>keyFn(t)!=null);
+function bucketCard({pool, label, keyFn, order, note, emptyNote, multi=false}){
+  // multi: keyFn returns an array and a trade can sit in several buckets (Anchor POI).
+  const has = multi ? (t=>Array.isArray(keyFn(t))&&keyFn(t).length>0) : (t=>keyFn(t)!=null);
+  const inB = multi ? ((t,k)=>keyFn(t).includes(k)) : ((t,k)=>keyFn(t)===k);
+  const scored=pool.filter(has);
   const missing=pool.length-scored.length;
   if(!scored.length) return `<div class="card" style="margin-bottom:12px"><div class="lbl">${label}</div>
     <div class="empty-note">${emptyNote}</div></div>`;
   const LD=leaderOf(pool), TK=LD?LD.best.m.key:(MGMT[0]||{}).key, tname=LD?LD.best.m.name:'';
-  const keys = order || [...new Set(scored.map(keyFn))];
-  const rows=keys.map(k=>({k, s:fullStats(scored.filter(t=>keyFn(t)===k).map(t=>RV(t,TK)).filter(x=>x!=null))}))
+  const keys = order || [...new Set(multi ? scored.flatMap(keyFn) : scored.map(keyFn))];
+  const rows=keys.map(k=>({k, s:fullStats(scored.filter(t=>inB(t,k)).map(t=>RV(t,TK)).filter(x=>x!=null))}))
                  .filter(x=>x.s.n);
   const ranked=[...rows].sort((a,b)=>(rankKey(b.s)-rankKey(a.s))||((b.s.lo??-999)-(a.s.lo??-999)));
   const top=ranked[0];
@@ -517,8 +525,8 @@ function bucketCard({pool, label, keyFn, order, note, emptyNote}){
 }
 function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
-    note:'you log what the chart shows (above / at / below the AVWAP); the board orients it to the trade — behind means the 200 backs the entry, below it on a long and above it on a short',
-    emptyNote:'No trade carries a 200 EMA reading yet. Set <b>200 EMA Position</b> on Trade Log — VCS and the buckets appear here.'});
+    note:'you log the 200 EMA\'s price at entry; the board places it against the box — in front means on the target side of entry, beyond stop means behind the whole box',
+    emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on Trade Log — VCS and the buckets appear here.'});
 }
 // ── money flow signal ────────────────────────────────────────────────────────
 // Logged raw as the indicator prints it — Buy or Sell — and oriented here, for the same
@@ -540,6 +548,66 @@ function mfCard(pool){
     note:'you log what the indicator printed (Buy / Sell); the board orients it to the trade — with means Buy on a long or Sell on a short',
     emptyNote:'No trade carries a money flow reading yet. Set <b>Money Flow Signal</b> on Trade Log — VCS and the buckets appear here.'});
 }
+// ── anchor point of interest ─────────────────────────────────────────────────
+// Three splits of the same trades on what sat at the AVWAP anchor. Logged raw — what was
+// there, not whether it worked — and scored here on the leading method like every other
+// bucket, so the answer comes from the numbers. A trade can carry several POIs and is
+// counted in each; the checkbox is "liquidity taken here" and is separate from the POI
+// options that name a sweep as the level itself.
+const POI_ORDER=['Order Block','Fair Value Gap','Inverted FVG','Internal Sweep','External Sweep','Session High','Session Low'];
+const POI_TF_ORDER=['15s','1m','3m','5m','15m','1h','4h','Multiple'];
+function poiCard(pool){
+  return bucketCard({pool, label:'Anchor point of interest', keyFn:t=>t.poi, order:POI_ORDER, multi:true,
+    note:'a trade with two POIs is counted in both rows, so the n column can sum past the trade count',
+    emptyNote:'No trade carries a point of interest yet. Set <b>Anchor POI</b> on Trade Log — VCS and the buckets appear here.'});
+}
+function poiTfCard(pool){
+  return bucketCard({pool, label:'POI timeframe', keyFn:t=>t.poiTf, order:POI_TF_ORDER,
+    note:'the timeframe the point of interest was read on',
+    emptyNote:'No trade carries a POI timeframe yet. Set <b>Anchor POI Timeframe</b> on Trade Log — VCS and the buckets appear here.'});
+}
+function sweepCard(pool){
+  return bucketCard({pool, label:'Sweep at anchor', keyFn:t=>t.sweep?'Sweep at anchor':'No sweep', order:['Sweep at anchor','No sweep'],
+    note:'a checkbox, so an unticked row reads as no sweep — there is no "unfilled" state',
+    emptyNote:'No trades yet.'});
+}
+// ── optimal range ────────────────────────────────────────────────────────────
+// "Where does each scenario actually earn?" Every method's expectancy in each Range-%
+// tercile. Terciles are cut PER INSTRUMENT — an MNQ box and a SOL box are not on one scale
+// — and a pair only contributes once it has 6+ scored trades, because a tercile of two is
+// not a tercile. Best cell per method is highlighted; a cell with n<3 is shown but dimmed.
+const RANGE_TERCILES=['Small','Medium','Large'];
+function rangeCard(pool){
+  const scored=pool.filter(t=>t.rangePct!=null && MGMT.some(m=>RV(t,m.key)!=null));
+  const byPair={}; scored.forEach(t=>(byPair[t.pair]=byPair[t.pair]||[]).push(t));
+  const cuts={}, skipped=[];
+  for(const pr in byPair){
+    const v=byPair[pr].map(t=>t.rangePct).sort((a,b)=>a-b);
+    if(v.length<6){ skipped.push(`${pr} (${v.length}, needs 6)`); continue; }
+    const c=[v[Math.floor(v.length/3)], v[Math.floor(2*v.length/3)]];
+    // Equal cut points mean the boxes are too uniform to split — every trade would land in
+    // one bucket and the card would read as if that size were "optimal". Say so instead.
+    if(c[0]===c[1]){ skipped.push(`${pr} (boxes too uniform)`); continue; }
+    cuts[pr]=c;
+  }
+  const eligible=scored.filter(t=>cuts[t.pair]);
+  if(!eligible.length) return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
+    <div class="empty-note">Needs 6+ scored trades on one instrument before its range terciles mean anything${skipped.length?` — so far: ${skipped.join(', ')}`:''}.</div></div>`;
+  const terc=t=>{ const c=cuts[t.pair]; return t.rangePct<c[0]?'Small':t.rangePct<c[1]?'Medium':'Large'; };
+  const bounds=Object.keys(cuts).map(pr=>`${pr} &lt;${cuts[pr][0].toFixed(2)}% / &lt;${cuts[pr][1].toFixed(2)}%`);
+  let body='';
+  MGMT.forEach(mm=>{
+    const cells=RANGE_TERCILES.map(k=>fullStats(eligible.filter(t=>terc(t)===k).map(t=>RV(t,mm.key)).filter(x=>x!=null)));
+    const best=cells.reduce((b,c,i)=>(c.n>=3&&(b<0||c.mean>cells[b].mean))?i:b,-1);
+    body+=`<tr><td>${mm.short}</td>`+cells.map((c,i)=>c.n
+      ? `<td class="pr ${cls(c.mean)}${c.n<3?' mut':''}${i===best?' best':''}">${fR(c.mean)} <span class="mini">n${c.n}</span></td>`
+      : `<td class="pr mut">—</td>`).join('')+`</tr>`;
+  });
+  return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
+    <div class="mini" style="margin-bottom:6px">terciles per instrument · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div>
+    <table class="ptab"><tr><td></td>${RANGE_TERCILES.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}</table>
+    <div class="mini" style="margin-top:8px">box = entry to stop as % of entry · best cell per method highlighted once it has 3+ trades</div></div>`;
+}
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
 function normalizeMethods(){
@@ -556,12 +624,11 @@ function paired(a,b,pool){
 // Attach the flat fields the ported chart code reads. Called once per filter pass.
 function decorate(pool){
   pool.forEach(t=>{
-    const w=t.raw||{}, d=w.Direction==='Long'?1:-1;
-    t.Direction=w.Direction; t.entry=num(w.EntryPrice);
-    t.maxRun = num(w.MaxRun);
-    const A=num(w.anchor), E=t.entry;
-    const oneR=(A!=null&&E!=null)?Math.abs(0.325*((A-E)/0.675)):null;
-    t.stop = (oneR&&t.entry!=null) ? t.entry - d*oneR : null;
+    const w=t.raw||{};
+    t.Direction=w.Direction; t.entry=num(w.EntryPrice); t.stop=num(w.StopPrice);
+    t.maxRun=num(w.MaxRun);
+    const oneR=(t.entry!=null&&t.stop!=null)?Math.abs(t.entry-t.stop):null;
+    t.oneR=oneR; t.rangePct=(oneR&&t.entry)?oneR/t.entry*100:null;
   });
   return pool;
 }
@@ -667,11 +734,16 @@ function verdictLine(pool){
 // this method clear even on an unlucky read of the same evidence — and drops it to fourth.
 // A zero-width interval still cannot win (see rankKey), because that is not confidence,
 // it is every observation landing on the same number.
-const rankKey = s => (s.degenerate ? -999 : (s.lo ?? -999));
+// Ranking is by expectancy — mean R per trade — POTUS's call 2026-08-29. It answers the
+// question the board is actually asked: over many trades, which management earns the most
+// per trade? The confidence interval stays printed on every row, so how much of that mean
+// rests on one outlier is still visible — it just no longer decides the order. Exact ties
+// fall back to the lower bound, so equal earners are led by the steadier one.
+const rankKey = s => s.mean ?? -999;
 function rankRows(rows, pool){
   if(rows.length<2) return rows;
   return [...rows].sort((a,b)=>
-    (rankKey(b.s)-rankKey(a.s)) || ((b.s.mean??-999)-(a.s.mean??-999)));
+    (rankKey(b.s)-rankKey(a.s)) || ((b.s.lo??-999)-(a.s.lo??-999)));
 }
 
 function leaderOf(pool){
@@ -737,7 +809,7 @@ function reachLadderSVG(pool){
   const pw=W-padL-padR, ph=H-padT-padB;
   const y=r=>padT+(1-(r-minR)/(maxR-minR))*ph;
   const n=rows.length, slot=pw/n, bw=Math.min(46,slot*0.54);
-  const LV=[{r:1,f:'0.65'},{r:2,f:'0.975'},{r:3,f:'1.30'},{r:5,f:'1.95'}];
+  const LV=[{r:1,f:'fib 2'},{r:2,f:'fib 3'},{r:3,f:'fib 4'},{r:5,f:'fib 6'}];
   const zero=y(0);
 
   let grid='';
@@ -796,7 +868,7 @@ function reachCurveSVG(pool){
   }
   let grid='';
   [1,2,3,5].forEach((N,i)=>{
-    const f=['0.65','0.975','1.30','1.95'][i], p=surv(N);
+    const f=['fib 2','fib 3','fib 4','fib 6'][i], p=surv(N);
     grid+=`<line x1="${x(N).toFixed(1)}" y1="${padT-4}" x2="${x(N).toFixed(1)}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<circle cx="${x(N).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.5" fill="#3fb950"/>`
        +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
@@ -1108,9 +1180,9 @@ function primerBlock(){
   return `<div class="card prim">
     <div class="primhd" id="primTog"><span>How to read this board</span><span class="mini">${PRIMER_OPEN?'– collapse':'+ expand'}</span></div>
     ${PRIMER_OPEN?`<div class="primbody">
-      <p><b>Every row is the same trades read a different way.</b> Ten exit rules scored against one log — not ten separate samples. Do not add the n column up.</p>
-      <p><b>Two models, two rulers.</b> The VCL ladder enters at fib 0.382 with an L1 at 0.17 and its stop at fib 0; Super Mario is a single order whose stop <em>is</em> fib 0, entering at 0.325 with the TP at 0.65. Both enter at the same price, but <b>ladder 1R is about 1.86× Super Mario 1R</b>. R does not convert across the toggle — never compare a number from one against the other.</p>
-      <p><b>Ranked by the lower bound of the 95% interval</b>, not raw expectancy. A method that pays well because of one outlier has a wide interval and a poor lower bound; one that pays consistently ranks above it. An interval of ±0 means every trade scored the same number — that is zero variance, not confidence, and it cannot take the top spot.</p>
+      <p><b>Every row is the same trades read a different way.</b> Twelve exit rules scored against one log — not ten separate samples. Do not add the n column up.</p>
+      <p><b>One ruler.</b> The stop is typed where market structure puts it — a swing point, not a fib ratio — and 1R is entry to stop. The fib is drawn stop-to-entry purely to read the chart: fib 0 is the stop, fib 1 the entry, and every R is a whole number above (XR at fib X+1). Futures and crypto share the log and the ruler; the board splits them by instrument.</p>
+      <p><b>Ranked by expectancy</b> — mean R per trade. The 95% interval is printed on every row so you can see how much of a mean rests on one outlier; it no longer decides the order. A wide interval that crosses zero is a lean, not a verdict, and the card above says so.</p>
       <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not.</p>
     </div>`:''}
   </div>`;
@@ -1140,6 +1212,10 @@ function render(){
     </div>
     ${emaCard(pool)}
     ${mfCard(pool)}
+    ${poiCard(pool)}
+    ${poiTfCard(pool)}
+    ${sweepCard(pool)}
+    ${rangeCard(pool)}
     <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
     <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
     <div class="foot" id="foot"></div>`;

@@ -686,9 +686,17 @@ async function computeV6Obvs(token) {
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'v6-obvs', [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
-    '200 EMA Position','Money Flow Signal',
-    '1 of Fib Price','Entry Price','Trail Stop','Max Run','Notes',
+    'Entry Price','Stop Price','Max Run','Trail Stop',
+    '200 EMA at Entry','Money Flow Signal',
+    'Anchor POI','Anchor POI Timeframe','Sweep at Anchor','Notes',
   ]);
+  // Stop Price must be a TYPED number. Under the structure-stop model it is the one price
+  // no formula can produce; a formula here means the 2026-09-13 retype was never applied,
+  // and every row would then score against a ratio the model no longer uses.
+  const spType = trades[0]?.properties?.['Stop Price']?.type;
+  if (spType && spType !== 'number') {
+    throw new Error(`v6-obvs: "Stop Price" is type "${spType}", expected "number" — the structure-stop retype has not been applied to Trade Log — VCS`);
+  }
   const rows = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -703,15 +711,24 @@ async function computeV6Obvs(token) {
       Pair:      getProp(t, 'Pair'),
       Direction: getProp(t, 'Direction'),
       Timeframe: getProp(t, 'Timeframe'),
-      ema200Pos: getProp(t, '200 EMA Position'),
+      // The 200 EMA is logged as a PRICE; the board places it against the box (stop → entry)
+      // and orients it to the trade, so the logger never decides "protection or headwind".
+      ema200:    getProp(t, '200 EMA at Entry'),
       // What the money flow indicator printed at entry: Buy or Sell, logged raw. The
       // board turns it into agreement with the trade, because that flip depends on
       // Direction and is the bit a human gets backwards on a short.
       mfSignal:  getProp(t, 'Money Flow Signal'),
-      anchor:    getProp(t, '1 of Fib Price'),
+      // What sat at the AVWAP anchor — logged raw, split by the board. Multi-select, so a
+      // trade can carry several. The checkbox is "liquidity taken here", separate from the
+      // POI options that name a sweep as the level itself.
+      poi:       getProp(t, 'Anchor POI'),
+      poiTf:     getProp(t, 'Anchor POI Timeframe'),
+      sweep:     getProp(t, 'Sweep at Anchor'),
+      // The four prices that score everything. Stop Price is typed from structure.
       EntryPrice:getProp(t, 'Entry Price'),
-      TrailStop: getProp(t, 'Trail Stop'),
+      StopPrice: getProp(t, 'Stop Price'),
       MaxRun:    getProp(t, 'Max Run'),
+      TrailStop: getProp(t, 'Trail Stop'),
       Notes:     getProp(t, 'Notes'),
     });
   }
