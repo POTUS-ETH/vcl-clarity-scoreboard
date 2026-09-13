@@ -257,7 +257,7 @@ function computeR(row){
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
               ema200:num(row.ema200), mfSignal:row.mfSignal||null,
-              poi:Array.isArray(row.poi)?row.poi:[], poiTf:row.poiTf||null, sweep:row.sweep===true,
+              poi:Array.isArray(row.poi)?row.poi:[],
               entry:E, stop:S, r, raw:row};
   if(E==null||S==null||MR==null||BX==null) return base;
   // Direction is logged, not inferred from the prices: a stop typed on the wrong side of
@@ -549,27 +549,15 @@ function mfCard(pool){
     emptyNote:'No trade carries a money flow reading yet. Set <b>Money Flow Signal</b> on Trade Log — VCS and the buckets appear here.'});
 }
 // ── anchor point of interest ─────────────────────────────────────────────────
-// Three splits of the same trades on what sat at the AVWAP anchor. Logged raw — what was
+// One split of the same trades on what sat at the AVWAP anchor. Logged raw — what was
 // there, not whether it worked — and scored here on the leading method like every other
-// bucket, so the answer comes from the numbers. A trade can carry several POIs and is
-// counted in each; the checkbox is "liquidity taken here" and is separate from the POI
-// options that name a sweep as the level itself.
-const POI_ORDER=['Order Block','Fair Value Gap','Inverted FVG','Internal Sweep','External Sweep','Session High','Session Low'];
-const POI_TF_ORDER=['15s','1m','3m','5m','15m','1h','4h','Multiple'];
+// bucket, so the answer comes from the numbers. Order blocks and FVGs carry their
+// timeframe in the option name; a trade can carry several POIs and is counted in each.
+const POI_ORDER=['Order Block 1m','Order Block 3m','Order Block 5m','Order Block 15m','FVG 1m','FVG 3m','FVG 5m','FVG 15m','Internal Sweep','External Sweep','Session High','Session Low'];
 function poiCard(pool){
   return bucketCard({pool, label:'Anchor point of interest', keyFn:t=>t.poi, order:POI_ORDER, multi:true,
     note:'a trade with two POIs is counted in both rows, so the n column can sum past the trade count',
     emptyNote:'No trade carries a point of interest yet. Set <b>Anchor POI</b> on Trade Log — VCS and the buckets appear here.'});
-}
-function poiTfCard(pool){
-  return bucketCard({pool, label:'POI timeframe', keyFn:t=>t.poiTf, order:POI_TF_ORDER,
-    note:'the timeframe the point of interest was read on',
-    emptyNote:'No trade carries a POI timeframe yet. Set <b>Anchor POI Timeframe</b> on Trade Log — VCS and the buckets appear here.'});
-}
-function sweepCard(pool){
-  return bucketCard({pool, label:'Sweep at anchor', keyFn:t=>t.sweep?'Sweep at anchor':'No sweep', order:['Sweep at anchor','No sweep'],
-    note:'a checkbox, so an unticked row reads as no sweep — there is no "unfilled" state',
-    emptyNote:'No trades yet.'});
 }
 // ── optimal range ────────────────────────────────────────────────────────────
 // "Where does each scenario actually earn?" Every method's expectancy in each Range-%
@@ -1213,8 +1201,6 @@ function render(){
     ${emaCard(pool)}
     ${mfCard(pool)}
     ${poiCard(pool)}
-    ${poiTfCard(pool)}
-    ${sweepCard(pool)}
     ${rangeCard(pool)}
     <div class="card" style="margin-bottom:12px">${intervalStripSVG(pool)}</div>
     <div class="card" style="margin-bottom:12px">${reachLadderSVG(pool)}</div>
