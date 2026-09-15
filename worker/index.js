@@ -687,7 +687,7 @@ async function computeV6Obvs(token) {
   assertSchema(trades, 'v6-obvs', [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
     'Entry Price','Stop Price','Max Run','Trail Stop',
-    '200 EMA at Entry','Money Flow Signal',
+    '200 EMA at Entry',
     'Anchor POI','Notes',
   ]);
   // Stop Price must be a TYPED number. Under the structure-stop model it is the one price
@@ -717,7 +717,6 @@ async function computeV6Obvs(token) {
       // What the money flow indicator printed at entry: Buy or Sell, logged raw. The
       // board turns it into agreement with the trade, because that flip depends on
       // Direction and is the bit a human gets backwards on a short.
-      mfSignal:  getProp(t, 'Money Flow Signal'),
       // What sat at the AVWAP anchor — logged raw, split by the board. Multi-select, so a
       // trade can carry several; order blocks and FVGs carry their timeframe in the option.
       poi:       getProp(t, 'Anchor POI'),

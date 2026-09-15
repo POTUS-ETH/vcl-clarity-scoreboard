@@ -101,6 +101,11 @@ tr.dr>td{padding:0;border-bottom:1px solid #232a36;background:#12161d}
 .mc-c{cursor:pointer}
 .mc-c:hover{border-color:#3b4557}
 .mc-s{outline:1.5px solid #4a90d9;outline-offset:-1.5px}
+.dw-tally{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;margin:4px 0 12px}
+.dw-t{font-size:11.5px;color:#c3c9d4;white-space:nowrap}
+.dw-t b{color:#e6e9ef;font-weight:700;margin-right:4px}
+.dw-t i{font-style:normal;color:#6b7280}
+.dw-cal{max-width:640px}
 .dd-h{display:flex;justify-content:space-between;font-size:10.5px;color:#c3c9d4;
       padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #232a36;font-weight:700}
 .dd-t{border:1px solid #232a36;border-radius:6px;padding:8px 10px;margin-bottom:7px;background:#12161d}
@@ -256,7 +261,7 @@ function computeR(row){
   const r={f1:null,f2:null,f3:null,f4:null,f5:null,a2:null,a3:null,a4:null,a5:null,b3:null,b4:null,b5:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
-              ema200:num(row.ema200), mfSignal:row.mfSignal||null,
+              ema200:num(row.ema200),
               poi:Array.isArray(row.poi)?row.poi:[],
               entry:E, stop:S, r, raw:row};
   if(E==null||S==null||MR==null||BX==null) return base;
@@ -528,26 +533,79 @@ function emaCard(pool){
     note:'you log the 200 EMA\'s price at entry; the board places it against the box — in front means on the target side of entry, beyond stop means behind the whole box',
     emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on Trade Log — VCS and the buckets appear here.'});
 }
-// ── money flow signal ────────────────────────────────────────────────────────
-// Logged raw as the indicator prints it — Buy or Sell — and oriented here, for the same
-// reason the 200 EMA is: "the signal said Sell" is a fact you read off the chart, while
-// "the signal agreed with me" depends on Direction and is the bit a human gets backwards
-// on a short. Raw Buy/Sell buckets would also answer the wrong question: they would mix
-// a Sell you shorted (agreement) with a Sell you longed (a fade) in one row.
-const MF_STATES = ['Signal with trade','Signal against trade'];
-function mfState(t){
-  const v=t.mfSignal;
-  if(v!=='Buy'&&v!=='Sell') return null;         // unfilled, or an option this code has never seen
-  // Without a direction there is no agreement to measure — leave the row unscored.
-  const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
-  if(d==null) return null;
-  return (v==='Buy') === (d===1) ? 'Signal with trade' : 'Signal against trade';
+// ── winning method by day ────────────────────────────────────────────────────
+// Per day, which method banked the most R across that day's trades. Ties are the rule,
+// not the exception, and they are real: every method that misses its target is scored at
+// the same trail exit, and a stop-out is −1R on all twelve, so on a day of misses whole
+// families sit level. A tie is shown as a tie and never broken by list order. A day where
+// every method lands on the same total has no winner at all and counts for nobody.
+function dayWinners(pool){
+  const byDay={};
+  pool.forEach(t=>{
+    if(!t.date) return;
+    const vals=MGMT.map(m=>[m.key,RV(t,m.key)]).filter(([,v])=>v!=null&&!isNaN(v));
+    if(!vals.length) return;
+    const d=byDay[t.date]=byDay[t.date]||{tot:{},n:0};
+    vals.forEach(([k,v])=>{ d.tot[k]=(d.tot[k]||0)+v; });
+    d.n++;
+  });
+  Object.values(byDay).forEach(d=>{
+    const keys=Object.keys(d.tot), best=Math.max(...keys.map(k=>d.tot[k]));
+    d.best=best;
+    d.winners=keys.filter(k=>Math.abs(d.tot[k]-best)<1e-9);
+    d.split=d.winners.length<keys.length;          // false: nothing separated from the rest
+  });
+  return byDay;
 }
-function mfCard(pool){
-  return bucketCard({pool, label:'Money flow signal', keyFn:mfState, order:MF_STATES,
-    note:'you log what the indicator printed (Buy / Sell); the board orients it to the trade — with means Buy on a long or Sell on a short',
-    emptyNote:'No trade carries a money flow reading yet. Set <b>Money Flow Signal</b> on Trade Log — VCS and the buckets appear here.'});
+function dayWinnerCard(pool){
+  const byDay=dayWinners(pool), days=Object.keys(byDay).sort();
+  if(!days.length) return '';
+  const KEY='__daywin';
+  const months=[...new Set(days.map(ym))].sort();
+  const cur=OPEN_MONTH[KEY]&&months.includes(OPEN_MONTH[KEY])?OPEN_MONTH[KEY]:months[months.length-1];
+  const idx=months.indexOf(cur), [Y,M]=cur.split('-').map(Number);
+  const first=new Date(Y,M-1,1), start=first.getDay(), dim=new Date(Y,M,0).getDate();
+  const byKey=Object.fromEntries(MGMT.map(m=>[m.key,m]));
+  // The tally runs over every dated day in the pool, not only the month on screen.
+  const tally={}; MGMT.forEach(m=>tally[m.key]={solo:0,shared:0});
+  let flat=0;
+  days.forEach(iso=>{ const d=byDay[iso];
+    if(!d.split){ flat++; return; }
+    if(d.winners.length===1) tally[d.winners[0]].solo++; else d.winners.forEach(k=>tally[k].shared++); });
+  const ranked=MGMT.filter(m=>tally[m.key].solo||tally[m.key].shared)
+    .sort((a,b)=>(tally[b.key].solo-tally[a.key].solo)||(tally[b.key].shared-tally[a.key].shared));
+  const chips=ranked.map(m=>{ const t=tally[m.key];
+    return `<span class="dw-t" title="${m.label}"><b>${m.short}</b> ${t.solo} day${t.solo===1?'':'s'}${t.shared?` <i>+${t.shared} shared</i>`:''}</span>`; }).join('');
+  let cells='';
+  for(let i=0;i<start;i++) cells+='<div class="mc-d mc-e"></div>';
+  for(let dd=1;dd<=dim;dd++){
+    const iso=`${cur}-${String(dd).padStart(2,'0')}`, d=byDay[iso];
+    if(!d){ cells+=`<div class="mc-d"><span class="mc-n">${dd}</span></div>`; continue; }
+    const tone=d.best>0?' mc-w':(d.best<0?' mc-l':' mc-f');
+    const names=d.winners.map(k=>byKey[k]?byKey[k].label:k).join(' · ');
+    const tag=!d.split ? '—'
+            : d.winners.length===1 ? byKey[d.winners[0]].short
+            : d.winners.length<=3 ? d.winners.map(k=>byKey[k].short).join('/')
+            : `${d.winners.length} tied`;
+    const title=(!d.split?'No separation — every method finished level':names)+` · ${fR(d.best)} · ${d.n} trade${d.n>1?'s':''}`;
+    cells+=`<div class="mc-d${tone}" title="${title}"><span class="mc-n">${dd}</span><span class="mc-r ${!d.split?'mut':cls(d.best)}">${tag}</span></div>`;
+  }
+  const nav=months.length>1
+    ? `<button class="mc-b" data-cal="${KEY}" data-mo="${months[idx-1]||''}" ${idx<=0?'disabled':''}>‹</button>`+
+      `<button class="mc-b" data-cal="${KEY}" data-mo="${months[idx+1]||''}" ${idx>=months.length-1?'disabled':''}>›</button>` : '';
+  return `<div class="card" style="margin-bottom:12px">
+    <div class="lbl">Winning method by day</div>
+    <div class="dw-tally">${chips||'<span class="mini">No day has separated a method yet.</span>'}
+      ${flat?`<span class="dw-t"><i>${flat} day${flat===1?'':'s'} with no separation</i></span>`:''}</div>
+    <div class="dw-cal">
+      <div class="mc-h"><span>${first.toLocaleString('en-US',{month:'long',year:'numeric'})}</span><span>${nav}</span></div>
+      <div class="mc-w7"><i>S</i><i>M</i><i>T</i><i>W</i><i>T</i><i>F</i><i>S</i></div>
+      <div class="mc-g">${cells}</div>
+    </div>
+    <div class="mini" style="margin-top:8px">Each day names the method that banked the most R on that day's trades. A tie is shown as a tie and counted as shared; a day where all twelve finish level counts for nobody. The tally covers every logged day, not only the month shown.</div>
+  </div>`;
 }
+
 // ── anchor point of interest ─────────────────────────────────────────────────
 // One split of the same trades on what sat at the AVWAP anchor. Logged raw — what was
 // there, not whether it worked — and scored here on the leading method like every other
@@ -1208,8 +1266,8 @@ function render(){
     </div>
     ${rangeCard(pool)}
     ${emaCard(pool)}
-    ${mfCard(pool)}
     ${poiCard(pool)}
+    ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
   const f=document.getElementById('foot'); if(f) f.innerHTML = FOOT_OBVS;
   const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
