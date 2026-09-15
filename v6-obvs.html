@@ -106,6 +106,8 @@ tr.dr>td{padding:0;border-bottom:1px solid #232a36;background:#12161d}
 .dw-t b{color:#e6e9ef;font-weight:700;margin-right:4px}
 .dw-t i{font-style:normal;color:#6b7280}
 .dw-cal{max-width:640px}
+.dw-cal .mc-d{height:56px}
+.dw-cal .mc-r{white-space:normal;text-align:center;line-height:1.15;font-size:10px;padding:0 3px}
 .dd-h{display:flex;justify-content:space-between;font-size:10.5px;color:#c3c9d4;
       padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #232a36;font-weight:700}
 .dd-t{border:1px solid #232a36;border-radius:6px;padding:8px 10px;margin-bottom:7px;background:#12161d}
@@ -575,7 +577,7 @@ function dayWinnerCard(pool){
   const ranked=MGMT.filter(m=>tally[m.key].solo||tally[m.key].shared)
     .sort((a,b)=>(tally[b.key].solo-tally[a.key].solo)||(tally[b.key].shared-tally[a.key].shared));
   const chips=ranked.map(m=>{ const t=tally[m.key];
-    return `<span class="dw-t" title="${m.label}"><b>${m.short}</b> ${t.solo} day${t.solo===1?'':'s'}${t.shared?` <i>+${t.shared} shared</i>`:''}</span>`; }).join('');
+    return `<span class="dw-t" title="${m.label}"><b>${m.mid}</b> ${t.solo} day${t.solo===1?'':'s'}${t.shared?` <i>+${t.shared} shared</i>`:''}</span>`; }).join('');
   let cells='';
   for(let i=0;i<start;i++) cells+='<div class="mc-d mc-e"></div>';
   for(let dd=1;dd<=dim;dd++){
@@ -584,8 +586,7 @@ function dayWinnerCard(pool){
     const tone=d.best>0?' mc-w':(d.best<0?' mc-l':' mc-f');
     const names=d.winners.map(k=>byKey[k]?byKey[k].label:k).join(' · ');
     const tag=!d.split ? '—'
-            : d.winners.length===1 ? byKey[d.winners[0]].short
-            : d.winners.length<=3 ? d.winners.map(k=>byKey[k].short).join('/')
+            : d.winners.length===1 ? byKey[d.winners[0]].mid
             : `${d.winners.length} tied`;
     const title=(!d.split?'No separation — every method finished level':names)+` · ${fR(d.best)} · ${d.n} trade${d.n>1?'s':''}`;
     cells+=`<div class="mc-d${tone}" title="${title}"><span class="mc-n">${dd}</span><span class="mc-r ${!d.split?'mut':cls(d.best)}">${tag}</span></div>`;
@@ -666,6 +667,9 @@ function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
 function normalizeMethods(){
   MGMT = MGMTS.map(m=>{ const i=METHOD_INFO[m.k]||{};
     return {...m, key:m.k, name:m.label, short:m.short||m.label,
+            // 'Full @ 2R', '50% @1R → 3R'. Spaces are non-breaking except the one before the
+            // arrow, so in a narrow calendar cell the name folds to two lines at most: '50% @1R' / '→ 3R'.
+            mid:(m.label||'').replace(/\s*·\s*(?:runner )?fib .*$/,'').replace(/ /g,'\u00a0').replace('\u00a0\u2192\u00a0',' \u2192\u00a0'),
             lvl:m.lvl||'', desc:i.what||''}; });
 }
 function seriesFor(prop,pool){ return pool.map(t=>RV(t,prop)).filter(v=>v!=null&&!isNaN(v)); }
