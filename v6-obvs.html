@@ -902,44 +902,63 @@ function reachLadderSVG(pool){
 }
 
 function reachCurveSVG(pool){
-  const dirOf=t=>t.Direction==='Long'?1:-1;
-  const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
-    return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
-  const rs=pool.map(rOf).filter(v=>v!=null).sort((a,b)=>a-b);
-  if(!rs.length) return '';
-  const W=1000,H=230,padL=52,padR=130,padT=20,padB=34;
-  const maxR=Math.max(6,rs[rs.length-1])*1.05, minR=Math.min(-1.5,rs[0]);
+  // Two survival curves on one axis, both from the scorer's own numbers so they can never
+  // disagree with the matrix: maxRunR is how far price went (what was OFFERED), exitR is
+  // where the trail actually closed (what was KEPT). For every trade exit ≤ max run, so
+  // the blue line sits on or under the green one everywhere, and the gap between them at
+  // any R is the share of trades that reached it and gave it back — the R left unsecured.
+  const scored=pool.filter(t=>t.maxRunR!=null&&t.exitR!=null);
+  if(!scored.length) return '';
+  const run=scored.map(t=>t.maxRunR).sort((a,b)=>a-b);
+  const kept=scored.map(t=>t.exitR).sort((a,b)=>a-b);
+  const gap=scored.map(t=>t.maxRunR-t.exitR).sort((a,b)=>a-b);   // per trade, never negative
+  const med=a=>a[Math.floor(a.length/2)];
+  const W=1000,H=230,padL=52,padR=150,padT=20,padB=34;
+  const maxR=Math.max(6,run[run.length-1])*1.05, minR=Math.min(-1.5,kept[0],run[0]);
   const pw=W-padL-padR, ph=H-padT-padB;
   const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
-  const surv=r=>rs.filter(v=>v>=r).length/rs.length;
-  let path='';
-  for(let i=0;i<=160;i++){
-    const r=minR+(maxR-minR)*i/160;
-    path+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(r)).toFixed(1);
-  }
+  const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
+  const pathOf=rs=>{ let d=''; for(let i=0;i<=160;i++){ const r=minR+(maxR-minR)*i/160;
+    d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
+  const GREEN='#3fb950', BLUE='#79c0ff';
   let grid='';
   [1,2,3,5].forEach((N,i)=>{
-    const f=['fib 2','fib 3','fib 4','fib 6'][i], p=surv(N);
-    grid+=`<line x1="${x(N).toFixed(1)}" y1="${padT-4}" x2="${x(N).toFixed(1)}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
-       +  `<circle cx="${x(N).toFixed(1)}" cy="${y(p).toFixed(1)}" r="3.5" fill="#3fb950"/>`
-       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
-       +  `<text x="${x(N).toFixed(1)}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
-       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(p)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(p*100)}%</text>`;
+    const f=['fib 2','fib 3','fib 4','fib 6'][i], pr=surv(run,N), pk=surv(kept,N), X=x(N).toFixed(1);
+    grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
+       +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
+       +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
+       // reached: dot with its % above-right; kept: dot with its % below-right. Kept is
+       // never above reached, so the two labels cannot cross.
+       +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
+       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
+       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3.5" fill="${BLUE}"/>`
+       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${BLUE}">${Math.round(pk*100)}%</text>`;
   });
   let yax='';
   [0,0.25,0.5,0.75,1].forEach(p=>{
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
       +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
   });
+  const sx=W-padR+12;
   return `<div class="card" style="padding:12px 14px 8px">
-    <div class="lbl">Reach curve — share of trades that ran at least this far (n=${rs.length})</div>
+    <div class="lbl">Reach curve — share of trades that ran at least this far, and that kept it (n=${scored.length})</div>
     <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
       ${yax}${grid}
-      <path d="${path}" fill="none" stroke="#3fb950" stroke-width="2"/>
-      <text x="${W-padR+12}" y="${padT+10}" font-size="10" fill="#8b93a1">median run</text>
-      <text x="${W-padR+12}" y="${padT+24}" font-size="13" font-weight="700" fill="#e6e8ec">${rs[Math.floor(rs.length/2)].toFixed(2)}R</text>
+      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="2"/>
+      <path d="${pathOf(kept)}" fill="none" stroke="${BLUE}" stroke-width="2"/>
+      <line x1="${sx}" y1="${padT+4}" x2="${sx+14}" y2="${padT+4}" stroke="${GREEN}" stroke-width="2"/>
+      <text x="${sx+19}" y="${padT+7}" font-size="9.5" fill="#c3c9d4">reached · max run</text>
+      <line x1="${sx}" y1="${padT+18}" x2="${sx+14}" y2="${padT+18}" stroke="${BLUE}" stroke-width="2"/>
+      <text x="${sx+19}" y="${padT+21}" font-size="9.5" fill="#c3c9d4">kept · trail exit</text>
+      <text x="${sx}" y="${padT+48}" font-size="10" fill="#8b93a1">median run</text>
+      <text x="${sx}" y="${padT+62}" font-size="13" font-weight="700" fill="#e6e8ec">${med(run).toFixed(2)}R</text>
+      <text x="${sx}" y="${padT+84}" font-size="10" fill="#8b93a1">median kept</text>
+      <text x="${sx}" y="${padT+98}" font-size="13" font-weight="700" fill="${BLUE}">${med(kept).toFixed(2)}R</text>
+      <text x="${sx}" y="${padT+120}" font-size="10" fill="#8b93a1">left unsecured</text>
+      <text x="${sx}" y="${padT+134}" font-size="13" font-weight="700" fill="#e6e8ec">${med(gap).toFixed(2)}R</text>
+      <text x="${sx}" y="${padT+146}" font-size="8.5" fill="#6b7280">median per trade</text>
     </svg>
-    <div class="fsub" style="margin:6px 0 0">Each dot is one exit level: how often price reached it at all. Every outcome on this board is a point on this curve weighed against what it pays.</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all; blue is how often the trade still had it at the exit. The vertical gap between them is the R that was on the table and given back. Every outcome on this board is a point on the green curve weighed against what it pays.</div>
   </div>`;
 }
 
