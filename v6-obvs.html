@@ -620,12 +620,23 @@ function dayWinnerCard(pool){
 // "Where does each scenario actually earn?" Every method's expectancy in each Range-%
 // tercile. Terciles are cut PER INSTRUMENT — an MNQ box and a SOL box are not on one scale
 // — and a pair only contributes once it has 6+ scored trades, because a tercile of two is
-// not a tercile. Best cell per method is highlighted; a cell with n<3 is shown but dimmed.
+// not a tercile.
+//
+// The card leads with a VERDICT, because a 12×3 grid does not read itself: which third
+// most methods earn most on, the average across methods in each third, and what that
+// third means in points on each instrument. Two honesty rules on the verdict:
+//   1. The twelve rows share the same trades. If every method peaks on small boxes, that
+//      is ONE fact seen twelve ways, not twelve independent confirmations — the count is
+//      reported as agreement, not as evidence stacking up.
+//   2. It is a lean until the winning third's interval, on the method the board currently
+//      leads with, clears the other two thirds' means. Until then the card says "lean".
+// Read R here as R per unit risked: a tight box turns the same price travel into more R
+// AND stops out more easily. Both are in these numbers, which is what makes them honest.
 const RANGE_TERCILES=['Small','Medium','Large'];
 function rangeCard(pool){
   const scored=pool.filter(t=>t.rangePct!=null && MGMT.some(m=>RV(t,m.key)!=null));
   const byPair={}; scored.forEach(t=>(byPair[t.pair]=byPair[t.pair]||[]).push(t));
-  const cuts={}, skipped=[];
+  const cuts={}, skipped=[], px={};
   for(const pr in byPair){
     const v=byPair[pr].map(t=>t.rangePct).sort((a,b)=>a-b);
     if(v.length<6){ skipped.push(`${pr} (${v.length}, needs 6)`); continue; }
@@ -634,31 +645,53 @@ function rangeCard(pool){
     // one bucket and the card would read as if that size were "optimal". Say so instead.
     if(c[0]===c[1]){ skipped.push(`${pr} (boxes too uniform)`); continue; }
     cuts[pr]=c;
+    const e=byPair[pr].map(t=>t.entry).filter(x=>x!=null).sort((a,b)=>a-b); px[pr]=e[Math.floor(e.length/2)];
   }
   const eligible=scored.filter(t=>cuts[t.pair]);
   if(!eligible.length) return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
     <div class="empty-note">Needs 6+ scored trades on one instrument before its range terciles mean anything${skipped.length?` — so far: ${skipped.join(', ')}`:''}.</div></div>`;
   const terc=t=>{ const c=cuts[t.pair]; return t.rangePct<c[0]?'Small':t.rangePct<c[1]?'Medium':'Large'; };
-  // Column heads: when one instrument is in view the thirds have real numbers, so print
-  // them. With several instruments mixed each has its own cut points, so the heads fall
-  // back to "smallest / middle / largest third" and the line beneath lists each instrument.
-  const prs=Object.keys(cuts), one=prs.length===1?cuts[prs[0]]:null;
-  const heads = one
-    ? [`box &lt; ${one[0].toFixed(2)}%`, `${one[0].toFixed(2)}–${one[1].toFixed(2)}%`, `box ≥ ${one[1].toFixed(2)}%`]
-    : ['smallest ⅓ of boxes','middle ⅓','largest ⅓'];
-  const bounds=prs.map(pr=>`${pr}: thirds split at ${cuts[pr][0].toFixed(2)}% and ${cuts[pr][1].toFixed(2)}%`);
-  let body='';
-  MGMT.forEach(mm=>{
+  const prs=Object.keys(cuts);
+  const heads=['smallest ⅓ of boxes','middle ⅓','largest ⅓'];
+  // Per method: three cells and the index of its best (n≥3). Per column: the average of
+  // the method means — "what an average method earns in this third".
+  const grid=MGMT.map(mm=>{
     const cells=RANGE_TERCILES.map(k=>fullStats(eligible.filter(t=>terc(t)===k).map(t=>RV(t,mm.key)).filter(x=>x!=null)));
     const best=cells.reduce((b,c,i)=>(c.n>=3&&(b<0||c.mean>cells[b].mean))?i:b,-1);
-    body+=`<tr><td>${mm.short}</td>`+cells.map((c,i)=>c.n
-      ? `<td class="pr ${cls(c.mean)}${c.n<3?' mut':''}${i===best?' best':''}">${fR(c.mean)} <span class="mini">n${c.n}</span></td>`
+    return {mm, cells, best};
+  });
+  const votes=[0,0,0]; grid.forEach(g=>{ if(g.best>=0) votes[g.best]++; });
+  const voted=grid.filter(g=>g.best>=0).length;
+  const colAvg=RANGE_TERCILES.map((_,i)=>{ const v=grid.map(g=>g.cells[i]).filter(c=>c.n).map(c=>c.mean); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; });
+  const colN=RANGE_TERCILES.map(k=>eligible.filter(t=>terc(t)===k).length);
+  const top=votes.indexOf(Math.max(...votes));
+  const consensus=voted&&votes[top]/voted>=2/3;
+  // Separation test on the leading method only — the one the rest of the board would
+  // actually have you trade.
+  const LD=leaderOf(pool), lead=LD?grid.find(g=>g.mm.key===LD.best.m.key):null;
+  const lc=lead?lead.cells[top]:null, others=lead?lead.cells.filter((_,i)=>i!==top&&lead.cells[i].n):[];
+  const separated=!!(lc&&lc.n>=5&&!lc.degenerate&&others.length&&others.every(o=>lc.lo>o.mean));
+  const word=['Small boxes','Medium boxes','Large boxes'][top];
+  // Translate the winning third into points per instrument at that instrument's typical price.
+  const lim=pr=>{ const c=cuts[pr], P=px[pr]; const pts=v=>(v/100*P).toFixed(P>10000?0:P>1000?1:2);   // MNQ whole points, MES/MGC tenths, crypto cents
+    return top===0?`${pr} under ${c[0].toFixed(2)}% ≈ ${pts(c[0])} pts`:top===2?`${pr} over ${c[1].toFixed(2)}% ≈ ${pts(c[1])} pts`:`${pr} ${c[0].toFixed(2)}–${c[1].toFixed(2)}% ≈ ${pts(c[0])}–${pts(c[1])} pts`; };
+  const head = !consensus
+    ? `<div class="band" style="margin:4px 0 2px"><div class="bandnum mut">No size edge yet</div>
+         <div class="bandci">methods split ${votes.join(' / ')} across small / medium / large — no third earns most for a clear majority</div></div>`
+    : `<div class="band" style="margin:4px 0 2px"><div class="bandnum ${cls(colAvg[top]??0)}">${word}</div>
+         <div class="bandci">${separated?'<b>best third</b>':'<b>lean</b>, not yet a verdict'} · earns most for ${votes[top]} of ${voted} methods · average method ${fR(colAvg[top])} here vs ${RANGE_TERCILES.map((k,i)=>i===top?null:`${fR(colAvg[i])} ${k.toLowerCase()}`).filter(Boolean).join(', ')} · n${colN[top]} trades in this third</div></div>
+       <div class="mini" style="margin-bottom:6px">on the chart that is a box ${prs.map(lim).join(' · ')}</div>`;
+  let body='';
+  grid.forEach(({mm,cells,best})=>{
+    body+=`<tr><td style="white-space:nowrap">${mm.mid||mm.short}</td>`+cells.map((c,i)=>c.n
+      ? `<td class="pr ${cls(c.mean)}${c.n<3?' mut':''}${i===best?' best':''}">${i===best?'▸ ':''}${fR(c.mean)} <span class="mini">n${c.n}</span></td>`
       : `<td class="pr mut">—</td>`).join('')+`</tr>`;
   });
-  return `<div class="card" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>
-    <div class="mini" style="margin-bottom:6px">does a method earn more on tight boxes or wide ones? · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div>
-    <table class="ptab"><tr><td></td>${heads.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}</table>
-    <div class="mini" style="margin-top:8px">box = entry to stop, as a % of entry price · each instrument is split into thirds on its own scale · best cell per method highlighted once it has 3+ trades</div></div>`;
+  const avgRow=`<tr><td class="mut" style="white-space:nowrap">average method</td>`+colAvg.map((v,i)=>`<td class="pr ${v==null?'mut':cls(v)}${i===top&&consensus?' best':''}" style="border-top:1px solid #2a3140">${v==null?'—':fR(v)} <span class="mini">n${colN[i]}</span></td>`).join('')+`</tr>`;
+  const bounds=prs.map(pr=>`${pr} thirds split at ${cuts[pr][0].toFixed(2)}% / ${cuts[pr][1].toFixed(2)}%`);
+  return `<div class="card answer" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>${head}
+    <table class="ptab"><tr><td></td>${heads.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}${avgRow}</table>
+    <div class="mini" style="margin-top:8px">box = entry to stop, as a % of entry price · ▸ marks each method's best third (3+ trades) · every row is scored on the same trades, so twelve agreeing rows are one signal seen twelve ways, not twelve signals · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div></div>`;
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
