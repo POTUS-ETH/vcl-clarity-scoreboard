@@ -993,7 +993,14 @@ function reachCurveSVG(pool){
   const trailBeats = tr.gap < bestM.gap - 1e-9;
   const med=a=>a[Math.floor(a.length/2)];
   const W=1000,H=240,padL=52,padR=24,padT=14,padB=34;
-  const minR=Math.min(-1.5,run[0],...series.map(x=>x.vals[0])), maxR=Math.max(6,run[run.length-1])*1.05;
+  // Axis. The right edge is the 95th-percentile run, not the single longest: one 11R
+  // runner would otherwise push every curve into a flat line at zero across half the
+  // width. Anything past the edge is counted and named in the footnote instead. The left
+  // edge sits just below −1R so the stop-out cliff at −1 is visible without a dead band.
+  const p95=run[Math.min(run.length-1, Math.floor(run.length*0.95))];
+  const maxR=Math.max(6.4, p95*1.06);
+  const minR=Math.min(-1.15, Math.min(run[0],...series.map(x=>x.vals[0]))-0.05);
+  const offChart=run.filter(v=>v>maxR).length, longest=run[run.length-1];
   const pw=W-padL-padR, ph=H-padT-padB;
   const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
   const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
@@ -1042,7 +1049,7 @@ function reachCurveSVG(pool){
       ${selPath}${grid}
     </svg>
     ${legend}${stats}
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Click a name to make its line bold and read its numbers. The figure beside each name is its mean gap to the reach, in R per trade — smaller is better, and the smallest is by definition the highest expectancy.</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Click a name to make its line bold and read its numbers. The figure beside each name is its mean gap to the reach, in R per trade — smaller is better, and the smallest is by definition the highest expectancy.${offChart?` The axis stops at the 95th-percentile run; <b>${offChart} trade${offChart>1?'s':''} ran past it</b>, the longest to ${longest.toFixed(1)}R — still counted in every number here.`:''}</div>
   </div>`;
 }
 
