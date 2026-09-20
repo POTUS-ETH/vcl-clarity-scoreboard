@@ -14,6 +14,7 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
 .tg button:first-child{border-left:0}
 .tg button.on{background:#3b82f6;color:#fff}
+.rsel{background:#161b24;color:#c3c9d4;border:1px solid #2a3140;border-radius:6px;font:inherit;font-size:11px;padding:3px 6px;cursor:pointer}
 .card{background:#161b24;border:1px solid #232a36;border-radius:10px;padding:16px}
 .top{border:2px solid #3b82f6;margin-bottom:12px}
 .top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
@@ -636,7 +637,7 @@ const RANGE_TERCILES=['Small','Medium','Large'];
 function rangeCard(pool){
   const scored=pool.filter(t=>t.rangePct!=null && MGMT.some(m=>RV(t,m.key)!=null));
   const byPair={}; scored.forEach(t=>(byPair[t.pair]=byPair[t.pair]||[]).push(t));
-  const cuts={}, skipped=[], px={};
+  const cuts={}, skipped=[], px={}, span={};
   for(const pr in byPair){
     const v=byPair[pr].map(t=>t.rangePct).sort((a,b)=>a-b);
     if(v.length<6){ skipped.push(`${pr} (${v.length}, needs 6)`); continue; }
@@ -644,7 +645,7 @@ function rangeCard(pool){
     // Equal cut points mean the boxes are too uniform to split — every trade would land in
     // one bucket and the card would read as if that size were "optimal". Say so instead.
     if(c[0]===c[1]){ skipped.push(`${pr} (boxes too uniform)`); continue; }
-    cuts[pr]=c;
+    cuts[pr]=c; span[pr]=[v[0], v[v.length-1]];
     const e=byPair[pr].map(t=>t.entry).filter(x=>x!=null).sort((a,b)=>a-b); px[pr]=e[Math.floor(e.length/2)];
   }
   const eligible=scored.filter(t=>cuts[t.pair]);
@@ -673,8 +674,13 @@ function rangeCard(pool){
   const separated=!!(lc&&lc.n>=5&&!lc.degenerate&&others.length&&others.every(o=>lc.lo>o.mean));
   const word=['Small boxes','Medium boxes','Large boxes'][top];
   // Translate the winning third into points per instrument at that instrument's typical price.
-  const lim=pr=>{ const c=cuts[pr], P=px[pr]; const pts=v=>(v/100*P).toFixed(P>10000?0:P>1000?1:2);   // MNQ whole points, MES/MGC tenths, crypto cents
-    return top===0?`${pr} under ${c[0].toFixed(2)}% ≈ ${pts(c[0])} pts`:top===2?`${pr} over ${c[1].toFixed(2)}% ≈ ${pts(c[1])} pts`:`${pr} ${c[0].toFixed(2)}–${c[1].toFixed(2)}% ≈ ${pts(c[0])}–${pts(c[1])} pts`; };
+  // Each third as a real range — both ends — in % of price and in points at the
+  // instrument's typical entry. The outer thirds run from the smallest / to the largest
+  // box actually logged, so "small" is a band you can see on the chart, not just a ceiling.
+  const pts=(pr,v)=>{ const P=px[pr]; return (v/100*P).toFixed(P>10000?0:P>1000?1:2); };   // MNQ whole points, MES/MGC tenths, crypto cents
+  const bandOf=(pr,i)=>{ const c=cuts[pr], sp=span[pr]; const lo=i===0?sp[0]:i===1?c[0]:c[1], hi=i===0?c[0]:i===1?c[1]:sp[1];
+    return {lo,hi,txt:`${lo.toFixed(2)}–${hi.toFixed(2)}% ≈ ${pts(pr,lo)}–${pts(pr,hi)} pts`}; };
+  const lim=pr=>`${pr} ${bandOf(pr,top).txt}`;
   const head = !consensus
     ? `<div class="band" style="margin:4px 0 2px"><div class="bandnum mut">No size edge yet</div>
          <div class="bandci">methods split ${votes.join(' / ')} across small / medium / large — no third earns most for a clear majority</div></div>`
@@ -688,7 +694,7 @@ function rangeCard(pool){
       : `<td class="pr mut">—</td>`).join('')+`</tr>`;
   });
   const avgRow=`<tr><td class="mut" style="white-space:nowrap">average method</td>`+colAvg.map((v,i)=>`<td class="pr ${v==null?'mut':cls(v)}${i===top&&consensus?' best':''}" style="border-top:1px solid #2a3140">${v==null?'—':fR(v)} <span class="mini">n${colN[i]}</span></td>`).join('')+`</tr>`;
-  const bounds=prs.map(pr=>`${pr} thirds split at ${cuts[pr][0].toFixed(2)}% / ${cuts[pr][1].toFixed(2)}%`);
+  const bounds=prs.map(pr=>`${pr} thirds: ${RANGE_TERCILES.map((k,i)=>`${k.toLowerCase()} ${bandOf(pr,i).txt}`).join(' · ')}`);
   return `<div class="card answer" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>${head}
     <table class="ptab"><tr><td></td>${heads.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}${avgRow}</table>
     <div class="mini" style="margin-top:8px">box = entry to stop, as a % of entry price · ▸ marks each method's best third (3+ trades) · every row is scored on the same trades, so twelve agreeing rows are one signal seen twelve ways, not twelve signals · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div></div>`;
@@ -938,64 +944,88 @@ function reachLadderSVG(pool){
   </div>`;
 }
 
+// Family colours for the reach fan. One hue per family; within a family the lines tell
+// themselves apart by WHERE they cliff — Full @ 2R can never hold a level above 2R, so its
+// curve drops to the floor there, and the same for every cap.
+const FAM_COLOR = {f:'#f2a93b', a:'#79c0ff', b:'#d2a8ff'};
+const FAM_NAME  = {f:'Full TP', a:'50% @1R', b:'50% @2R'};
+const famOf = k => k==='trail' ? 'trail' : k[0];
 function reachCurveSVG(pool){
-  // Two survival curves on one axis, both from the scorer's own numbers so they can never
-  // disagree with the matrix: maxRunR is how far price went (what was OFFERED), exitR is
-  // where the trail actually closed (what was KEPT). For every trade exit ≤ max run, so
-  // the blue line sits on or under the green one everywhere, and the gap between them at
-  // any R is the share of trades that reached it and gave it back — the R left unsecured.
+  // Green is what PRICE did — max run — and is the same for every method. Every other
+  // line is what one exit rule would have kept on the same trades: the twelve methods,
+  // coloured by family, plus the trade as it was actually run (grey, dashed). Each line
+  // is a survival curve: at any R, the share of trades that still held at least that
+  // much when that rule closed them. Every line sits on or under green, because a rule
+  // can only keep what ran; the vertical gap to green is that rule's unsecured R.
   const scored=pool.filter(t=>t.maxRunR!=null&&t.exitR!=null);
   if(!scored.length) return '';
+  const LD=leaderOf(pool);
+  const sel = REACH_KEY && (REACH_KEY==='trail' || MGMT.some(m=>m.key===REACH_KEY)) ? REACH_KEY : (LD?LD.best.m.key:'trail');
+  const keptOf = k => k==='trail' ? (t=>t.exitR) : (t=>RV(t,k));
+  const nameOf = k => k==='trail' ? 'as traded · trail exit' : (MGMT.find(m=>m.key===k)||{}).mid||k;
+  const colorOf = k => k==='trail' ? '#8b93a1' : FAM_COLOR[famOf(k)];
   const run=scored.map(t=>t.maxRunR).sort((a,b)=>a-b);
-  const kept=scored.map(t=>t.exitR).sort((a,b)=>a-b);
-  const gap=scored.map(t=>t.maxRunR-t.exitR).sort((a,b)=>a-b);   // per trade, never negative
+  const series = ['trail', ...MGMT.map(m=>m.key)].map(k=>({k, vals:scored.map(keptOf(k)).sort((a,b)=>a-b)}));
+  const selS = series.find(x=>x.k===sel);
+  const gap=scored.map(t=>t.maxRunR-keptOf(sel)(t)).sort((a,b)=>a-b);
   const med=a=>a[Math.floor(a.length/2)];
-  const W=1000,H=230,padL=52,padR=150,padT=20,padB=34;
-  const maxR=Math.max(6,run[run.length-1])*1.05, minR=Math.min(-1.5,kept[0],run[0]);
+  // Capture: what this exit banked over everything price ever offered. Losses count
+  // against the numerator; a trade that never went favourable offered nothing.
+  const offered=scored.reduce((a,t)=>a+Math.max(t.maxRunR,0),0), banked=scored.reduce((a,t)=>a+keptOf(sel)(t),0);
+  const capture=offered>0?banked/offered:null;
+  const opts=[`<option value="trail"${sel==='trail'?' selected':''}>as traded · trail exit</option>`]
+    .concat(MGMT.map(m=>`<option value="${m.key}"${sel===m.key?' selected':''}>${m.mid||m.name}</option>`)).join('');
+  const W=1000,H=240,padL=52,padR=150,padT=20,padB=34;
+  const allMin=Math.min(-1.5,run[0],...series.map(x=>x.vals[0]));
+  const maxR=Math.max(6,run[run.length-1])*1.05, minR=allMin;
   const pw=W-padL-padR, ph=H-padT-padB;
   const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
   const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
   const pathOf=rs=>{ let d=''; for(let i=0;i<=160;i++){ const r=minR+(maxR-minR)*i/160;
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
-  const GREEN='#3fb950', BLUE='#79c0ff';
+  const GREEN='#3fb950', SELC=colorOf(sel);
   let grid='';
   R_LEVELS.forEach(({r:N,f})=>{
-    const pr=surv(run,N), pk=surv(kept,N), X=x(N).toFixed(1);
+    const pr=surv(run,N), pk=surv(selS.vals,N), X=x(N).toFixed(1);
     grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
        +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
-       // reached: dot with its % above-right; kept: dot with its % below-right. Kept is
-       // never above reached, so the two labels cannot cross.
        +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
        +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
-       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3.5" fill="${BLUE}"/>`
-       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${BLUE}">${Math.round(pk*100)}%</text>`;
+       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3.5" fill="${SELC}"/>`
+       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${SELC}">${Math.round(pk*100)}%</text>`;
   });
   let yax='';
   [0,0.25,0.5,0.75,1].forEach(p=>{
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
       +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
   });
+  // Unselected lines thin and faded, drawn first; the selected one thick and on top.
+  const fan = series.filter(x=>x.k!==sel).map(x=>
+    `<path d="${pathOf(x.vals)}" fill="none" stroke="${colorOf(x.k)}" stroke-width="1.1" opacity="0.45"${x.k==='trail'?' stroke-dasharray="4 3"':''}/>`).join('');
+  const selPath = `<path d="${pathOf(selS.vals)}" fill="none" stroke="${SELC}" stroke-width="2.6"${sel==='trail'?' stroke-dasharray="6 3"':''}/>`;
   const sx=W-padR+12;
+  const legend = [[GREEN,'reached · max run',''],[FAM_COLOR.f,'Full TP',''],[FAM_COLOR.a,'50% @1R',''],[FAM_COLOR.b,'50% @2R',''],['#8b93a1','as traded',' stroke-dasharray="4 3"']]
+    .map(([c,l,d],i)=>`<line x1="${sx}" y1="${padT+4+i*13}" x2="${sx+14}" y2="${padT+4+i*13}" stroke="${c}" stroke-width="2"${d}/><text x="${sx+19}" y="${padT+7+i*13}" font-size="9.5" fill="#c3c9d4">${l}</text>`).join('');
+  const st=padT+78;
   return `<div class="card" style="padding:12px 14px 8px">
-    <div class="lbl">Reach curve — share of trades that ran at least this far, and that kept it (n=${scored.length})</div>
+    <div class="lbl" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span>Reach curve — share of trades that ran at least this far, and what each exit kept (n=${scored.length})</span>
+      <span style="text-transform:none;letter-spacing:0;font-size:11px;color:#8b93a1">bold line: <select id="reachSel" class="rsel">${opts}</select></span></div>
     <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
-      ${yax}${grid}
-      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="2"/>
-      <path d="${pathOf(kept)}" fill="none" stroke="${BLUE}" stroke-width="2"/>
-      <line x1="${sx}" y1="${padT+4}" x2="${sx+14}" y2="${padT+4}" stroke="${GREEN}" stroke-width="2"/>
-      <text x="${sx+19}" y="${padT+7}" font-size="9.5" fill="#c3c9d4">reached · max run</text>
-      <line x1="${sx}" y1="${padT+18}" x2="${sx+14}" y2="${padT+18}" stroke="${BLUE}" stroke-width="2"/>
-      <text x="${sx+19}" y="${padT+21}" font-size="9.5" fill="#c3c9d4">kept · trail exit</text>
-      <text x="${sx}" y="${padT+48}" font-size="10" fill="#8b93a1">median run</text>
-      <text x="${sx}" y="${padT+62}" font-size="13" font-weight="700" fill="#e6e8ec">${med(run).toFixed(2)}R</text>
-      <text x="${sx}" y="${padT+84}" font-size="10" fill="#8b93a1">median kept</text>
-      <text x="${sx}" y="${padT+98}" font-size="13" font-weight="700" fill="${BLUE}">${med(kept).toFixed(2)}R</text>
-      <text x="${sx}" y="${padT+120}" font-size="10" fill="#8b93a1">left unsecured</text>
-      <text x="${sx}" y="${padT+134}" font-size="13" font-weight="700" fill="#e6e8ec">${med(gap).toFixed(2)}R</text>
-      <text x="${sx}" y="${padT+146}" font-size="8.5" fill="#6b7280">median per trade</text>
+      ${yax}${fan}
+      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="2.2"/>
+      ${selPath}${grid}${legend}
+      <text x="${sx}" y="${st}" font-size="10" fill="#8b93a1">median run</text>
+      <text x="${sx}" y="${st+14}" font-size="13" font-weight="700" fill="#e6e8ec">${med(run).toFixed(2)}R</text>
+      <text x="${sx}" y="${st+34}" font-size="10" fill="#8b93a1">median kept</text>
+      <text x="${sx}" y="${st+48}" font-size="13" font-weight="700" fill="${SELC}">${med(selS.vals).toFixed(2)}R</text>
+      <text x="${sx}" y="${st+68}" font-size="10" fill="#8b93a1">left unsecured</text>
+      <text x="${sx}" y="${st+82}" font-size="13" font-weight="700" fill="#e6e8ec">${med(gap).toFixed(2)}R <tspan font-size="8.5" font-weight="400" fill="#6b7280">median / trade</tspan></text>
+      <text x="${sx}" y="${st+102}" font-size="10" fill="#8b93a1">captured</text>
+      <text x="${sx}" y="${st+116}" font-size="13" font-weight="700" fill="${capture==null?'#6b7280':capture>=0?'#e6e8ec':'#e66767'}">${capture==null?'—':Math.round(capture*100)+'%'} <tspan font-size="8.5" font-weight="400" fill="#6b7280">of R offered</tspan></text>
     </svg>
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all; blue is how often the trade still had it at the exit. The vertical gap between them is the R that was on the table and given back. Every outcome on this board is a point on the green curve weighed against what it pays.</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each coloured line is how often one exit rule still held that level when it closed the trade; a Full @ 2R line falls to the floor past 2R because that rule can never keep more. The bold line and the numbers beside the chart are <b>${nameOf(sel)}</b>; pick another above. The vertical gap from any line up to green is the R that rule leaves on the table.</div>
   </div>`;
 }
 
@@ -1199,6 +1229,11 @@ function wireMatrix(){
       const k=(e.currentTarget.dataset.row)||(e.currentTarget.closest('tr').dataset.row);
       OPEN_ROW = OPEN_ROW===k ? null : k; render(); };
   });
+}
+// Controls that live outside the matrix — the calendars' month/day buttons and the reach
+// curve's method picker — are wired on every render. They used to sit inside wireMatrix,
+// which only runs while the matrix is expanded, so collapsing it silently killed them.
+function wireControls(){
   document.querySelectorAll('.mc-d[data-day]').forEach(c=>{
     c.onclick=e=>{ e.stopPropagation(); const {cal,day}=e.currentTarget.dataset;
       SEL_DAY[cal]=day; render(); };
@@ -1207,6 +1242,8 @@ function wireMatrix(){
     b.onclick=e=>{ e.stopPropagation(); const {cal,mo}=e.currentTarget.dataset;
       if(mo){ OPEN_MONTH[cal]=mo; render(); } };
   });
+  const rs=document.getElementById('reachSel');
+  if(rs) rs.onchange=e=>{ REACH_KEY=e.target.value; render(); };
 }
 // Rows that never reach the matrix, counted for the ACTIVE model only — each model reads
 // its own excursion pair, and a row the ladder scores fine can be unscoreable for Super
@@ -1226,6 +1263,7 @@ function dropCounts(pool){
   return {excluded};
 }
 let MATRIX_OPEN=true, PRIMER_OPEN=false;
+let REACH_KEY=null;   // blue line on the reach curve: null = whichever method leads, 'trail' = as traded
 
 // Replaces the days badge, drop badge, pair-mix card and verdict line — roughly 230px of
 // card chrome to show four integers and a sentence. How much evidence exists has to come
@@ -1326,6 +1364,7 @@ function render(){
   const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
   const mt=document.getElementById('matTog'); if(mt) mt.onclick=()=>{MATRIX_OPEN=!MATRIX_OPEN; render();};
   if(MATRIX_OPEN) wireMatrix();
+  wireControls();
 }
 
 function ym(d){ return d? d.slice(0,7):null; }
