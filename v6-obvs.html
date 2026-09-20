@@ -223,6 +223,10 @@ table.sp tr.sptot{color:#c3c9d4}
 //   partial at 2R -> delivering NR needs the runner at 2N-2
 // The fib is drawn stop-to-entry, so the box IS 1R and XR sits at fib X+1. Runner caps:
 // on the 1R-partial fib the cap delivering N is fib 2N; on the 2R-partial fib it is 2N-1.
+// The full-size target levels every reach chart marks. Fib = R + 1: the box is 1R and
+// entry sits at fib 1. One list, so the curve and the ladder cannot disagree on which
+// targets exist — they skipped 4R for a week after Full @ 4R was added.
+const R_LEVELS=[1,2,3,4,5].map(r=>({r, f:'fib '+(r+1)}));
 const MGMTS_OBVS=[
   {k:'f1',label:'Full @ 1R · fib 2',short:'F1'},
   {k:'f2',label:'Full @ 2R · fib 3',short:'F2'},
@@ -860,7 +864,7 @@ function reachLadderSVG(pool){
   const pw=W-padL-padR, ph=H-padT-padB;
   const y=r=>padT+(1-(r-minR)/(maxR-minR))*ph;
   const n=rows.length, slot=pw/n, bw=Math.min(46,slot*0.54);
-  const LV=[{r:1,f:'fib 2'},{r:2,f:'fib 3'},{r:3,f:'fib 4'},{r:5,f:'fib 6'}];
+  const LV=R_LEVELS;
   const zero=y(0);
 
   let grid='';
@@ -922,8 +926,8 @@ function reachCurveSVG(pool){
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
   const GREEN='#3fb950', BLUE='#79c0ff';
   let grid='';
-  [1,2,3,5].forEach((N,i)=>{
-    const f=['fib 2','fib 3','fib 4','fib 6'][i], pr=surv(run,N), pk=surv(kept,N), X=x(N).toFixed(1);
+  R_LEVELS.forEach(({r:N,f})=>{
+    const pr=surv(run,N), pk=surv(kept,N), X=x(N).toFixed(1);
     grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
        +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
