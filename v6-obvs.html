@@ -14,7 +14,17 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .tg button{border:0;background:#161b24;padding:5px 11px;font:inherit;font-size:11px;cursor:pointer;color:#c3c9d4;border-left:1px solid #2a3140}
 .tg button:first-child{border-left:0}
 .tg button.on{background:#3b82f6;color:#fff}
-.rsel{background:#161b24;color:#c3c9d4;border:1px solid #2a3140;border-radius:6px;font:inherit;font-size:11px;padding:3px 6px;cursor:pointer}
+.rleg{display:flex;flex-wrap:wrap;gap:4px 6px;margin:8px 0 2px}
+.rchip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:#c3c9d4;padding:2px 7px 2px 5px;border:1px solid transparent;border-radius:12px;cursor:pointer;white-space:nowrap;background:#12161e}
+.rchip i{width:14px;height:0;border-top:2px solid var(--c);display:inline-block}
+.rchip b{color:#8b93a1;font-weight:600;margin-left:1px}
+.rchip:hover{border-color:#2a3140}
+.rchip.on{border-color:var(--c);color:#e6e9ef}
+.rchip.on b{color:var(--c)}
+.rstats{display:flex;flex-wrap:wrap;gap:6px 22px;margin:8px 0 0}
+.rstats span{display:flex;flex-direction:column;gap:1px}
+.rstats i{font-style:normal;font-size:9.5px;color:#6b7280;letter-spacing:.3px}
+.rstats b{font-size:13px;color:#e6e8ec}
 .card{background:#161b24;border:1px solid #232a36;border-radius:10px;padding:16px}
 .top{border:2px solid #3b82f6;margin-bottom:12px}
 .top .crown{font-size:11px;letter-spacing:1.5px;color:#e0b341;text-transform:uppercase;margin-bottom:6px}
@@ -944,46 +954,52 @@ function reachLadderSVG(pool){
   </div>`;
 }
 
-// Family colours for the reach fan. One hue per family; within a family the lines tell
-// themselves apart by WHERE they cliff — Full @ 2R can never hold a level above 2R, so its
-// curve drops to the floor there, and the same for every cap.
-const FAM_COLOR = {f:'#f2a93b', a:'#79c0ff', b:'#d2a8ff'};
-const FAM_NAME  = {f:'Full TP', a:'50% @1R', b:'50% @2R'};
-const famOf = k => k==='trail' ? 'trail' : k[0];
+// One colour per method on the reach fan. Warm for the Full family, cool for the 1R
+// partials, violet for the 2R partials, so a family still reads as a group — but every
+// line is its own hue. Green is reserved for the reach itself; nothing here is green.
+const M_COLOR = {f1:'#ffd60a', f2:'#ffa630', f3:'#ff6b35', f4:'#ff3366', f5:'#ff70d9',
+                 a2:'#b8f2ff', a3:'#5cd6ff', a4:'#3d8bff', a5:'#7b61ff',
+                 b3:'#c9a8ff', b4:'#a24bff', b5:'#e05cff', trail:'#9aa3b2'};
 function reachCurveSVG(pool){
   // Green is what PRICE did — max run — and is the same for every method. Every other
-  // line is what one exit rule would have kept on the same trades: the twelve methods,
-  // coloured by family, plus the trade as it was actually run (grey, dashed). Each line
-  // is a survival curve: at any R, the share of trades that still held at least that
-  // much when that rule closed them. Every line sits on or under green, because a rule
-  // can only keep what ran; the vertical gap to green is that rule's unsecured R.
+  // line is what one exit rule would have kept on the same trades: the twelve methods
+  // plus the trade as it was actually run (dashed). Each is a survival curve: at any R,
+  // the share of trades that still held at least that much when that rule closed them.
+  // Every line sits on or under green, because a rule can only keep what ran; the
+  // vertical gap to green is that rule's unsecured R.
+  //
+  // The determination on top ranks the rules by MEAN gap per trade, in R. Green is fixed,
+  // so the smallest gap is exactly the largest total R — the same method the board leads
+  // with, seen from what it leaves behind. "As traded" is not a scored method anywhere
+  // else on the board, so its place in this ranking is the one thing here the matrix
+  // cannot tell you.
   const scored=pool.filter(t=>t.maxRunR!=null&&t.exitR!=null);
   if(!scored.length) return '';
   const LD=leaderOf(pool);
-  const sel = REACH_KEY && (REACH_KEY==='trail' || MGMT.some(m=>m.key===REACH_KEY)) ? REACH_KEY : (LD?LD.best.m.key:'trail');
+  const keys=['trail', ...MGMT.map(m=>m.key)];
+  const sel = keys.includes(REACH_KEY) ? REACH_KEY : (LD?LD.best.m.key:'trail');
   const keptOf = k => k==='trail' ? (t=>t.exitR) : (t=>RV(t,k));
-  const nameOf = k => k==='trail' ? 'as traded · trail exit' : (MGMT.find(m=>m.key===k)||{}).mid||k;
-  const colorOf = k => k==='trail' ? '#8b93a1' : FAM_COLOR[famOf(k)];
+  const nameOf = k => k==='trail' ? 'as traded' : (MGMT.find(m=>m.key===k)||{}).mid||k;
   const run=scored.map(t=>t.maxRunR).sort((a,b)=>a-b);
-  const series = ['trail', ...MGMT.map(m=>m.key)].map(k=>({k, vals:scored.map(keptOf(k)).sort((a,b)=>a-b)}));
-  const selS = series.find(x=>x.k===sel);
-  const gap=scored.map(t=>t.maxRunR-keptOf(sel)(t)).sort((a,b)=>a-b);
+  const offered=scored.reduce((a,t)=>a+Math.max(t.maxRunR,0),0);
+  const series = keys.map(k=>{ const f=keptOf(k), vals=scored.map(f);
+    const gap=vals.reduce((a,v,i)=>a+(scored[i].maxRunR-v),0)/vals.length;      // mean R per trade left on the table
+    const banked=vals.reduce((a,v)=>a+v,0);
+    return {k, vals:[...vals].sort((a,b)=>a-b), gap, capture:offered>0?banked/offered:null}; });
+  const bySer=Object.fromEntries(series.map(x=>[x.k,x]));
+  const selS=bySer[sel];
+  const ranked=[...series].sort((a,b)=>a.gap-b.gap);
+  const bestM=ranked.find(x=>x.k!=='trail'), worstM=[...ranked].reverse().find(x=>x.k!=='trail'), tr=bySer.trail;
+  const trailBeats = tr.gap < bestM.gap - 1e-9;
   const med=a=>a[Math.floor(a.length/2)];
-  // Capture: what this exit banked over everything price ever offered. Losses count
-  // against the numerator; a trade that never went favourable offered nothing.
-  const offered=scored.reduce((a,t)=>a+Math.max(t.maxRunR,0),0), banked=scored.reduce((a,t)=>a+keptOf(sel)(t),0);
-  const capture=offered>0?banked/offered:null;
-  const opts=[`<option value="trail"${sel==='trail'?' selected':''}>as traded · trail exit</option>`]
-    .concat(MGMT.map(m=>`<option value="${m.key}"${sel===m.key?' selected':''}>${m.mid||m.name}</option>`)).join('');
-  const W=1000,H=240,padL=52,padR=150,padT=20,padB=34;
-  const allMin=Math.min(-1.5,run[0],...series.map(x=>x.vals[0]));
-  const maxR=Math.max(6,run[run.length-1])*1.05, minR=allMin;
+  const W=1000,H=240,padL=52,padR=24,padT=14,padB=34;
+  const minR=Math.min(-1.5,run[0],...series.map(x=>x.vals[0])), maxR=Math.max(6,run[run.length-1])*1.05;
   const pw=W-padL-padR, ph=H-padT-padB;
   const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
   const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
   const pathOf=rs=>{ let d=''; for(let i=0;i<=160;i++){ const r=minR+(maxR-minR)*i/160;
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
-  const GREEN='#3fb950', SELC=colorOf(sel);
+  const GREEN='#3fb950', SELC=M_COLOR[sel];
   let grid='';
   R_LEVELS.forEach(({r:N,f})=>{
     const pr=surv(run,N), pk=surv(selS.vals,N), X=x(N).toFixed(1);
@@ -992,7 +1008,7 @@ function reachCurveSVG(pool){
        +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
        +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
        +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
-       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3.5" fill="${SELC}"/>`
+       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3" fill="${SELC}"/>`
        +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${SELC}">${Math.round(pk*100)}%</text>`;
   });
   let yax='';
@@ -1000,32 +1016,33 @@ function reachCurveSVG(pool){
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
       +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
   });
-  // Unselected lines thin and faded, drawn first; the selected one thick and on top.
+  // Twelve thin lines under one heavy green; the selected line a touch heavier and on top.
   const fan = series.filter(x=>x.k!==sel).map(x=>
-    `<path d="${pathOf(x.vals)}" fill="none" stroke="${colorOf(x.k)}" stroke-width="1.1" opacity="0.45"${x.k==='trail'?' stroke-dasharray="4 3"':''}/>`).join('');
-  const selPath = `<path d="${pathOf(selS.vals)}" fill="none" stroke="${SELC}" stroke-width="2.6"${sel==='trail'?' stroke-dasharray="6 3"':''}/>`;
-  const sx=W-padR+12;
-  const legend = [[GREEN,'reached · max run',''],[FAM_COLOR.f,'Full TP',''],[FAM_COLOR.a,'50% @1R',''],[FAM_COLOR.b,'50% @2R',''],['#8b93a1','as traded',' stroke-dasharray="4 3"']]
-    .map(([c,l,d],i)=>`<line x1="${sx}" y1="${padT+4+i*13}" x2="${sx+14}" y2="${padT+4+i*13}" stroke="${c}" stroke-width="2"${d}/><text x="${sx+19}" y="${padT+7+i*13}" font-size="9.5" fill="#c3c9d4">${l}</text>`).join('');
-  const st=padT+78;
-  return `<div class="card" style="padding:12px 14px 8px">
-    <div class="lbl" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-      <span>Reach curve — share of trades that ran at least this far, and what each exit kept (n=${scored.length})</span>
-      <span style="text-transform:none;letter-spacing:0;font-size:11px;color:#8b93a1">bold line: <select id="reachSel" class="rsel">${opts}</select></span></div>
+    `<path d="${pathOf(x.vals)}" fill="none" stroke="${M_COLOR[x.k]}" stroke-width="0.9" opacity="0.8"${x.k==='trail'?' stroke-dasharray="4 3"':''}/>`).join('');
+  const selPath = `<path d="${pathOf(selS.vals)}" fill="none" stroke="${SELC}" stroke-width="1.8"${sel==='trail'?' stroke-dasharray="6 3"':''}/>`;
+  // Legend doubles as the picker. Selected chip carries its colour as a border.
+  const chip=(k,extra='')=>`<span class="rchip${k===sel?' on':''}" data-reach="${k}" style="--c:${M_COLOR[k]}"><i></i>${nameOf(k)}${extra}</span>`;
+  const legend=`<div class="rleg"><span class="rchip" style="--c:${GREEN};cursor:default"><i></i>reached · max run</span>${keys.map(k=>chip(k, ` <b>${bySer[k].gap.toFixed(2)}R</b>`)).join('')}</div>`;
+  const head=`<div class="band" style="margin:4px 0 6px">
+      <div class="bandnum" style="color:${M_COLOR[bestM.k]}">${nameOf(bestM.k)}</div>
+      <div class="bandci"><b>smallest gap</b> to the reach — leaves <b>${bestM.gap.toFixed(2)}R</b> per trade on the table, keeps ${Math.round(bestM.capture*100)}% of the R price offered
+        · ${trailBeats?`<span style="color:${M_COLOR.trail}"><b>as traded beats it</b> at ${tr.gap.toFixed(2)}R — the real trail kept more than any fixed rule</span>`:`as traded ${tr.gap.toFixed(2)}R`}
+        · widest: ${nameOf(worstM.k)} ${worstM.gap.toFixed(2)}R</div></div>`;
+  const stats=`<div class="rstats">
+      <span><i>median run</i><b>${med(run).toFixed(2)}R</b></span>
+      <span><i>median kept · ${nameOf(sel)}</i><b style="color:${SELC}">${med(selS.vals).toFixed(2)}R</b></span>
+      <span><i>mean gap · ${nameOf(sel)}</i><b>${selS.gap.toFixed(2)}R</b></span>
+      <span><i>captured · ${nameOf(sel)}</i><b style="color:${selS.capture==null?'#6b7280':selS.capture>=0?'#e6e8ec':'#e66767'}">${selS.capture==null?'—':Math.round(selS.capture*100)+'%'}</b></span></div>`;
+  return `<div class="card answer" style="padding:12px 14px 8px">
+    <div class="lbl">Reach curve — share of trades that ran at least this far, and what each exit kept (n=${scored.length})</div>
+    ${head}
     <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
       ${yax}${fan}
-      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="2.2"/>
-      ${selPath}${grid}${legend}
-      <text x="${sx}" y="${st}" font-size="10" fill="#8b93a1">median run</text>
-      <text x="${sx}" y="${st+14}" font-size="13" font-weight="700" fill="#e6e8ec">${med(run).toFixed(2)}R</text>
-      <text x="${sx}" y="${st+34}" font-size="10" fill="#8b93a1">median kept</text>
-      <text x="${sx}" y="${st+48}" font-size="13" font-weight="700" fill="${SELC}">${med(selS.vals).toFixed(2)}R</text>
-      <text x="${sx}" y="${st+68}" font-size="10" fill="#8b93a1">left unsecured</text>
-      <text x="${sx}" y="${st+82}" font-size="13" font-weight="700" fill="#e6e8ec">${med(gap).toFixed(2)}R <tspan font-size="8.5" font-weight="400" fill="#6b7280">median / trade</tspan></text>
-      <text x="${sx}" y="${st+102}" font-size="10" fill="#8b93a1">captured</text>
-      <text x="${sx}" y="${st+116}" font-size="13" font-weight="700" fill="${capture==null?'#6b7280':capture>=0?'#e6e8ec':'#e66767'}">${capture==null?'—':Math.round(capture*100)+'%'} <tspan font-size="8.5" font-weight="400" fill="#6b7280">of R offered</tspan></text>
+      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="3"/>
+      ${selPath}${grid}
     </svg>
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each coloured line is how often one exit rule still held that level when it closed the trade; a Full @ 2R line falls to the floor past 2R because that rule can never keep more. The bold line and the numbers beside the chart are <b>${nameOf(sel)}</b>; pick another above. The vertical gap from any line up to green is the R that rule leaves on the table.</div>
+    ${legend}${stats}
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Click a name to make its line bold and read its numbers. The figure beside each name is its mean gap to the reach, in R per trade — smaller is better, and the smallest is by definition the highest expectancy.</div>
   </div>`;
 }
 
@@ -1242,8 +1259,9 @@ function wireControls(){
     b.onclick=e=>{ e.stopPropagation(); const {cal,mo}=e.currentTarget.dataset;
       if(mo){ OPEN_MONTH[cal]=mo; render(); } };
   });
-  const rs=document.getElementById('reachSel');
-  if(rs) rs.onchange=e=>{ REACH_KEY=e.target.value; render(); };
+  document.querySelectorAll('.rchip[data-reach]').forEach(c=>{
+    c.onclick=e=>{ e.stopPropagation(); REACH_KEY=e.currentTarget.dataset.reach; render(); };
+  });
 }
 // Rows that never reach the matrix, counted for the ACTIVE model only — each model reads
 // its own excursion pair, and a row the ladder scores fine can be unscoreable for Super
