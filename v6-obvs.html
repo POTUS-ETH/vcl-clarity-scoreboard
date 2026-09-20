@@ -264,7 +264,6 @@ function computeR(row){
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
               ema200:num(row.ema200),
-              poi:Array.isArray(row.poi)?row.poi:[],
               entry:E, stop:S, r, raw:row};
   if(E==null||S==null||MR==null||BX==null) return base;
   // Direction is logged, not inferred from the prices: a stop typed on the wrong side of
@@ -452,41 +451,45 @@ function recoCard(pool){
   return `<div class="card top" style="margin-bottom:12px"><div class="crown">Session prescription</div>${recoStats}<div class="lbl" style="margin:8px 0 5px">By session, in order</div><table class="ptab">${sess}</table>${tilt}<div class="mini" style="margin-top:8px">thin = &lt;5 trades</div></div>`;
 }
 // ── 200 EMA at entry ─────────────────────────────────────────────────────────
-// The log stores ONE number — the 200 EMA's price on the entry candle. Every state the
-// board reports is solved from it, because a number can be re-bucketed later and a
-// category cannot be un-bucketed.
+// The log stores ONE number — the 200 EMA's price on the entry candle — and every state
+// below is solved from it, oriented to the trade. A price can be re-bucketed later; a
+// category cannot be un-bucketed. The logger never decides whether the 200 was protection
+// or a headwind: that flips with Direction and is exactly what a human gets backwards on
+// a short. A long feeds DOWN into the AVWAP, so a 200 below entry is the backstop; a short
+// feeds UP into it, so a 200 above entry is.
 //
-// Entry is fib 0.382, one tick beyond the AVWAP, so "above/below the AVWAP we entered on"
-// and "above/below Entry Price" are the same comparison to within a tick — there is no
-// separate VWAP field to log. The killbox is the fib envelope, 1.0 (the anchor) down to
-// 0, and fib 0 is solved from the two prices already typed:
-//   entry = fib0 + 0.382·(anchor − fib0)  ⟹  fib0 = (entry − 0.382·anchor) / 0.618
-// A 200 outside that envelope is not interacting with the setup at all, which is why it
-// is its own bucket rather than a wider "above".
-// The log records the RAW position — what the chart plainly shows — and this converts it
-// to the trade's frame. That split is deliberate: reading "the 200 is above the AVWAP" off
-// a chart is instant and never wrong, whereas deciding whether that is protection or a
-// headwind depends on Direction and is exactly what a human gets backwards on a short.
+//   Aligned     — within ALIGN_R of entry: the trade is entering ON the 200
+//   In front    — on the target side of entry, beyond the band: in the path of the run
+//   Behind      — on the stop side of entry, beyond the band, still inside the box: backing the trade
+//   Out of box  — beyond the stop: not interacting with the setup at all
 //
-//   Behind entry      — the 200 is on the far side of entry from the target, backing the trade
-//   In front of entry — the 200 sits between entry and the target, in the path of the run
-//
-// A long feeds DOWN into the AVWAP, so a 200 below it is the backstop; a short feeds UP
-// into it, so a 200 above it is. Labelling by raw price put structurally identical setups
-// in opposite buckets, mixing the protected case with the headwind case in each.
-const EMA_STATES = ['In front of entry','Inside box','Beyond stop'];
+// "Aligned" is measured in R, not in price or percent. The box (entry → stop) is the
+// trade's own risk unit and already scales with the instrument and the day: a 3-point
+// box on MES and a 40-point box on MNQ each define what "close to entry" means for that
+// trade. A percent-of-price band would need a table per instrument — and the logged
+// boxes vary tenfold WITHIN one instrument (MNQ 0.02%–0.70% of price) — so it could never
+// be right for both a quiet and a fast session. 0.25R was chosen on the first 64 readings:
+// it puts ~40% of trades in the aligned bucket and leaves the other three states enough
+// to say something; 0.10R (12%) starves the bucket, 0.50R (70%) swallows the rest.
+const ALIGN_R = 0.25;
+const EMA_STATES = ['Aligned','In front of entry','Behind entry','Out of box'];
+// A 200 EMA more than 5% of price away from entry is not a reading, it is a typo — a
+// 200-period average on a 15s or 1m chart cannot sit that far from price. Such a row is
+// left unscored and named in the card, rather than silently filed under "Out of box".
+const EMA_SANE = 0.05;
+function emaSuspect(t){ const p=t.ema200, E=t.entry; return p!=null&&E!=null&&Math.abs(p-E)/E>EMA_SANE; }
 function emaState(t){
-  // The 200 EMA is logged as a PRICE. Its position is worked out here against the box
-  // (stop → entry), oriented to the trade, so the logger never has to decide whether it
-  // was protection or a headwind — that flips with direction and is the bit a human gets
-  // backwards on a short.
   const p=t.ema200, E=t.entry, S=t.stop;
   if(p==null||E==null||S==null) return null;
+  if(emaSuspect(t)) return null;
   const d = t.dir==='Long' ? 1 : t.dir==='Short' ? -1 : null;
   if(d==null) return null;
-  if(d*(p-E)>0) return 'In front of entry';   // on the target side of entry
-  if(d*(p-S)<0) return 'Beyond stop';         // behind the box entirely
-  return 'Inside box';                        // between stop and entry
+  const oneR=Math.abs(E-S); if(!oneR) return null;
+  const off=d*(p-E)/oneR;                      // +: target side of entry, −: stop side
+  if(Math.abs(off)<=ALIGN_R) return 'Aligned';
+  if(off>0) return 'In front of entry';
+  if(d*(p-S)<0) return 'Out of box';           // past the stop
+  return 'Behind entry';                       // between the band and the stop
 }
 // ── shared bucket card ───────────────────────────────────────────────────────
 // One categorical split of the same trades, scored the same way every time. Kept generic
@@ -495,7 +498,7 @@ function emaState(t){
 // Scored on whatever method currently leads, the same key the direction tilt uses, so this
 // can never name a method the rest of the board has just ranked last.
 function bucketCard({pool, label, keyFn, order, note, emptyNote, multi=false}){
-  // multi: keyFn returns an array and a trade can sit in several buckets (Anchor POI).
+  // multi: keyFn returns an array and a trade can sit in several buckets.
   const has = multi ? (t=>Array.isArray(keyFn(t))&&keyFn(t).length>0) : (t=>keyFn(t)!=null);
   const inB = multi ? ((t,k)=>keyFn(t).includes(k)) : ((t,k)=>keyFn(t)===k);
   const scored=pool.filter(has);
@@ -531,8 +534,10 @@ function bucketCard({pool, label, keyFn, order, note, emptyNote, multi=false}){
     <div class="mini" style="margin-top:8px">win column is W/scratch/L · thin = &lt;5 trades · ${note}</div></div>`;
 }
 function emaCard(pool){
-  return bucketCard({pool, label:'200 EMA at entry', keyFn:emaState, order:EMA_STATES,
-    note:'you log the 200 EMA\'s price at entry; the board places it against the box — in front means on the target side of entry, beyond stop means behind the whole box',
+  const bad=pool.filter(emaSuspect).map(t=>'#'+(t.n??'?'));
+  return bucketCard({pool, label:'200 EMA at entry · confluence', keyFn:emaState, order:EMA_STATES,
+    note:`you log the 200 EMA's price at entry; the board places it against the box, oriented to the trade — aligned is within ${ALIGN_R}R of entry, in front is the target side, behind is the stop side inside the box, out of box is past the stop`
+        +(bad.length?` · <span class="flag">${bad.length} reading${bad.length>1?'s':''} look${bad.length>1?'':'s'} mistyped and ${bad.length>1?'are':'is'} left out: ${bad.join(', ')}</span>`:''),
     emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on Trade Log — VCS and the buckets appear here.'});
 }
 // ── winning method by day ────────────────────────────────────────────────────
@@ -607,17 +612,6 @@ function dayWinnerCard(pool){
   </div>`;
 }
 
-// ── anchor point of interest ─────────────────────────────────────────────────
-// One split of the same trades on what sat at the AVWAP anchor. Logged raw — what was
-// there, not whether it worked — and scored here on the leading method like every other
-// bucket, so the answer comes from the numbers. Order blocks and FVGs carry their
-// timeframe in the option name; a trade can carry several POIs and is counted in each.
-const POI_ORDER=['Order Block 1m','Order Block 3m','Order Block 5m','Order Block 15m','FVG 1m','FVG 3m','FVG 5m','FVG 15m','Internal Sweep','External Sweep','Session High','Session Low'];
-function poiCard(pool){
-  return bucketCard({pool, label:'Anchor point of interest', keyFn:t=>t.poi, order:POI_ORDER, multi:true,
-    note:'a trade with two POIs is counted in both rows, so the n column can sum past the trade count',
-    emptyNote:'No trade carries a point of interest yet. Set <b>Anchor POI</b> on Trade Log — VCS and the buckets appear here.'});
-}
 // ── optimal range ────────────────────────────────────────────────────────────
 // "Where does each scenario actually earn?" Every method's expectancy in each Range-%
 // tercile. Terciles are cut PER INSTRUMENT — an MNQ box and a SOL box are not on one scale
@@ -1270,7 +1264,6 @@ function render(){
     </div>
     ${rangeCard(pool)}
     ${emaCard(pool)}
-    ${poiCard(pool)}
     ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
   const f=document.getElementById('foot'); if(f) f.innerHTML = FOOT_OBVS;

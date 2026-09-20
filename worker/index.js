@@ -688,7 +688,7 @@ async function computeV6Obvs(token) {
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
     'Entry Price','Stop Price','Max Run','Trail Stop',
     '200 EMA at Entry',
-    'Anchor POI','Notes',
+    'Notes',
   ]);
   // Stop Price must be a TYPED number. Under the structure-stop model it is the one price
   // no formula can produce; a formula here means the 2026-09-13 retype was never applied,
@@ -719,7 +719,6 @@ async function computeV6Obvs(token) {
       // Direction and is the bit a human gets backwards on a short.
       // What sat at the AVWAP anchor — logged raw, split by the board. Multi-select, so a
       // trade can carry several; order blocks and FVGs carry their timeframe in the option.
-      poi:       getProp(t, 'Anchor POI'),
       // The four prices that score everything. Stop Price is typed from structure.
       EntryPrice:getProp(t, 'Entry Price'),
       StopPrice: getProp(t, 'Stop Price'),
