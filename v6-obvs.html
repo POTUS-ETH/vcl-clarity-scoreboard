@@ -17,6 +17,8 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .rleg{display:flex;flex-wrap:wrap;gap:4px 6px;margin:8px 0 2px}
 .rchip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:#c3c9d4;padding:2px 7px 2px 5px;border:1px solid transparent;border-radius:12px;cursor:pointer;white-space:nowrap;background:#12161e}
 .rchip i{width:14px;height:0;border-top:2px solid var(--c);display:inline-block}
+.rchip u{text-decoration:none;font-size:9px;color:#6b7280;min-width:14px;text-align:right;margin-right:1px}
+.rchip.on u{color:var(--c)}
 .rchip b{color:#8b93a1;font-weight:600;margin-left:1px}
 .rchip:hover{border-color:#2a3140}
 .rchip.on{border-color:var(--c);color:#e6e9ef}
@@ -1028,8 +1030,10 @@ function reachCurveSVG(pool){
     `<path d="${pathOf(x.vals)}" fill="none" stroke="${M_COLOR[x.k]}" stroke-width="0.9" opacity="0.8"${x.k==='trail'?' stroke-dasharray="4 3"':''}/>`).join('');
   const selPath = `<path d="${pathOf(selS.vals)}" fill="none" stroke="${SELC}" stroke-width="1.8"${sel==='trail'?' stroke-dasharray="6 3"':''}/>`;
   // Legend doubles as the picker. Selected chip carries its colour as a border.
-  const chip=(k,extra='')=>`<span class="rchip${k===sel?' on':''}" data-reach="${k}" style="--c:${M_COLOR[k]}"><i></i>${nameOf(k)}${extra}</span>`;
-  const legend=`<div class="rleg"><span class="rchip" style="--c:${GREEN};cursor:default"><i></i>reached · max run</span>${keys.map(k=>chip(k, ` <b>${bySer[k].gap.toFixed(2)}R</b>`)).join('')}</div>`;
+  const chip=(k,extra='',rank=null)=>`<span class="rchip${k===sel?' on':''}" data-reach="${k}" style="--c:${M_COLOR[k]}">${rank?`<u>${rank}</u>`:''}<i></i>${nameOf(k)}${extra}</span>`;
+  // Chips in capture order, best first — the same order as smallest gap, since both are
+  // just total R kept. A rank number on each so the order survives wrapping onto two rows.
+  const legend=`<div class="rleg"><span class="rchip" style="--c:${GREEN};cursor:default"><i></i>reached · max run</span>${ranked.map((x,i)=>chip(x.k, ` <b>${x.capture==null?'—':(x.capture*100).toFixed(1)+'%'}</b>`, i+1)).join('')}</div>`;
   const head=`<div class="band" style="margin:4px 0 6px">
       <div class="bandnum" style="color:${M_COLOR[bestM.k]}">${nameOf(bestM.k)}</div>
       <div class="bandci"><b>smallest gap</b> to the reach — leaves <b>${bestM.gap.toFixed(2)}R</b> per trade on the table, keeps ${Math.round(bestM.capture*100)}% of the R price offered
@@ -1049,7 +1053,7 @@ function reachCurveSVG(pool){
       ${selPath}${grid}
     </svg>
     ${legend}${stats}
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Click a name to make its line bold and read its numbers. The figure beside each name is its mean gap to the reach, in R per trade — smaller is better, and the smallest is by definition the highest expectancy.${offChart?` The axis stops at the 95th-percentile run; <b>${offChart} trade${offChart>1?'s':''} ran past it</b>, the longest to ${longest.toFixed(1)}R — still counted in every number here.`:''}</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Names are ordered best to worst by how much of the offered R each exit captured — the figure beside each — and that order is by definition the expectancy order too. Click a name to make its line bold and read its numbers.${offChart?` The axis stops at the 95th-percentile run; <b>${offChart} trade${offChart>1?'s':''} ran past it</b>, the longest to ${longest.toFixed(1)}R — still counted in every number here.`:''}</div>
   </div>`;
 }
 
