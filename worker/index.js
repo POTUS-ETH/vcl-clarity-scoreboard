@@ -336,6 +336,11 @@ const V3_CRYPTO_DB = '17736d193e324254b76cbf9054b89184';     // VCL Clarity V3 �
 // no Max Adverse here — the logged Trail Stop is real evidence of where the trade ended.
 const V6_OBVS_DATA_SOURCE = '26f37e26-6963-4d38-8e7b-51d421f522c9';
 const V6_OBVS_DB = '2d8c0fefabca400ab563beab37ac8c9a';
+// Eli's futures-only log — identical schema, its own database, its own view. The worker's
+// integration must be connected to that page in Notion or both queries below return
+// nothing and the board reads as an empty log rather than an access error.
+const V6_ELI_DATA_SOURCE = 'f4acd1b9-7f34-45ad-ba41-5c470ebd4dfb';
+const V6_ELI_DB = 'f4a4161311c4482993f7ee2b47f49c7e';
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
@@ -674,17 +679,17 @@ async function computeV4Futures(token) {
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
 }
 
-async function computeV6Obvs(token) {
+async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS_DB, name: 'v6-obvs' }) {
   // Same both-endpoints belt-and-braces as V4: /data_sources and /databases have disagreed
   // about this workspace's logs before, and an empty answer from one is indistinguishable
   // from an empty log. Take whichever yields more rows and report both counts.
   const [dsRows, dbRows] = await Promise.all([
-    queryAllDataSource(V6_OBVS_DATA_SOURCE, token).catch(() => []),
-    queryAll(V6_OBVS_DB, token).catch(() => []),
+    queryAllDataSource(ids.ds, token).catch(() => []),
+    queryAll(ids.db, token).catch(() => []),
   ]);
   const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
-  assertSchema(trades, 'v6-obvs', [
+  assertSchema(trades, ids.name, [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
     'Entry Price','Stop Price','Max Run','Trail Stop',
     '200 EMA at Entry',
@@ -1034,6 +1039,7 @@ export default {
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
         'v4-futures': () => computeV4Futures(env.NOTION_TOKEN),
         'v6-obvs':    () => computeV6Obvs(env.NOTION_TOKEN),
+        'v6-eli':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V6_ELI_DATA_SOURCE, db: V6_ELI_DB, name: 'v6-eli' }),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
         'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),

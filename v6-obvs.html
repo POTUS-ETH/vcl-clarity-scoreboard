@@ -257,8 +257,22 @@ const FOOT_OBVS='R math: one order, one stop, no L1 leg — 1R is simply |entry 
 let MGMTS=MGMTS_OBVS.slice();
 // Instrument class filter — futures and crypto share this log, so the top toggle splits
 // them. 'all' is legitimate: the R math is identical, only the tick grid differs.
+// ── which board is this? ─────────────────────────────────────────────────────
+// One file serves every V6 tracker. `?board=` picks the log, the title and whether the
+// futures/crypto class toggle is shown; everything else is shared, so a fix lands on
+// every board at once instead of drifting across copies. Default is POTUS's log.
+const BOARDS={
+  vcs:{view:'v6-obvs', title:'VCS Simplicity V6', log:'Trade Log — VCS',
+       sub:'VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / fib 1 entry / XR at fib X+1', futuresOnly:false},
+  eli:{view:'v6-eli',  title:'VCS Simplicity V6 — Eli', log:'Trade Log — VCS (Eli)',
+       sub:'VWAP Scalp · single fill · futures 15s · MNQ · MES · MGC · MYM · fib 0 stop / fib 1 entry / XR at fib X+1', futuresOnly:true},
+};
+const BOARD=BOARDS[new URLSearchParams(location.search).get('board')]||BOARDS.vcs;
+document.title=BOARD.title;
+{ const h=document.querySelector('h1'), sb=document.querySelector('.sub');
+  if(h) h.textContent=BOARD.title.toUpperCase(); if(sb) sb.textContent=BOARD.sub; }
 let CLASS='all';
-const FUTURES=['MNQ','MES','MGC'];
+const FUTURES=['MNQ','MES','MGC','MYM'];
 const isFutures=p=>FUTURES.includes(p);
 let ALL_TRADES=[], TRADES=[];
 let PAIR='all';
@@ -1462,7 +1476,7 @@ function writeStatus(){
   const st=document.getElementById('status'); if(!st) return;
   st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${CLASS==='all'?'':' · '+CLASS.toUpperCase()} · ${LAST_SRC} · ${new Date().toLocaleTimeString()}`;
 }
-const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view=v6-obvs';
+const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view='+BOARD.view;
 let firstLoad=true;
 async function fetchTrades(){
   try{
@@ -1472,7 +1486,7 @@ async function fetchTrades(){
     if(j.error) throw new Error(j.error);
     return {j, src:'live'};
   }catch(e){
-    const res=await fetch('v6-obvs-data.json?t='+Date.now(),{cache:'no-store'});
+    const res=await fetch(BOARD.view+'-data.json?t='+Date.now(),{cache:'no-store'});
     if(!res.ok) throw new Error('data '+res.status);
     return {j:await res.json(), src:'cached'};
   }
@@ -1495,7 +1509,11 @@ async function poll(){
     }
   }
 }
-wireClassTg(); applyModel();
+wireClassTg();
+// A futures-only board has nothing to toggle between — hide the class switch rather
+// than show a button that can only ever empty the board.
+if(BOARD.futuresOnly){ const b=document.querySelector('[data-c]'); if(b) (b.closest('.tg')||b.parentElement).style.display='none'; }
+applyModel();
 poll();
 setInterval(poll,5000);
 </script>
