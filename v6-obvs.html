@@ -1508,7 +1508,15 @@ async function fetchTrades(){
     return {j:await res.json(), src:'cached'};
   }
 }
+// One poll at a time. The worker takes 1.5–5s per answer and the timer fires every 5s,
+// so without this a slow answer had the next poll stacking on top of it — two Notion
+// round-trips in flight for one board, and a status clock that skipped a beat.
 async function poll(){
+  if(poll.busy) return;
+  poll.busy=true;
+  try{ await pollOnce(); } finally{ poll.busy=false; }
+}
+async function pollOnce(){
   const st=document.getElementById('status');
   try{
     const {j,src}=await fetchTrades();
