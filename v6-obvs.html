@@ -1321,6 +1321,16 @@ function sessionProfile(pool){
   const ss=[...new Set(pool.map(t=>t.session).filter(Boolean))].sort((a,b)=>sessRank(a)-sessRank(b));
   if(!ss.length) return '<div class="empty-note">No session tagged yet.</div>';
   const allDays=new Set(pool.filter(t=>t.date).map(t=>t.date)).size;
+  // Win rate and expectancy per session, scored on whatever method currently leads the
+  // board — the same key every bucket card uses, so this card can never name a number the
+  // matrix has just ranked last. A cell under 5 trades is marked thin; the interval is
+  // printed small so a +1.5R on four trades reads as what it is.
+  const LD=leaderOf(pool), TK=LD?LD.best.m.key:(MGMT[0]||{}).key, tname=LD?LD.best.m.name:'';
+  const perf=sub=>{ const st=fullStats(sub.map(t=>RV(t,TK)).filter(x=>x!=null));
+    if(!st.n) return '<td class="spn mut">—</td><td class="spn mut">—</td>';
+    const thin=st.n<5;
+    return `<td class="spn"><b>${Math.round(st.winRate*100)}%</b> <span class="mini">${st.wins}/${st.scratches}/${st.losses}${thin?' · thin':''}</span></td>
+      <td class="spn"><b class="${cls(st.mean)}">${fR(st.mean)}</b> <span class="mini">${st.n<2?'':st.degenerate?'±0':`[${fR(st.lo)}, ${fR(st.hi)}]`}</span></td>`; };
   let rows='';
   ss.forEach(se=>{
     const sub=pool.filter(t=>t.session===se);
@@ -1331,6 +1341,7 @@ function sessionProfile(pool){
       <td class="spn"><b>${sub.length}</b></td>
       <td class="spn"><b>${d?(sub.length/d).toFixed(1):'0'}</b> <span class="mini">/day</span></td>
       <td class="spn mut">${d}d</td>
+      ${perf(sub)}
       <td class="spn"><b>${avg}</b></td></tr>`;
   });
   // Totals. Two different averages, and they answer different questions: how busy a
@@ -1345,9 +1356,10 @@ function sessionProfile(pool){
       <td class="spn"><b>${pool.length}</b> <span class="mini">${perSession}/session</span></td>
       <td class="spn"><b>${perDay}</b> <span class="mini">/day</span></td>
       <td class="spn mut">${allDays}d</td>
+      ${perf(pool)}
       <td class="spn"><b>${allAvg}</b></td></tr>`;
-  return `<table class="sp"><thead><tr><th>Session</th><th>Trades</th><th>Rate</th><th>Days</th><th>Avg range %</th></tr></thead><tbody>${rows}</tbody></table>
-    <div class="mnote">Counts and rates are descriptive at any sample size. Which exit is best <em>per session</em> is deliberately not shown — at these counts every cell would be two or three trades, and a method name in a cell reads as a recommendation.</div>`;
+  return `<table class="sp"><thead><tr><th>Session</th><th>Trades</th><th>Rate</th><th>Days</th><th>Win</th><th>Expectancy</th><th>Avg range %</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="mnote">Win and expectancy are scored on <b>${tname}</b>, the method leading the board; win column is W/scratch/L, thin = fewer than 5 trades, and the bracket is the 95% interval — at these counts it is wide, and a session with a fat expectancy on four trades is a fact about four trades. Counts and rates are descriptive at any sample size.</div>`;
 }
 
 function primerBlock(){
