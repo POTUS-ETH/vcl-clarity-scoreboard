@@ -569,7 +569,7 @@ function emaCard(pool){
   return bucketCard({pool, label:'200 EMA at entry · confluence', keyFn:emaState, order:EMA_STATES,
     note:`you log the 200 EMA's price at entry; the board places it against the box, oriented to the trade — aligned is within ${ALIGN_R}R of entry, in front is the target side, behind is the stop side inside the box, out of box is past the stop`
         +(bad.length?` · <span class="flag">${bad.length} reading${bad.length>1?'s':''} look${bad.length>1?'':'s'} mistyped and ${bad.length>1?'are':'is'} left out: ${bad.join(', ')}</span>`:''),
-    emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on Trade Log — VCS and the buckets appear here.'});
+    emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on '+BOARD.log+' and the buckets appear here.'});
 }
 // ── winning method by day ────────────────────────────────────────────────────
 // Per day, which method banked the most R across that day's trades. Ties are the rule,
@@ -1390,7 +1390,7 @@ function primerBlock(){
 
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to Trade Log — VCS.</div></div>'; return; }
+  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to '+BOARD.log+'.</div></div>'; return; }
   const matrixSummary=(()=>{
     const rows=MGMT.map(m=>statsFor(m.key,pool)).filter(x=>x.n);
     const clear=rows.filter(x=>x.lo>0).length;
