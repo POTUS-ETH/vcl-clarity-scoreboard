@@ -736,7 +736,24 @@ function normalizeMethods(){
             lvl:m.lvl||'', desc:i.what||''}; });
 }
 function seriesFor(prop,pool){ return pool.map(t=>RV(t,prop)).filter(v=>v!=null&&!isNaN(v)); }
-function statsFor(prop,pool){ return fullStats(seriesFor(prop,pool)); }
+function statsFor(prop,pool){
+  const s=fullStats(seriesFor(prop,pool));
+  // Path stats — worst run, losing streak, win streak — are computed PER PAIR and the
+  // worst pair is reported, never the interleaved log. A losing streak that alternates
+  // MES and MNQ trades is a fact about the trader's day, not about either instrument
+  // (POTUS, 2026-09-27). With a single pair in the pool this is the plain series, so a
+  // filtered board is unchanged; only the ALL view moves, and it names the pair.
+  const pairs=[...new Set(pool.map(t=>t.pair).filter(Boolean))];
+  if(pairs.length>1){
+    let dd={v:-1,p:null}, ls={v:-1,p:null}, ws={v:-1,p:null};
+    pairs.forEach(p=>{ const ser=seriesFor(prop,pool.filter(t=>t.pair===p)); if(!ser.length) return;
+      const d=maxDrawdown(ser), l=maxLossStreak(ser).len||0; let run=0,w=0;
+      for(const x of ser){ if(x>0.005){run++; if(run>w)w=run;} else run=0; }
+      if(d>dd.v) dd={v:d,p}; if(l>ls.v) ls={v:l,p}; if(w>ws.v) ws={v:w,p}; });
+    s.dd=dd.v; s.ddPair=dd.p; s.streak=ls.v; s.streakPair=ls.p; s.winStreak=ws.v; s.winStreakPair=ws.p; s.perPair=true;
+  }
+  return s;
+}
 function paired(a,b,pool){
   const d=[]; pool.forEach(t=>{const x=RV(t,a),y=RV(t,b); if(x!=null&&y!=null) d.push(y-x);});
   return ci95(d);
@@ -899,9 +916,9 @@ function winnerCard(pool){
     <div class="stats">
       <div class="stat"><div class="k">Win rate</div><div class="v">${Math.round(s.winRate*100)}% <span class="mini">${s.wins}/${s.scratches}/${s.losses}</span></div></div>
       <div class="stat"><div class="k">Total R</div><div class="v ${cls(s.total)}">${fR(s.total)}</div></div>
-      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}</div></div>
-      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak}</div></div>
-      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak}</div></div>
+      <div class="stat"><div class="k">Max drawdown</div><div class="v neg">${fDD(s.dd)}${s.ddPair?` <span class="mini">${s.ddPair}</span>`:''}</div></div>
+      <div class="stat"><div class="k">LIS</div><div class="v ${s.streak?'neg':'mut'}">${s.streak}${s.streakPair?` <span class="mini">${s.streakPair}</span>`:''}</div></div>
+      <div class="stat"><div class="k">WIS</div><div class="v ${s.winStreak?'pos':'mut'}">${s.winStreak}${s.winStreakPair?` <span class="mini">${s.winStreakPair}</span>`:''}</div></div>
       <div class="stat"><div class="k">Trading days</div><div class="v mut">${days}</div></div>
     </div>
     ${up?`<div class="ctlstrip" style="margin-top:9px">Runner-up: <b style="color:var(--ink)">${up.m.name}</b> at ${fR(up.s.mean)} — leader is ahead by
@@ -1201,7 +1218,7 @@ function dayDetail(key,pool){
 }
 
 function methodDrawer(m,pool){
-  const inf=METHOD_INFO[m.key]||{}, s=fullStats(seriesFor(m.key,pool));
+  const inf=METHOD_INFO[m.key]||{}, s=statsFor(m.key,pool);
   const pre = String(m.key).startsWith('m_') ? MARIO_PREAMBLE : LADDER_PREAMBLE;
   return `<tr class="dr" data-drawer="${m.key}"><td colspan="8"><div class="dr-in">
     <div class="dr-g">
@@ -1222,7 +1239,7 @@ function matrixTable(pool){
   // MGMT, not MGMTS: the normalised list carries .key/.name on both boards. Reading
   // m.k here emitted data-row="undefined", which set OPEN_ROW to the string
   // "undefined" and made every drawer unopenable on the crypto side.
-  let rows=MGMT.map(m=>({m, s:fullStats(seriesFor(m.key,pool))}));   // reassigned by rankRows below
+  let rows=MGMT.map(m=>({m, s:statsFor(m.key,pool)}));   // reassigned by rankRows below; statsFor carries the per-pair path stats
   const scored=rows.filter(r=>r.s.n), unscored=rows.filter(r=>!r.s.n);
   rows = rankRows(scored,pool).concat(unscored);
   // A zero-width interval is every observation landing on the same number, not confidence.
@@ -1249,13 +1266,13 @@ function matrixTable(pool){
       // Path group. Drawdown and streak depend on the ORDER these trades happened in;
       // expectancy and win% do not. Reshuffle the log and only these two move — so they
       // sit behind a divider under their own heading rather than reading as peers.
-      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">none</span>':'<b class="neg">-'+s.dd.toFixed(2)+'R</b>'):'—'}</td>`+
-      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">—</span>':s.streak+'×'):'—'}</td></tr>`;
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">none</span>':'<b class="neg">-'+s.dd.toFixed(2)+'R</b>'+(s.ddPair?' <span class="mini">'+s.ddPair+'</span>':'')):'—'}</td>`+
+      `<td class="pathc${dim}">${s.n?(s.losses===0?'<span class="mut">—</span>':s.streak+'×'+(s.streakPair?' <span class="mini">'+s.streakPair+'</span>':'')):'—'}</td></tr>`;
     if(open) html+=methodDrawer(r.m,pool);
   });
   const note = days<10
     ? `Worst run and streak describe the order these ${pool.length} trades happened in, not the strategy — and ${days} trading day${days===1?'':'s'} is not enough order to describe. Reshuffle the log and they change; expectancy and win% do not.`
-    : `Worst run and streak describe the order these trades happened in, not the strategy. Reshuffle the log and they change; expectancy and win% do not.`;
+    : `Worst run and streak describe the order these trades happened in, not the strategy. Reshuffle the log and they change; expectancy and win% do not. With several pairs in view each is the single worst pair's own run, named beside it — never the interleaved log.`;
   return `<table class="matrix"><thead>
     <tr class="grp"><th></th><th colspan="4">Distribution — order-independent</th><th></th>
         <th colspan="2" class="pathh${dim}">Path — depends on trade order</th></tr>
@@ -1383,7 +1400,7 @@ function primerBlock(){
       <p><b>Every row is the same trades read a different way.</b> Twelve exit rules scored against one log — not ten separate samples. Do not add the n column up.</p>
       <p><b>One ruler.</b> The stop is typed where market structure puts it — a swing point, not a fib ratio — and 1R is entry to stop. The fib is drawn stop-to-entry purely to read the chart: fib 0 is the stop, fib 1 the entry, and every R is a whole number above (XR at fib X+1). Futures and crypto share the log and the ruler; the board splits them by instrument.</p>
       <p><b>Ranked by expectancy</b> — mean R per trade. The 95% interval is printed on every row so you can see how much of a mean rests on one outlier; it no longer decides the order. A wide interval that crosses zero is a lean, not a verdict, and the card above says so.</p>
-      <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not.</p>
+      <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not. When more than one pair is in view they are computed per pair and the worst pair is shown, named — a streak that alternates instruments is a fact about the day, not about either instrument.</p>
     </div>`:''}
   </div>`;
 }
