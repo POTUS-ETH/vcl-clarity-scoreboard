@@ -266,7 +266,17 @@ const BOARDS={
        sub:'VWAP Scalp · single fill · futures 15s + crypto 1m · fib 0 stop / fib 1 entry / XR at fib X+1', futuresOnly:false},
   eli:{view:'v6-eli',  title:'VCL - Eli', log:'Trade Log — VCS (Eli)',
        sub:'VWAP Scalp · single fill · futures 15s · MNQ · MES · MGC · MYM · fib 0 stop / fib 1 entry / XR at fib X+1', futuresOnly:true},
+  // V7: the anchor is the session-open VWAP, not a sweep candle. Same prices, same twelve
+  // exits, same structure stop and BoS trail. The 200 EMA / POI / money-flow tests are not
+  // carried over, so the EMA card is off and the one confluence card is the anchor session.
+  v7: {view:'v7-vcs',  title:'VCS Simplicity V7', log:'Trade Log — VCS V7',
+       sub:'VWAP Scalp · single fill · session-open AVWAP anchor · futures 15s + crypto 1m · fib 0 stop / fib 1 entry / XR at fib X+1',
+       futuresOnly:false, cards:{ema:false, anchor:true}},
 };
+// Which confluence cards a board shows. Default is V6's set; a board without a column must
+// not render the card for it, or the empty-state copy nags forever about a field the log
+// does not have.
+const CARDS=Object.assign({ema:true, anchor:false}, (BOARDS[new URLSearchParams(location.search).get('board')]||BOARDS.vcs).cards||{});
 const BOARD=BOARDS[new URLSearchParams(location.search).get('board')]||BOARDS.vcs;
 document.title=BOARD.title;
 { const h=document.querySelector('h1'), sb=document.querySelector('.sub');
@@ -294,7 +304,7 @@ function computeR(row){
   const r={f1:null,f2:null,f3:null,f4:null,f5:null,a2:null,a3:null,a4:null,a5:null,b3:null,b4:null,b5:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
-              ema200:num(row.ema200),
+              ema200:num(row.ema200), vwapAnchor:row.VWAPAnchor||null,
               entry:E, stop:S, r, raw:row};
   if(E==null||S==null||MR==null||BX==null) return base;
   // Direction is logged, not inferred from the prices: a stop typed on the wrong side of
@@ -570,6 +580,19 @@ function emaCard(pool){
     note:`you log the 200 EMA's price at entry; the board places it against the box, oriented to the trade — aligned is within ${ALIGN_R}R of entry, in front is the target side, behind is the stop side inside the box, out of box is past the stop`
         +(bad.length?` · <span class="flag">${bad.length} reading${bad.length>1?'s':''} look${bad.length>1?'':'s'} mistyped and ${bad.length>1?'are':'is'} left out: ${bad.join(', ')}</span>`:''),
     emptyNote:'No trade carries a 200 EMA price yet. Set <b>200 EMA at Entry</b> on '+BOARD.log+' and the buckets appear here.'});
+}
+// ── anchor session (V7) ──────────────────────────────────────────────────────
+// Which session open the AVWAP was anchored at. Logged raw — Asia / London / NY open —
+// and scored here on the leading method like every other bucket. Canonical order first,
+// then anything the log has grown that this code has never seen, so a new option shows
+// up rather than silently vanishing.
+const ANCHOR_ORDER=['Asia open','London open','NY open'];
+function anchorCard(pool){
+  const seen=[...new Set(pool.map(t=>t.vwapAnchor).filter(Boolean))];
+  const order=ANCHOR_ORDER.filter(k=>seen.includes(k)).concat(seen.filter(k=>!ANCHOR_ORDER.includes(k)));
+  return bucketCard({pool, label:'Anchor session · which open the VWAP was anchored at', keyFn:t=>t.vwapAnchor, order,
+    note:'you log which session open the AVWAP was anchored at; this is the one confluence V7 tests',
+    emptyNote:'No trade carries an anchor session yet. Set <b>VWAP Anchor</b> on '+BOARD.log+' and the buckets appear here.'});
 }
 // ── winning method by day ────────────────────────────────────────────────────
 // Per day, which method banked the most R across that day's trades. Ties are the rule,
@@ -1429,7 +1452,8 @@ function render(){
       ${reachLadderSVG(pool)}
     </div>
     ${rangeCard(pool)}
-    ${emaCard(pool)}
+    ${CARDS.ema?emaCard(pool):''}
+    ${CARDS.anchor?anchorCard(pool):''}
     ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
   const f=document.getElementById('foot'); if(f) f.innerHTML = FOOT_OBVS;

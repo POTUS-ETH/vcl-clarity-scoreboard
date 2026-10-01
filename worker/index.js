@@ -341,6 +341,11 @@ const V6_OBVS_DB = '2d8c0fefabca400ab563beab37ac8c9a';
 // nothing and the board reads as an empty log rather than an access error.
 const V6_ELI_DATA_SOURCE = 'f4acd1b9-7f34-45ad-ba41-5c470ebd4dfb';
 const V6_ELI_DB = 'f4a4161311c4482993f7ee2b47f49c7e';
+// V7 — the session-open AVWAP anchor. Same four prices and the same twelve exits; the
+// 200 EMA / POI / money-flow columns are gone and `VWAP Anchor` (Asia / London / NY open)
+// is the only confluence under test. Own page, own log, own view.
+const V7_DATA_SOURCE = '0815f8b9-2260-430b-ac4c-2317a8a07f39';
+const V7_DB = '60965b27d54644a9b0d2a82f5afae256';
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
@@ -679,7 +684,7 @@ async function computeV4Futures(token) {
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
 }
 
-async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS_DB, name: 'v6-obvs' }) {
+async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS_DB, name: 'v6-obvs', extra: ['200 EMA at Entry'] }) {
   // Same both-endpoints belt-and-braces as V4: /data_sources and /databases have disagreed
   // about this workspace's logs before, and an empty answer from one is indistinguishable
   // from an empty log. Take whichever yields more rows and report both counts.
@@ -692,7 +697,10 @@ async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS
   assertSchema(trades, ids.name, [
     '#','Trade','Date','Session','Pair','Direction','Timeframe',
     'Entry Price','Stop Price','Max Run','Trail Stop',
-    '200 EMA at Entry',
+    // The confluence column(s) a given log carries — '200 EMA at Entry' on V6 and Eli,
+    // 'VWAP Anchor' on V7. Asserted so a renamed or deleted column fails loudly here
+    // rather than reading as "every trade unfilled" on the board.
+    ...(ids.extra || []),
     'Notes',
   ]);
   // Stop Price must be a TYPED number. Under the structure-stop model it is the one price
@@ -719,6 +727,8 @@ async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS
       // The 200 EMA is logged as a PRICE; the board places it against the box (stop → entry)
       // and orients it to the trade, so the logger never decides "protection or headwind".
       ema200:    getProp(t, '200 EMA at Entry'),
+      // V7 only: which session open the AVWAP was anchored at. Null on logs without it.
+      VWAPAnchor: getProp(t, 'VWAP Anchor'),
       // What the money flow indicator printed at entry: Buy or Sell, logged raw. The
       // board turns it into agreement with the trade, because that flip depends on
       // Direction and is the bit a human gets backwards on a short.
@@ -1039,7 +1049,8 @@ export default {
         'v3-crypto': () => computeV3Raw(env.NOTION_TOKEN, V3_CRYPTO_DB),
         'v4-futures': () => computeV4Futures(env.NOTION_TOKEN),
         'v6-obvs':    () => computeV6Obvs(env.NOTION_TOKEN),
-        'v6-eli':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V6_ELI_DATA_SOURCE, db: V6_ELI_DB, name: 'v6-eli' }),
+        'v6-eli':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V6_ELI_DATA_SOURCE, db: V6_ELI_DB, name: 'v6-eli', extra: ['200 EMA at Entry'] }),
+        'v7-vcs':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V7_DATA_SOURCE, db: V7_DB, name: 'v7-vcs', extra: ['VWAP Anchor'] }),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
         'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),
