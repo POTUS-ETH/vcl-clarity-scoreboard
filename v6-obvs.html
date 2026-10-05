@@ -241,27 +241,45 @@ table.sp tr.sptot{color:#c3c9d4}
 // targets exist — they skipped 4R for a week after Full @ 4R was added.
 const R_LEVELS=[1,1.5,2,2.5,3,4,5].map(r=>({r, f:'fib '+(r+1)}));
 const MGMTS_OBVS=[
-  {k:'f1', label:'Full @ 1R · fib 2',     short:'F1'},
-  {k:'f15',label:'Full @ 1.5R · fib 2.5', short:'F1.5'},
-  {k:'f2', label:'Full @ 2R · fib 3',     short:'F2'},
-  {k:'f25',label:'Full @ 2.5R · fib 3.5', short:'F2.5'},
-  {k:'f3', label:'Full @ 3R · fib 4',     short:'F3'},
-  {k:'f4', label:'Full @ 4R · fib 5',     short:'F4'},
-  {k:'f5', label:'Full @ 5R · fib 6',     short:'F5'},
-  {k:'a2', label:'50% @1R → 2R · runner fib 4',      short:'A2'},
-  {k:'a3', label:'50% @1R → 3R · runner fib 6',      short:'A3'},
-  {k:'a4', label:'50% @1R → 4R · runner fib 8',      short:'A4'},
-  {k:'a5', label:'50% @1R → 5R · runner fib 10',     short:'A5'},
-  {k:'c2', label:'50% @1.5R → 2R · runner fib 3.5',  short:'C2'},
-  {k:'c3', label:'50% @1.5R → 3R · runner fib 5.5',  short:'C3'},
-  {k:'c4', label:'50% @1.5R → 4R · runner fib 7.5',  short:'C4'},
-  {k:'c5', label:'50% @1.5R → 5R · runner fib 9.5',  short:'C5'},
-  {k:'b3', label:'50% @2R → 3R · runner fib 5',      short:'B3'},
-  {k:'b4', label:'50% @2R → 4R · runner fib 7',      short:'B4'},
-  {k:'b5', label:'50% @2R → 5R · runner fib 9',      short:'B5'},
-  {k:'d3', label:'50% @2.5R → 3R · runner fib 4.5',  short:'D3'},
-  {k:'d4', label:'50% @2.5R → 4R · runner fib 6.5',  short:'D4'},
-  {k:'d5', label:'50% @2.5R → 5R · runner fib 8.5',  short:'D5'}];
+  {k:'f1', fam:'full', label:'Full @ 1R · fib 2', short:'F1'},
+  {k:'f125', fam:'full', label:'Full @ 1.25R · fib 2.25', short:'F1.25'},
+  {k:'f15', fam:'full', label:'Full @ 1.5R · fib 2.5', short:'F1.5'},
+  {k:'f175', fam:'full', label:'Full @ 1.75R · fib 2.75', short:'F1.75'},
+  {k:'f2', fam:'full', label:'Full @ 2R · fib 3', short:'F2'},
+  {k:'f225', fam:'full', label:'Full @ 2.25R · fib 3.25', short:'F2.25'},
+  {k:'f25', fam:'full', label:'Full @ 2.5R · fib 3.5', short:'F2.5'},
+  {k:'f275', fam:'full', label:'Full @ 2.75R · fib 3.75', short:'F2.75'},
+  {k:'f3', fam:'full', label:'Full @ 3R · fib 4', short:'F3'},
+  {k:'f4', fam:'full', label:'Full @ 4R · fib 5', short:'F4'},
+  {k:'f5', fam:'full', label:'Full @ 5R · fib 6', short:'F5'},
+  {k:'a2', fam:'p1', label:'50% @1R → 2R · runner fib 4', short:'A2'},
+  {k:'a3', fam:'p1', label:'50% @1R → 3R · runner fib 6', short:'A3'},
+  {k:'a4', fam:'p1', label:'50% @1R → 4R · runner fib 8', short:'A4'},
+  {k:'a5', fam:'p1', label:'50% @1R → 5R · runner fib 10', short:'A5'},
+  {k:'e2', fam:'p1.25', label:'50% @1.25R → 2R · runner fib 3.75', short:'E2'},
+  {k:'e3', fam:'p1.25', label:'50% @1.25R → 3R · runner fib 5.75', short:'E3'},
+  {k:'e4', fam:'p1.25', label:'50% @1.25R → 4R · runner fib 7.75', short:'E4'},
+  {k:'e5', fam:'p1.25', label:'50% @1.25R → 5R · runner fib 9.75', short:'E5'},
+  {k:'c2', fam:'p1.5', label:'50% @1.5R → 2R · runner fib 3.5', short:'C2'},
+  {k:'c3', fam:'p1.5', label:'50% @1.5R → 3R · runner fib 5.5', short:'C3'},
+  {k:'c4', fam:'p1.5', label:'50% @1.5R → 4R · runner fib 7.5', short:'C4'},
+  {k:'c5', fam:'p1.5', label:'50% @1.5R → 5R · runner fib 9.5', short:'C5'},
+  {k:'g2', fam:'p1.75', label:'50% @1.75R → 2R · runner fib 3.25', short:'G2'},
+  {k:'g3', fam:'p1.75', label:'50% @1.75R → 3R · runner fib 5.25', short:'G3'},
+  {k:'g4', fam:'p1.75', label:'50% @1.75R → 4R · runner fib 7.25', short:'G4'},
+  {k:'g5', fam:'p1.75', label:'50% @1.75R → 5R · runner fib 9.25', short:'G5'},
+  {k:'b3', fam:'p2', label:'50% @2R → 3R · runner fib 5', short:'B3'},
+  {k:'b4', fam:'p2', label:'50% @2R → 4R · runner fib 7', short:'B4'},
+  {k:'b5', fam:'p2', label:'50% @2R → 5R · runner fib 9', short:'B5'},
+  {k:'h3', fam:'p2.25', label:'50% @2.25R → 3R · runner fib 4.75', short:'H3'},
+  {k:'h4', fam:'p2.25', label:'50% @2.25R → 4R · runner fib 6.75', short:'H4'},
+  {k:'h5', fam:'p2.25', label:'50% @2.25R → 5R · runner fib 8.75', short:'H5'},
+  {k:'d3', fam:'p2.5', label:'50% @2.5R → 3R · runner fib 4.5', short:'D3'},
+  {k:'d4', fam:'p2.5', label:'50% @2.5R → 4R · runner fib 6.5', short:'D4'},
+  {k:'d5', fam:'p2.5', label:'50% @2.5R → 5R · runner fib 8.5', short:'D5'},
+  {k:'i3', fam:'p2.75', label:'50% @2.75R → 3R · runner fib 4.25', short:'I3'},
+  {k:'i4', fam:'p2.75', label:'50% @2.75R → 4R · runner fib 6.25', short:'I4'},
+  {k:'i5', fam:'p2.75', label:'50% @2.75R → 5R · runner fib 8.25', short:'I5'}];
 const FOOT_OBVS='R math: one order, one stop, no L1 leg — 1R is simply |entry − stop|, so nothing here may be cross-compared against a two-fill ladder board. The stop is <b>typed from structure</b>, not solved from a ratio; the fib is drawn stop-to-entry as a reading aid only, so <b>fib 0 = stop, fib 1 = entry, and XR sits at fib X+1</b>. Both ends are on-grid prices, so no tick rounding is applied anywhere. Stop-outs are read off the <b>logged Trail Stop</b> reaching the stop — there is no break-even move, the stop only steps on a break of structure — so the trail exit is complete evidence of where the trade ended and no Max Adverse column is needed. A target that never printed is <b>not</b> a loss — the position exits at the logged Trail Stop.';
 let MGMTS=MGMTS_OBVS.slice();
 // Instrument class filter — futures and crypto share this log, so the top toggle splits
@@ -310,9 +328,7 @@ function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 function computeR(row){
   const E=num(row.EntryPrice), S=num(row.StopPrice),
         MR=num(row.MaxRun), BX=num(row.TrailStop);
-  const r={f1:null,f15:null,f2:null,f25:null,f3:null,f4:null,f5:null,
-           a2:null,a3:null,a4:null,a5:null, c2:null,c3:null,c4:null,c5:null,
-           b3:null,b4:null,b5:null, d3:null,d4:null,d5:null};
+  const r=Object.fromEntries(MGMTS_OBVS.map(m=>[m.k,null]));
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null,
               n:row.n??null, dir:row.Direction||null,
               ema200:num(row.ema200), vwapAnchor:row.VWAPAnchor||null,
@@ -343,12 +359,17 @@ function computeR(row){
   // 0.5*p + 0.5*exit. To deliver N on the position off a partial at p the runner must reach
   // 2N - p, so the caps below are 2N-1 (@1R), 2N-1.5 (@1.5R), 2N-2 (@2R), 2N-2.5 (@2.5R).
   const runP=(p,c)=>hit(p)?0.5*p+0.5*(hit(c)?c:be):be;
-  r.f1=hit(1)?1:be; r.f15=hit(1.5)?1.5:be; r.f2=hit(2)?2:be; r.f25=hit(2.5)?2.5:be;
-  r.f3=hit(3)?3:be; r.f4=hit(4)?4:be; r.f5=hit(5)?5:be;
-  r.a2=runP(1,3);     r.a3=runP(1,5);     r.a4=runP(1,7);     r.a5=runP(1,9);       // @1R   → 2/3/4/5R
-  r.c2=runP(1.5,2.5); r.c3=runP(1.5,4.5); r.c4=runP(1.5,6.5); r.c5=runP(1.5,8.5);   // @1.5R → 2/3/4/5R
-  r.b3=runP(2,4);     r.b4=runP(2,6);     r.b5=runP(2,8);                           // @2R   → 3/4/5R
-  r.d3=runP(2.5,3.5); r.d4=runP(2.5,5.5); r.d5=runP(2.5,7.5);                       // @2.5R → 3/4/5R
+  // Full targets: hit the level or exit at the trail.
+  r.f1=hit(1)?1:be; r.f125=hit(1.25)?1.25:be; r.f15=hit(1.5)?1.5:be; r.f175=hit(1.75)?1.75:be; r.f2=hit(2)?2:be; r.f225=hit(2.25)?2.25:be; r.f25=hit(2.5)?2.5:be; r.f275=hit(2.75)?2.75:be; r.f3=hit(3)?3:be; r.f4=hit(4)?4:be; r.f5=hit(5)?5:be;
+  // Partial families: deliver N on the position off a partial at p => runner reaches 2N - p.
+  r.a2=runP(1,3); r.a3=runP(1,5); r.a4=runP(1,7); r.a5=runP(1,9);   // @1R
+  r.e2=runP(1.25,2.75); r.e3=runP(1.25,4.75); r.e4=runP(1.25,6.75); r.e5=runP(1.25,8.75);   // @1.25R
+  r.c2=runP(1.5,2.5); r.c3=runP(1.5,4.5); r.c4=runP(1.5,6.5); r.c5=runP(1.5,8.5);   // @1.5R
+  r.g2=runP(1.75,2.25); r.g3=runP(1.75,4.25); r.g4=runP(1.75,6.25); r.g5=runP(1.75,8.25);   // @1.75R
+  r.b3=runP(2,4); r.b4=runP(2,6); r.b5=runP(2,8);   // @2R
+  r.h3=runP(2.25,3.75); r.h4=runP(2.25,5.75); r.h5=runP(2.25,7.75);   // @2.25R
+  r.d3=runP(2.5,3.5); r.d4=runP(2.5,5.5); r.d5=runP(2.5,7.5);   // @2.5R
+  r.i3=runP(2.75,3.25); r.i4=runP(2.75,5.25); r.i5=runP(2.75,7.25);   // @2.75R
   base.maxRunR=mr; base.exitR=be;
   return base;
 }
@@ -453,6 +474,18 @@ Object.assign(METHOD_INFO,{
   d5:{what:'Half off at 2.5R, runner capped at 7.5R (fib 8.5): delivers <b>5R on the position</b>.',
       test:'Same gates.', fail:'Differs from the 4R delivery only on runs past 5.5R.'},
 });
+// The quarter levels (POTUS 2026-10-05, "also x.25/.75"): copy generated from the arithmetic so
+// every cap, runner and fib on the drawer is the one the scorer actually uses.
+MGMTS_OBVS.forEach(m=>{ if(METHOD_INFO[m.k]) return;
+  const lab=m.label;
+  if(m.fam==='full'){ const L=parseFloat(lab.match(/@ ([\d.]+)R/)[1]);
+    METHOD_INFO[m.k]={what:`Close the whole position the moment price trades ${L}R — fib ${L+1}. If it never does, the trade exits at the logged Trail Stop.`,
+      test:`Gated by <b>Max Run</b> against ${L}R. A miss is scored at the <b>logged Trail Stop</b>, never a synthetic −1R.`,
+      fail:`A quarter step: distinguishable from its neighbours only on trades whose run ends within a quarter-R of ${L}R.`}; return; }
+  const [,p,N]=lab.match(/@([\d.]+)R → (\d)R/); const pp=parseFloat(p), n=parseInt(N), run=2*n-pp;
+  METHOD_INFO[m.k]={what:`Half off at ${pp}R (fib ${pp+1}), runner capped at ${run}R (fib ${run+1}): ${pp/2} + ${run/2} = <b>${n}R on the position</b>.`,
+    test:`<b>Max Run</b> settles the partial and the cap; the runner half is scored at the logged Trail Stop on a cap miss. No partial if ${pp}R never printed — the whole position rides to the exit.`,
+    fail:`Sits between the @${pp-0.25}R and @${pp+0.25}R families; separates from them only on runs that end within a quarter-R of the partial or the cap.`}; });
 
 // ── THE SEAM ─────────────────────────────────────────────────────────────────
 // The only structural difference between this board and the crypto one. Futures nests
@@ -1053,12 +1086,17 @@ function reachLadderSVG(pool){
 // One colour per method on the reach fan. Warm for the Full family, cool for the 1R
 // partials, violet for the 2R partials, so a family still reads as a group — but every
 // line is its own hue. Green is reserved for the reach itself; nothing here is green.
-// Warm for Full, cool blues for @1R, teal for @1.5R, violet for @2R, tan for @2.5R.
-const M_COLOR = {f1:'#ffd60a', f15:'#ffc21f', f2:'#ffa630', f25:'#ff8a33', f3:'#ff6b35', f4:'#ff3366', f5:'#ff70d9',
-                 a2:'#b8f2ff', a3:'#5cd6ff', a4:'#3d8bff', a5:'#7b61ff',
-                 c2:'#9df5dc', c3:'#3fd9b4', c4:'#1fae8e', c5:'#127d66',
-                 b3:'#c9a8ff', b4:'#a24bff', b5:'#e05cff',
-                 d3:'#ffd9a8', d4:'#e8a65f', d5:'#b8743a', trail:'#9aa3b2'};
+// Colours are generated, not hand-picked: 39 lines need a system. Fulls walk yellow→red as the
+// target rises; each partial family owns a hue and ramps darker as its cap rises. Green stays
+// reserved for the reach itself.
+const FAM_HUE={p1:215, 'p1.25':195, 'p1.5':170, 'p1.75':50, p2:270, 'p2.25':300, 'p2.5':330, 'p2.75':30};
+const M_COLOR=(()=>{ const out={trail:'#9aa3b2'}, byFam={};
+  MGMTS_OBVS.forEach(m=>(byFam[m.fam]=byFam[m.fam]||[]).push(m.k));
+  Object.entries(byFam).forEach(([fam,ks])=>ks.forEach((k,i)=>{
+    const n=Math.max(ks.length-1,1);
+    out[k]= fam==='full' ? `hsl(${Math.round(52-52*i/n)},95%,60%)`
+          : `hsl(${FAM_HUE[fam]??0},${fam==='p2.75'?45:85}%,${Math.round(74-32*i/n)}%)`; }));
+  return out; })();
 function reachCurveSVG(pool){
   // Green is what PRICE did — max run — and is the same for every method. Every other
   // line is what one exit rule would have kept on the same trades: the twelve methods
