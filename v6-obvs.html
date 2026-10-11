@@ -1162,12 +1162,23 @@ function reachCurveSVG(pool){
   let grid='';
   R_LEVELS.forEach(({r:N,f,minor})=>{
     const X=x(N).toFixed(1);
-    // Quarter levels: line plus a small R label and nothing else. The share figures a
-    // major carries are still readable here off the neighbouring majors and the Y grid,
-    // whereas two 9.5px callouts every 31px are not readable at all.
+    // Quarter levels carry the same reached/kept pair as a major, two sizes down and inside
+    // a 0.75 group so the eye still lands on the majors first.
+    // The spacing works because every callout is left-anchored 5px right of its OWN line,
+    // so consecutive labels chain left-to-right instead of stacking on one another. At
+    // 30.6px between marks the widest string ("100%") is 22.8px at the major's 9.5px and
+    // 18.0px at the minor's 7.5px, leaving 7.8px clear after a major and 12.6px after a
+    // minor. Centring these, or matching the major's size, is what would collide.
     if(minor){
+      const pr=surv(run,N), pk=surv(selS.vals,N);
       grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#222936" stroke-width="1"/>`
-         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="7.5" fill="#6b7280" text-anchor="middle">${N}R</text>`;
+         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="7.5" fill="#6b7280" text-anchor="middle">${N}R</text>`
+         +  `<g opacity="0.75">`
+         +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="2.5" fill="${GREEN}"/>`
+         +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-5).toFixed(1)}" font-size="7.5" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
+         +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="2.2" fill="${SELC}"/>`
+         +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+10).toFixed(1)}" font-size="7.5" fill="${SELC}">${Math.round(pk*100)}%</text>`
+         +  `</g>`;
       return;
     }
     const pr=surv(run,N), pk=surv(selS.vals,N);
