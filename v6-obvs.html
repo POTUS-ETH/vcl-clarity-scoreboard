@@ -1112,7 +1112,12 @@ const M_COLOR=(()=>{ const out={trail:'#9aa3b2'}, byFam={};
     out[k]= fam==='full' ? `hsl(${Math.round(52-52*i/n)},95%,60%)`
           : `hsl(${FAM_HUE[fam]??0},${fam==='p2.75'?45:85}%,${Math.round(74-32*i/n)}%)`; }));
   return out; })();
-function reachCurveSVG(pool){
+// mode 'current' is the shipped two-tier chart and is left exactly as it was. 'A' and 'B'
+// are layout variants rendered as extra cards for a side-by-side pick; whichever loses gets
+// deleted, so they deliberately share every line of this function except the mark block and
+// the card chrome. They carry no head/legend/stats: the legend is a picker bound to the one
+// global REACH_KEY, and three copies of it would mutate the same state from three places.
+function reachCurveSVG(pool, mode='current'){
   // Green is what PRICE did — max run — and is the same for every method. Every other
   // line is what one exit rule would have kept on the same trades: the twelve methods
   // plus the trade as it was actually run (dashed). Each is a survival curve: at any R,
@@ -1160,7 +1165,7 @@ function reachCurveSVG(pool){
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
   const GREEN='#3fb950', SELC=M_COLOR[sel];
   let grid='';
-  R_LEVELS.forEach(({r:N,f,minor})=>{
+  if(mode==='current') R_LEVELS.forEach(({r:N,f,minor})=>{
     const X=x(N).toFixed(1);
     // Quarter levels carry the same reached/kept pair as a major, two sizes down and inside
     // a 0.75 group so the eye still lands on the majors first.
@@ -1190,6 +1195,41 @@ function reachCurveSVG(pool){
        +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3" fill="${SELC}"/>`
        +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${SELC}">${Math.round(pk*100)}%</text>`;
   });
+  else {
+    // Options A and B. Every mark is identical — same gridline, same label sizes, same dot
+    // radii, no opacity step — so the only thing under comparison is where the figures sit.
+    //
+    // The reached/kept figures leave the fan entirely and sit in fixed rows in the empty
+    // wedge above green, measured at 57px of clear height at 1R and growing to 172px by 5R
+    // on both boards. The fan therefore carries no text at all, which is the one way this
+    // is strictly better than the baseline rather than merely different.
+    //
+    // Association is each mark's own full-height gridline, already drawn, so the figure can
+    // sit anywhere on that vertical and still read as belonging to it. No leader lines.
+    //
+    // The % glyph is hoisted to a row label in the right-hand dead band (30% of plot width
+    // on V6, 19% on V7, empty above the green tail). That takes the worst-case string from
+    // 4 chars to 3 and is what lets A fit one row per metric at 26.1px mark spacing.
+    //
+    // A: one row per metric. B: two alternating rows per metric, which doubles the
+    // effective spacing at the cost of adjacent figures sitting at different heights.
+    const ROWS = mode==='B' ? {pr:[23,35], pk:[47,59]} : {pr:[26], pk:[43]};
+    R_LEVELS.forEach(({r:N,f},i)=>{
+      const pr=surv(run,N), pk=surv(selS.vals,N), X=x(N).toFixed(1);
+      grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
+         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
+         +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
+         +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
+         +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3" fill="${SELC}"/>`
+         +  `<text x="${X}" y="${ROWS.pr[i%ROWS.pr.length]}" font-size="9.5" font-weight="700" fill="#e6e8ec" text-anchor="middle">${Math.round(pr*100)}</text>`
+         +  `<text x="${X}" y="${ROWS.pk[i%ROWS.pk.length]}" font-size="9.5" font-weight="700" fill="${SELC}" text-anchor="middle">${Math.round(pk*100)}</text>`;
+    });
+    // Row labels sit past the last mark, which is always 5R because maxR has a 6.4 floor.
+    const LX=(x(R_LEVELS[R_LEVELS.length-1].r)+16).toFixed(1);
+    const mid=a=>a.reduce((s,v)=>s+v,0)/a.length;
+    grid+=`<text x="${LX}" y="${mid(ROWS.pr)}" font-size="9.5" font-weight="700" fill="${GREEN}">reached %</text>`
+       +  `<text x="${LX}" y="${mid(ROWS.pk)}" font-size="9.5" font-weight="700" fill="${SELC}">kept %</text>`;
+  }
   let yax='';
   [0,0.25,0.5,0.75,1].forEach(p=>{
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
@@ -1214,6 +1254,17 @@ function reachCurveSVG(pool){
       <span><i>median kept · ${nameOf(sel)}</i><b style="color:${SELC}">${med(selS.vals).toFixed(2)}R</b></span>
       <span><i>mean gap · ${nameOf(sel)}</i><b>${selS.gap.toFixed(2)}R</b></span>
       <span><i>captured · ${nameOf(sel)}</i><b style="color:${selS.capture==null?'#6b7280':selS.capture>=0?'#e6e8ec':'#e66767'}">${selS.capture==null?'—':Math.round(selS.capture*100)+'%'}</b></span></div>`;
+  // Variant cards: label plus chart only. Everything else on the baseline card is identical
+  // across all three, so repeating it would only push the charts apart and make the
+  // comparison harder to eyeball.
+  if(mode!=='current') return `<div class="card answer" style="padding:12px 14px 8px">
+    <div class="lbl">Reach curve · Option ${mode} — ${mode==='A'?'two rows, uniform marks':'four rows, alternating'} (n=${scored.length})</div>
+    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
+      ${yax}${fan}
+      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="3"/>
+      ${selPath}${grid}
+    </svg>
+  </div>`;
   return `<div class="card answer" style="padding:12px 14px 8px">
     <div class="lbl">Reach curve — share of trades that ran at least this far, and what each exit kept (n=${scored.length})</div>
     ${head}
@@ -1616,6 +1667,8 @@ function render(){
       ${intervalStripSVG(pool)}
       <div style="height:1px;background:#1d2430;margin:14px 0"></div>
       ${reachLadderSVG(pool)}
+      ${reachCurveSVG(pool,'A')}
+      ${reachCurveSVG(pool,'B')}
     </div>
     ${rangeCard(pool)}
     ${CARDS.ema?emaCard(pool):''}
