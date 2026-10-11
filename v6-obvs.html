@@ -246,8 +246,15 @@ table.sp tr.sptot{color:#c3c9d4}
 // on the 1R-partial fib the cap delivering N is fib 2N; on the 2R-partial fib it is 2N-1.
 // The full-size target levels every reach chart marks. Fib = R + 1: the box is 1R and
 // entry sits at fib 1. One list, so the curve and the ladder cannot disagree on which
-// targets exist — they skipped 4R for a week after Full @ 4R was added.
-const R_LEVELS=[1,1.5,2,2.5,3,4,5].map(r=>({r, f:'fib '+(r+1)}));
+// targets exist. This has now drifted TWICE — 4R went unmarked for a week after Full @ 4R
+// was added, and 1.25/1.75/2.25/2.75 went unmarked when the quarter families landed. Adding
+// a Full-TP target without adding its level here is the known failure mode of this file:
+// the chart quietly stops marking a target the matrix is still scoring.
+// `minor` is the quarter positions (x.25 / x.75). They get a line and a small label so that
+// every target has a mark, but no fib sub-label and neither percentage callout: at roughly
+// 31px per quarter-R on a 1000-wide viewBox those overlap into noise.
+const R_LEVELS=[1,1.25,1.5,1.75,2,2.25,2.5,2.75,3,4,5]
+  .map(r=>({r, f:'fib '+(r+1), minor:!Number.isInteger(r*2)}));
 const MGMTS_OBVS=[
   {k:'f1', fam:'full', label:'Full @ 1R · fib 2', short:'F1'},
   {k:'f125', fam:'full', label:'Full @ 1.25R · fib 2.25', short:'F1.25'},
@@ -1153,8 +1160,17 @@ function reachCurveSVG(pool){
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
   const GREEN='#3fb950', SELC=M_COLOR[sel];
   let grid='';
-  R_LEVELS.forEach(({r:N,f})=>{
-    const pr=surv(run,N), pk=surv(selS.vals,N), X=x(N).toFixed(1);
+  R_LEVELS.forEach(({r:N,f,minor})=>{
+    const X=x(N).toFixed(1);
+    // Quarter levels: line plus a small R label and nothing else. The share figures a
+    // major carries are still readable here off the neighbouring majors and the Y grid,
+    // whereas two 9.5px callouts every 31px are not readable at all.
+    if(minor){
+      grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#222936" stroke-width="1"/>`
+         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="7.5" fill="#6b7280" text-anchor="middle">${N}R</text>`;
+      return;
+    }
+    const pr=surv(run,N), pk=surv(selS.vals,N);
     grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
        +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
