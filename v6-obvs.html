@@ -1112,12 +1112,7 @@ const M_COLOR=(()=>{ const out={trail:'#9aa3b2'}, byFam={};
     out[k]= fam==='full' ? `hsl(${Math.round(52-52*i/n)},95%,60%)`
           : `hsl(${FAM_HUE[fam]??0},${fam==='p2.75'?45:85}%,${Math.round(74-32*i/n)}%)`; }));
   return out; })();
-// mode 'current' is the shipped two-tier chart and is left exactly as it was. 'A' and 'B'
-// are layout variants rendered as extra cards for a side-by-side pick; whichever loses gets
-// deleted, so they deliberately share every line of this function except the mark block and
-// the card chrome. They carry no head/legend/stats: the legend is a picker bound to the one
-// global REACH_KEY, and three copies of it would mutate the same state from three places.
-function reachCurveSVG(pool, mode='current'){
+function reachCurveSVG(pool){
   // Green is what PRICE did — max run — and is the same for every method. Every other
   // line is what one exit rule would have kept on the same trades: the twelve methods
   // plus the trade as it was actually run (dashed). Each is a survival curve: at any R,
@@ -1149,15 +1144,20 @@ function reachCurveSVG(pool, mode='current'){
   const bestM=ranked.find(x=>x.k!=='trail'), worstM=[...ranked].reverse().find(x=>x.k!=='trail'), tr=bySer.trail;
   const trailBeats = tr.gap < bestM.gap - 1e-9;
   const med=a=>a[Math.floor(a.length/2)];
-  const W=1000,H=240,padL=52,padR=24,padT=14,padB=34;
-  // Axis. The right edge is the 95th-percentile run, not the single longest: one 11R
-  // runner would otherwise push every curve into a flat line at zero across half the
-  // width. Anything past the edge is counted and named in the footnote instead. The left
-  // edge sits just below −1R so the stop-out cliff at −1 is visible without a dead band.
-  const p95=run[Math.min(run.length-1, Math.floor(run.length*0.95))];
-  const maxR=Math.max(6.4, p95*1.06);
-  const minR=Math.min(-1.15, Math.min(run[0],...series.map(x=>x.vals[0]))-0.05);
+  const W=1000,H=256,padL=52,padR=24,padT=30,padB=34;
+  const TOPROW=21;   // reached-% band, entirely above the plot area so it never meets a curve
+  // Axis pinned to the target band: 1R at the left edge, a hair past 5R at the right.
+  // The old axis spent 24–28% of its width below 1R on curve tails that carried no mark,
+  // and another 19–30% past the last target. Reclaiming both puts the eleven marks 56.3px
+  // apart instead of 26.1px, which is what finally lets every label render at full size.
+  // Fixing both ends also makes that spacing CONSTANT. It used to shrink every time the
+  // log grew a longer runner, because the right edge tracked the 95th percentile — so the
+  // chart got harder to read the more data it had. Nothing is lost: what falls outside
+  // either end is counted in the footnote, and the share that never reached 1R is simply
+  // where the green line starts.
+  const minR=1, maxR=5.1;
   const offChart=run.filter(v=>v>maxR).length, longest=run[run.length-1];
+  const below=run.filter(v=>v<minR).length;
   const pw=W-padL-padR, ph=H-padT-padB;
   const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
   const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
@@ -1165,71 +1165,24 @@ function reachCurveSVG(pool, mode='current'){
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
   const GREEN='#3fb950', SELC=M_COLOR[sel];
   let grid='';
-  if(mode==='current') R_LEVELS.forEach(({r:N,f,minor})=>{
-    const X=x(N).toFixed(1);
-    // Quarter levels carry the same reached/kept pair as a major, two sizes down and inside
-    // a 0.75 group so the eye still lands on the majors first.
-    // The spacing works because every callout is left-anchored 5px right of its OWN line,
-    // so consecutive labels chain left-to-right instead of stacking on one another. At
-    // 30.6px between marks the widest string ("100%") is 22.8px at the major's 9.5px and
-    // 18.0px at the minor's 7.5px, leaving 7.8px clear after a major and 12.6px after a
-    // minor. Centring these, or matching the major's size, is what would collide.
-    if(minor){
-      const pr=surv(run,N), pk=surv(selS.vals,N);
-      grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#222936" stroke-width="1"/>`
-         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="7.5" fill="#6b7280" text-anchor="middle">${N}R</text>`
-         +  `<g opacity="0.75">`
-         +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="2.5" fill="${GREEN}"/>`
-         +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-5).toFixed(1)}" font-size="7.5" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
-         +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="2.2" fill="${SELC}"/>`
-         +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+10).toFixed(1)}" font-size="7.5" fill="${SELC}">${Math.round(pk*100)}%</text>`
-         +  `</g>`;
-      return;
-    }
-    const pr=surv(run,N), pk=surv(selS.vals,N);
+  // One treatment for all eleven marks: same gridline colour, same label sizes, same dot
+  // radius, no opacity step. At 56.3px spacing every string clears comfortably — "1.25R"
+  // is 27.0px, "fib 2.25" 38.4px, "100%" 22.8px — which is what the two-tier version and
+  // the A/B row experiments were both working around. Reclaiming the axis removed the
+  // problem rather than dressing it.
+  // Reached-% sits in its own band above the plot, so the fan carries no text at all.
+  // Kept-% is gone: with 39 methodologies a single selected method's per-level readout was
+  // one number out of 39 competing for the busiest part of the chart. The selected method
+  // is still drawn — it is the heavy line in the fan — and still summarised in the stats
+  // row below, which is where a single-method figure belongs.
+  R_LEVELS.forEach(({r:N,f})=>{
+    const pr=surv(run,N), X=x(N).toFixed(1);
     grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
        +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
        +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
        +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
-       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pr)-6).toFixed(1)}" font-size="9.5" font-weight="700" fill="#e6e8ec">${Math.round(pr*100)}%</text>`
-       +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3" fill="${SELC}"/>`
-       +  `<text x="${(x(N)+5).toFixed(1)}" y="${(y(pk)+13).toFixed(1)}" font-size="9.5" font-weight="700" fill="${SELC}">${Math.round(pk*100)}%</text>`;
+       +  `<text x="${X}" y="${TOPROW}" font-size="9.5" font-weight="700" fill="${GREEN}" text-anchor="middle">${Math.round(pr*100)}%</text>`;
   });
-  else {
-    // Options A and B. Every mark is identical — same gridline, same label sizes, same dot
-    // radii, no opacity step — so the only thing under comparison is where the figures sit.
-    //
-    // The reached/kept figures leave the fan entirely and sit in fixed rows in the empty
-    // wedge above green, measured at 57px of clear height at 1R and growing to 172px by 5R
-    // on both boards. The fan therefore carries no text at all, which is the one way this
-    // is strictly better than the baseline rather than merely different.
-    //
-    // Association is each mark's own full-height gridline, already drawn, so the figure can
-    // sit anywhere on that vertical and still read as belonging to it. No leader lines.
-    //
-    // The % glyph is hoisted to a row label in the right-hand dead band (30% of plot width
-    // on V6, 19% on V7, empty above the green tail). That takes the worst-case string from
-    // 4 chars to 3 and is what lets A fit one row per metric at 26.1px mark spacing.
-    //
-    // A: one row per metric. B: two alternating rows per metric, which doubles the
-    // effective spacing at the cost of adjacent figures sitting at different heights.
-    const ROWS = mode==='B' ? {pr:[23,35], pk:[47,59]} : {pr:[26], pk:[43]};
-    R_LEVELS.forEach(({r:N,f},i)=>{
-      const pr=surv(run,N), pk=surv(selS.vals,N), X=x(N).toFixed(1);
-      grid+=`<line x1="${X}" y1="${padT-4}" x2="${X}" y2="${(H-padB).toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
-         +  `<text x="${X}" y="${(H-padB+13).toFixed(1)}" font-size="9" fill="#c3c9d4" text-anchor="middle" font-weight="700">${N}R</text>`
-         +  `<text x="${X}" y="${(H-padB+23).toFixed(1)}" font-size="8" fill="#6b7280" text-anchor="middle">${f}</text>`
-         +  `<circle cx="${X}" cy="${y(pr).toFixed(1)}" r="3.5" fill="${GREEN}"/>`
-         +  `<circle cx="${X}" cy="${y(pk).toFixed(1)}" r="3" fill="${SELC}"/>`
-         +  `<text x="${X}" y="${ROWS.pr[i%ROWS.pr.length]}" font-size="9.5" font-weight="700" fill="#e6e8ec" text-anchor="middle">${Math.round(pr*100)}</text>`
-         +  `<text x="${X}" y="${ROWS.pk[i%ROWS.pk.length]}" font-size="9.5" font-weight="700" fill="${SELC}" text-anchor="middle">${Math.round(pk*100)}</text>`;
-    });
-    // Row labels sit past the last mark, which is always 5R because maxR has a 6.4 floor.
-    const LX=(x(R_LEVELS[R_LEVELS.length-1].r)+16).toFixed(1);
-    const mid=a=>a.reduce((s,v)=>s+v,0)/a.length;
-    grid+=`<text x="${LX}" y="${mid(ROWS.pr)}" font-size="9.5" font-weight="700" fill="${GREEN}">reached %</text>`
-       +  `<text x="${LX}" y="${mid(ROWS.pk)}" font-size="9.5" font-weight="700" fill="${SELC}">kept %</text>`;
-  }
   let yax='';
   [0,0.25,0.5,0.75,1].forEach(p=>{
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
@@ -1254,19 +1207,8 @@ function reachCurveSVG(pool, mode='current'){
       <span><i>median kept · ${nameOf(sel)}</i><b style="color:${SELC}">${med(selS.vals).toFixed(2)}R</b></span>
       <span><i>mean gap · ${nameOf(sel)}</i><b>${selS.gap.toFixed(2)}R</b></span>
       <span><i>captured · ${nameOf(sel)}</i><b style="color:${selS.capture==null?'#6b7280':selS.capture>=0?'#e6e8ec':'#e66767'}">${selS.capture==null?'—':Math.round(selS.capture*100)+'%'}</b></span></div>`;
-  // Variant cards: label plus chart only. Everything else on the baseline card is identical
-  // across all three, so repeating it would only push the charts apart and make the
-  // comparison harder to eyeball.
-  if(mode!=='current') return `<div class="card answer" style="padding:12px 14px 8px">
-    <div class="lbl">Reach curve · Option ${mode} — ${mode==='A'?'two rows, uniform marks':'four rows, alternating'} (n=${scored.length})</div>
-    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
-      ${yax}${fan}
-      <path d="${pathOf(run)}" fill="none" stroke="${GREEN}" stroke-width="3"/>
-      ${selPath}${grid}
-    </svg>
-  </div>`;
   return `<div class="card answer" style="padding:12px 14px 8px">
-    <div class="lbl">Reach curve — share of trades that ran at least this far, and what each exit kept (n=${scored.length})</div>
+    <div class="lbl">Reach curve — % of trades that reached each target, and what each exit kept (n=${scored.length})</div>
     ${head}
     <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
       ${yax}${fan}
@@ -1274,7 +1216,7 @@ function reachCurveSVG(pool, mode='current'){
       ${selPath}${grid}
     </svg>
     ${legend}${stats}
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Names are ordered best to worst by how much of the offered R each exit captured — the figure beside each — and that order is by definition the expectancy order too. Click a name to make its line bold and read its numbers.${offChart?` The axis stops at the 95th-percentile run; <b>${offChart} trade${offChart>1?'s':''} ran past it</b>, the longest to ${longest.toFixed(1)}R — still counted in every number here.`:''}</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit rule still held that level when it closed the trade; Full @ 2R falls to the floor past 2R because it can never keep more. Names are ordered best to worst by how much of the offered R each exit captured — the figure beside each — and that order is by definition the expectancy order too. Click a name to make its line bold and read its numbers. The axis is the target band: it starts at 1R and ends just past 5R.${below?` <b>${below} trade${below===1?'':'s'}</b> never reached 1R — that is why green starts below 100%, not a gap in the data.`:''}${offChart?` <b>${offChart} trade${offChart===1?'':'s'}</b> ran past 5R, the longest to ${longest.toFixed(1)}R.`:''} Everything outside the axis is still counted in every number here.</div>
   </div>`;
 }
 
@@ -1667,8 +1609,6 @@ function render(){
       ${intervalStripSVG(pool)}
       <div style="height:1px;background:#1d2430;margin:14px 0"></div>
       ${reachLadderSVG(pool)}
-      ${reachCurveSVG(pool,'A')}
-      ${reachCurveSVG(pool,'B')}
     </div>
     ${rangeCard(pool)}
     ${CARDS.ema?emaCard(pool):''}
