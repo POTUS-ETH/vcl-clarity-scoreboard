@@ -38,6 +38,14 @@ body{font-family:ui-monospace,'JetBrains Mono',SFMono-Regular,Menlo,monospace;ba
 .matrix th{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#7b8494;font-weight:600}
 .matrix td:first-child,.matrix th:first-child{text-align:left}
 .matrix tr.best td{background:#182335}
+.matrix th.srt{cursor:pointer;user-select:none}
+.matrix th.srt:hover{color:#cdd4e0}
+.matrix th.srt.on{color:#e6ebf4}
+/* The arrow slot is emitted on every sortable header, hidden when that column is not the
+   active one, so flipping direction or moving the sort never changes a header's width and
+   reflows the whole table under the cursor. */
+.matrix th .sarw{display:inline-block;width:8px;margin-left:3px;text-align:center}
+.matrix th .sarw.off{opacity:0}
 .lbl{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#8b93a1;margin-bottom:6px}
 .combo-md{font-size:16px;font-weight:700;margin-bottom:8px}
 .stats{display:flex;flex-wrap:wrap;gap:12px 18px}
@@ -1335,6 +1343,31 @@ function methodDrawer(m,pool){
   </div></td></tr>`;
 }
 
+// Column sort over the SCORED rows only. dir -1 descending, +1 ascending, so (a-b)*dir
+// reads straight off the toggle. Ties fall back to the board's own ranking so a column of
+// identical values still lists the better method first.
+// n<2 has no interval to compare — lo and hi exist but equal the mean, and the cell renders
+// a dash — so a CI sort parks those rows after the real intervals instead of interleaving
+// them with numbers the reader cannot see.
+function sortRows(rows){
+  const {key,dir}=MATRIX_SORT;
+  const noCI = r => key==='lo' && !(r.s.n>1);
+  return [...rows].sort((a,b)=>{
+    const an=noCI(a), bn=noCI(b);
+    if(an!==bn) return an?1:-1;                 // dash rows last in BOTH directions
+    if(an&&bn) return 0;
+    return (((a.s[key]??0)-(b.s[key]??0))*dir) || (rankKey(b.s)-rankKey(a.s));
+  });
+}
+// One sortable header. The arrow slot is always present (hidden when inactive) to keep
+// column widths fixed; ▾ reads as descending, ▴ as ascending.
+function sortHead(key,label,extra){
+  const on=MATRIX_SORT&&MATRIX_SORT.key===key;
+  const arw=on&&MATRIX_SORT.dir>0 ? '▴' : '▾';
+  return `<th class="srt${on?' on':''}${extra||''}" data-sort="${key}">${label}`
+       + `<span class="sarw${on?'':' off'}">${arw}</span></th>`;
+}
+
 // Rank by the LOWER BOUND of the 95% interval, not raw expectancy. That is what "best
 // return with least pain" actually is: a method that pays well and behaves consistently
 // has a high lower bound; one that pays well by way of a single outlier does not. It is
@@ -1345,10 +1378,17 @@ function matrixTable(pool){
   // "undefined" and made every drawer unopenable on the crypto side.
   let rows=MGMT.map(m=>({m, s:statsFor(m.key,pool)}));   // reassigned by rankRows below; statsFor carries the per-pair path stats
   const scored=rows.filter(r=>r.s.n), unscored=rows.filter(r=>!r.s.n);
-  rows = rankRows(scored,pool).concat(unscored);
+  const ranked=rankRows(scored,pool);
   // A zero-width interval is every observation landing on the same number, not confidence.
   // It must not take the crown.
-  const winner=rows.find(r=>r.s.n>0);
+  // Read off the RANKED order, never the displayed one. This used to be rows.find(), i.e.
+  // simply "whatever sits in row 1" — fine while display order WAS merit order, but a
+  // user-chosen column sort decides row 1, and an ascending sort would then hand the crown
+  // to the worst method on the board.
+  const winner=ranked.find(r=>r.s.n>0);
+  // Unscored rows carry no metric to compare, so they stay pinned last under every sort
+  // rather than filling the top of an ascending one with dashes.
+  rows = (MATRIX_SORT ? sortRows(ranked) : ranked).concat(unscored);
   // One trading day cannot produce a meaningful drawdown or streak — there is no order to
   // speak of. Grey the whole group below 10 days rather than printing numbers that look
   // like measurements.
@@ -1380,8 +1420,8 @@ function matrixTable(pool){
   return `<table class="matrix"><thead>
     <tr class="grp"><th></th><th colspan="4">Distribution — order-independent</th><th></th>
         <th colspan="2" class="pathh${dim}">Path — depends on trade order</th></tr>
-    <tr><th>Method</th><th>Exp</th><th>95% CI</th><th>Win%</th><th>Tot</th><th>n</th>
-        <th class="pathc${dim}">Worst run</th><th class="pathc${dim}">Streak</th></tr>
+    <tr><th class="srt${MATRIX_SORT?'':' on'}" data-sort="default" title="Back to the board's own ranking">Method</th>${sortHead('mean','Exp')}${sortHead('lo','95% CI')}${sortHead('winRate','Win%')}${sortHead('total','Tot')}<th>n</th>
+        ${sortHead('dd','Worst run',' pathc'+dim)}${sortHead('streak','Streak',' pathc'+dim)}</tr>
     </thead><tbody>${html}</tbody></table>
     <div class="mnote">${note}</div>`;
 }
@@ -1391,6 +1431,17 @@ function wireMatrix(){
     el.onclick=e=>{ e.stopPropagation();
       const k=(e.currentTarget.dataset.row)||(e.currentTarget.closest('tr').dataset.row);
       OPEN_ROW = OPEN_ROW===k ? null : k; render(); };
+  });
+  // Column headers. Scoped to the data row: the group row's spanning headers carry no
+  // data-sort and stay inert. First click on a column is descending; clicking the active
+  // column flips direction and never clears the sort — Method is the only reset.
+  document.querySelectorAll('.matrix thead tr:not(.grp) th[data-sort]').forEach(th=>{
+    th.onclick=e=>{ e.stopPropagation();
+      const k=e.currentTarget.dataset.sort;
+      if(k==='default') MATRIX_SORT=null;
+      else if(MATRIX_SORT&&MATRIX_SORT.key===k) MATRIX_SORT={key:k, dir:-MATRIX_SORT.dir};
+      else MATRIX_SORT={key:k, dir:-1};          // -1 = descending, greatest first
+      render(); };
   });
 }
 // Controls that live outside the matrix — the calendars' month/day buttons and the reach
@@ -1428,6 +1479,13 @@ function dropCounts(pool){
 }
 let MATRIX_OPEN=true, PRIMER_OPEN=false;
 let REACH_KEY=null;   // blue line on the reach curve: null = whichever method leads, 'trail' = as traded
+// Matrix column sort. null = the board's own ranking (rankRows: expectancy desc, CI lower
+// bound as tie-break). Otherwise {key, dir} with dir -1 descending / +1 ascending. First
+// click on a column sorts DESCENDING; clicking the active column flips direction and never
+// returns to null — the Method header is the only way back to the default order.
+// A global, not a class on the header: render() rebuilds the board from scratch on every
+// 5s poll, so anything held in the DOM is gone by the next tick.
+let MATRIX_SORT=null;
 
 // Replaces the days badge, drop badge, pair-mix card and verdict line — roughly 230px of
 // card chrome to show four integers and a sentence. How much evidence exists has to come
