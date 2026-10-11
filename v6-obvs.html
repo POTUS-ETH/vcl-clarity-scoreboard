@@ -937,7 +937,15 @@ function equityCurveSVG(series, w, h){
 }
 const fDD=d=>d<0.005?'0.00R':'-'+d.toFixed(2)+'R';
 
+// Reset to 0 at the top of every render so the gradient ids are deterministic. The counter
+// still guarantees uniqueness WITHIN one render if a second curve is ever added; what it
+// must not do is make two renders of identical data produce different HTML, because that
+// is what defeated the repaint skip below.
 let _eqSeq=0;
+// Last HTML written to #board. render() runs every 5s whether anything changed or not, and
+// replacing innerHTML tears down and rebuilds ~158KB of DOM including forty SVG paths —
+// that teardown is the flicker. Comparing first makes an idle poll free.
+let _lastBoardHTML=null;
 
 // ── PORTED VERBATIM FROM v3-grant.html — do not edit here without editing there ──
 function verdictLine(pool){
@@ -1110,8 +1118,20 @@ function reachCurveSVG(pool){
   const offChart=run.filter(v=>v>maxR).length, longest=run[run.length-1];
   const below=run.filter(v=>v<minR).length;
   const pw=W-padL-padR, ph=H-padT-padB;
-  const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p)*ph;
   const surv=(rs,r)=>rs.filter(v=>v>=r).length/rs.length;
+  // The Y axis stops just above the highest point any curve reaches, not at 100%. Green is
+  // the upper envelope — a rule can only keep what ran — and survival is non-increasing, so
+  // the single highest plotted value is green at the left edge: 70% on the V6 board today.
+  // Everything above that was dead band no curve could enter, and it was spending ~30% of
+  // the plot height that the forty-line fan needs to separate.
+  // Snap up to the next 5%, and take one more step if that would leave the top curve
+  // kissing the ceiling. The 0.1 floor stops a pool where almost nothing reached 1R from
+  // collapsing the chart to no height at all.
+  const yMax=surv(run,minR);
+  let yCap=Math.ceil(yMax*20)/20;
+  if(yCap-yMax<0.02) yCap+=0.05;
+  yCap=+Math.max(0.1, Math.min(1, yCap)).toFixed(4);   // 0.7+0.05 lands on 0.75000000000001
+  const x=r=>padL+(r-minR)/(maxR-minR)*pw, y=p=>padT+(1-p/yCap)*ph;
   const pathOf=rs=>{ let d=''; for(let i=0;i<=160;i++){ const r=minR+(maxR-minR)*i/160;
     d+=(i?'L':'M')+x(r).toFixed(1)+','+y(surv(rs,r)).toFixed(1); } return d; };
   const GREEN='#3fb950', SELC=M_COLOR[sel];
@@ -1135,7 +1155,13 @@ function reachCurveSVG(pool){
        +  `<text x="${X}" y="${TOPROW}" font-size="9.5" font-weight="700" fill="${GREEN}" text-anchor="middle">${Math.round(pr*100)}%</text>`;
   });
   let yax='';
-  [0,0.25,0.5,0.75,1].forEach(p=>{
+  // Gridline step picked to land on round percentages and divide the cap evenly, falling
+  // back to quarters. The cap itself always gets a line, so the ceiling is always labelled
+  // even when it is not a multiple of the step.
+  const yStep=[0.25,0.2,0.1].find(s=>Math.abs(yCap/s-Math.round(yCap/s))<1e-9 && yCap/s<=5)||0.25;
+  const yTicks=[]; for(let p=0;p<=yCap+1e-9;p+=yStep) yTicks.push(+p.toFixed(4));
+  if(Math.abs(yTicks[yTicks.length-1]-yCap)>1e-9) yTicks.push(+yCap.toFixed(4));
+  yTicks.forEach(p=>{
     yax+=`<line x1="${padL}" y1="${y(p).toFixed(1)}" x2="${(W-padR).toFixed(1)}" y2="${y(p).toFixed(1)}" stroke="#1f2735" stroke-width="1"/>`
       +  `<text x="${padL-7}" y="${(y(p)+3.5).toFixed(1)}" font-size="9" fill="#6b7280" text-anchor="end">${Math.round(p*100)}%</text>`;
   });
@@ -1540,13 +1566,18 @@ function primerBlock(){
 
 function render(){
   const pool=TRADES, board=document.getElementById('board');
-  if(!pool.length){ board.innerHTML='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to '+BOARD.log+'.</div></div>'; return; }
+  if(!pool.length){
+    const e='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to '+BOARD.log+'.</div></div>';
+    if(e!==_lastBoardHTML){ _lastBoardHTML=e; board.innerHTML=e; }   // cache here too, or
+    return;                                                          // empty→data→empty restores a stale string
+  }
+  _eqSeq=0;     // deterministic ids — see the note on _lastBoardHTML
   const matrixSummary=(()=>{
     const rows=MGMT.map(m=>statsFor(m.key,pool)).filter(x=>x.n);
     const clear=rows.filter(x=>x.lo>0).length;
     return `${MGMT.length} outcomes on the same ${pool.length} trades · ${clear} clear zero`;
   })();
-  board.innerHTML=`
+  const html=`
     ${evidenceBar(pool, ALL_TRADES)}
     ${primerBlock()}
     ${winnerCard(pool)}
@@ -1566,6 +1597,13 @@ function render(){
     ${CARDS.anchor?anchorCard(pool):''}
     ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
+  // Nothing changed — leave the DOM alone. Skipping the write also skips the rewiring
+  // below, which is correct: the existing nodes and their handlers are still the live ones.
+  // Anything that SHOULD redraw (a filter, a sort, a toggle, new trades) changes this
+  // string, so it writes.
+  if(html===_lastBoardHTML) return;
+  _lastBoardHTML=html;
+  board.innerHTML=html;
   const f=document.getElementById('foot'); if(f) f.innerHTML = FOOT_OBVS;
   const pt=document.getElementById('primTog'); if(pt) pt.onclick=()=>{PRIMER_OPEN=!PRIMER_OPEN; render();};
   const mt=document.getElementById('matTog'); if(mt) mt.onclick=()=>{MATRIX_OPEN=!MATRIX_OPEN; render();};
