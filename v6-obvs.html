@@ -1047,55 +1047,6 @@ function reachLadderSVG(pool){
   // Always the survival curve — POTUS chose one format for both boards, and it is the
   // one that gets MORE legible as n grows. The per-trade bar variant is retired.
   return reachCurveSVG(pool);
-  const dirOf=t=>t.Direction==='Long'?1:-1;
-  const rOf=t=>{const d=dirOf(t),risk=d*(t.entry-t.stop);
-    return (risk>0 && t.maxRun!=null) ? d*(t.maxRun-t.entry)/risk : null;};
-  const rows=pool.map(t=>({t,r:rOf(t)})).filter(x=>x.r!=null);
-  if(!rows.length) return '';
-  const W=1000,H=250,padL=6,padR=138,padT=22,padB=36;
-  const maxR=Math.max(5.6,...rows.map(x=>x.r))*1.06, minR=-1.7;
-  const pw=W-padL-padR, ph=H-padT-padB;
-  const y=r=>padT+(1-(r-minR)/(maxR-minR))*ph;
-  const n=rows.length, slot=pw/n, bw=Math.min(46,slot*0.54);
-  const LV=R_LEVELS;
-  const zero=y(0);
-
-  let grid='';
-  LV.forEach(l=>{
-    const hits=rows.filter(x=>x.r>=l.r).length, yy=y(l.r);
-    grid+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR+6).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="#2a3140" stroke-width="1"/>`
-       +  `<text x="${W-padR+13}" y="${(yy+3.5).toFixed(1)}" font-size="11" fill="#8b93a1">`
-       +  `<tspan font-weight="700" fill="#c3c9d4">${l.r}R</tspan>  fib ${l.f}  `
-       +  `<tspan font-weight="700" fill="${hits?'#e6e8ec':'#4a5568'}">${hits}/${rows.length}</tspan></text>`;
-  });
-
-  let bars='';
-  rows.forEach((x,i)=>{
-    const cx=padL+slot*i+slot/2, win=x.r>0;
-    const top=y(Math.max(x.r,0)), bot=y(Math.min(x.r,0));
-    const col=win?'#3fb950':'var(--neg)';
-    bars+=`<rect x="${(cx-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(1,bot-top).toFixed(1)}" fill="${col}" fill-opacity="0.20"/>`
-       +  `<line x1="${(cx-bw/2).toFixed(1)}" y1="${(win?top:bot).toFixed(1)}" x2="${(cx+bw/2).toFixed(1)}" y2="${(win?top:bot).toFixed(1)}" stroke="${col}" stroke-width="2"/>`
-       +  `<text x="${cx.toFixed(1)}" y="${(win?top-5:bot+12).toFixed(1)}" font-size="10" font-weight="700" fill="${col}" text-anchor="middle">${(x.r>=0?'+':'')+x.r.toFixed(2)}R</text>`;
-    const dt=(x.t.date||'').slice(5), ses=(x.t.Session||'').replace('London','Ldn').replace('NY AM','NYam').replace('NY PM','NYpm');
-    bars+=`<text x="${cx.toFixed(1)}" y="${(H-padB+14).toFixed(1)}" font-size="8.5" fill="#8b93a1" text-anchor="middle">${dt}</text>`
-       +  `<text x="${cx.toFixed(1)}" y="${(H-padB+24).toFixed(1)}" font-size="8.5" fill="#6b7280" text-anchor="middle">${ses}</text>`;
-    // a visible seam wherever the log jumps to a different day — clustering you can see
-    if(i>0 && rows[i-1].t.date && x.t.date && rows[i-1].t.date!==x.t.date){
-      const dx=(padL+slot*i).toFixed(1);
-      bars+=`<line x1="${dx}" y1="${padT-6}" x2="${dx}" y2="${H-padB+2}" stroke="#3d4553" stroke-width="1" stroke-dasharray="2 3"/>`;
-    }
-  });
-
-  return `<div class="card" style="padding:12px 14px 8px">
-    <div class="lbl">How far each trade actually ran — and what each exit level would have caught</div>
-    <svg viewBox="0 0 ${W} ${H}" style="display:block;width:100%;height:auto">
-      ${grid}
-      <line x1="${padL}" y1="${zero.toFixed(1)}" x2="${(W-padR+6).toFixed(1)}" y2="${zero.toFixed(1)}" stroke="#5a6478" stroke-width="1.5"/>
-      ${bars}
-    </svg>
-    <div class="fsub" style="margin:6px 0 0">Every outcome on this board is this one picture read at a different height. The levels do not fail independently — a trade that misses 3R misses 5R too — so two outcomes agreeing is not two pieces of evidence.</div>
-  </div>`;
 }
 
 // One colour per method on the reach fan. Warm for the Full family, cool for the 1R
