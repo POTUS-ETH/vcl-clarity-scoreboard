@@ -6,7 +6,8 @@
 const fs=require('fs');
 const src=fs.readFileSync(process.argv[2]||require("path").join(__dirname,"..","v6-obvs.html"),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
-eval(src.match(/function computeR\(row\)\{[\s\S]*?\n\}/)[0]);
+// computeR builds its outcome map from MGMTS_OBVS, so the method table is evaluated with it.
+eval(src.match(/const MGMTS_OBVS=\[[\s\S]*?\];\n/)[0]+src.match(/function computeR\(row\)\{[\s\S]*?\n\}/)[0]);
 // POTUS's Full-TP fib, MNQ 15s 2026-09-13: entry 30298.75, stop 30250 → 1R = 48.75
 const L={Direction:'Long',Pair:'MNQ',EntryPrice:30298.75,StopPrice:30250};
 const at=R=>30298.75+R*48.75;

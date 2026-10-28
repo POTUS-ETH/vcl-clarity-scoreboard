@@ -346,6 +346,11 @@ const V6_ELI_DB = 'f4a4161311c4482993f7ee2b47f49c7e';
 // is the only confluence under test. Own page, own log, own view.
 const V7_DATA_SOURCE = '0815f8b9-2260-430b-ac4c-2317a8a07f39';
 const V7_DB = '60965b27d54644a9b0d2a82f5afae256';
+// TCLV — the TCL 2.0 two-fill ladder entered off a swing-high AVWAP. Entry + anchor are
+// typed; stop / L1 / 0.618 / 1.272 / 1R are solved (by the board, and by display formulas
+// on the log). Five outcomes per trade come from Max Run plus four checkboxes.
+const TCLV_DATA_SOURCE = 'fea7e1b5-ca3c-4268-8a53-c76a8d378987';
+const TCLV_DB = '2acca67e074b441eba19594847b502bd';
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
@@ -682,6 +687,59 @@ async function computeV4Futures(token) {
     });
   }
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
+}
+
+async function computeTclv(token) {
+  const [dsRows, dbRows] = await Promise.all([
+    queryAllDataSource(TCLV_DATA_SOURCE, token).catch(() => []),
+    queryAll(TCLV_DB, token).catch(() => []),
+  ]);
+  const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
+  const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
+  assertSchema(trades, 'tclv', [
+    '#','Trade','Date','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
+    'Entry Price','1 of Fib Price','Max Run','Swing Low',
+    'L1 Filled','Hit entry after partial','Hit swing stop after partial','EMAs aligned','Stopped out',
+    'Notes',
+  ]);
+  const rows = [], tests = [];
+  for (const t of trades) {
+    const title = getProp(t, 'Trade') || '';
+    if (getProp(t, 'Entry Price') == null) continue;       // an empty "+ New" row
+    const row = {
+      id:        t.id,
+      n:         getProp(t, '#'),
+      Trade:     title,
+      date:      getProp(t, 'Date'),
+      Session:   getProp(t, 'Session'),
+      Pair:      getProp(t, 'Pair'),
+      Direction: getProp(t, 'Direction'),
+      Timeframe: getProp(t, 'Timeframe'),
+      Timezone:  getProp(t, 'Timezone'),
+      EntryTime: getProp(t, 'Entry Time (HHMM)'),
+      // The three typed prices. Everything on the ladder is solved from the first two.
+      EntryPrice: getProp(t, 'Entry Price'),
+      Anchor:     getProp(t, '1 of Fib Price'),
+      MaxRun:     getProp(t, 'Max Run'),
+      SwingLow:   getProp(t, 'Swing Low'),
+      // Facts, not choices: which branch scores the trade.
+      L1Filled:     !!getProp(t, 'L1 Filled'),
+      HitEntry:     !!getProp(t, 'Hit entry after partial'),
+      HitSwingStop: !!getProp(t, 'Hit swing stop after partial'),
+      EmaAligned:   !!getProp(t, 'EMAs aligned'),
+      Stopped:      !!getProp(t, 'Stopped out'),
+      // The log's own solved columns, passed through so the board can cross-check its
+      // arithmetic against Notion's and flag a row where the two disagree.
+      solved: { stop: getProp(t, 'Stop Price'), l1: getProp(t, 'L1 Price'), tp: getProp(t, 'TP 0.618'),
+                t1272: getProp(t, 'Target 1.272'), oneR: getProp(t, '1R (price)'), rangePct: getProp(t, 'Range %') },
+      Notes:     getProp(t, 'Notes'),
+    };
+    // Scaffolding rows are returned separately so a probe can verify the formulas, but
+    // they never reach the board's trades.
+    if (title.toUpperCase().startsWith('TEST')) tests.push(row); else rows.push(row);
+  }
+  rows.sort((a, b) => (a.n ?? 1e9) - (b.n ?? 1e9));
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows, tests };
 }
 
 async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS_DB, name: 'v6-obvs', extra: ['200 EMA at Entry'] }) {
@@ -1051,6 +1109,7 @@ export default {
         'v6-obvs':    () => computeV6Obvs(env.NOTION_TOKEN),
         'v6-eli':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V6_ELI_DATA_SOURCE, db: V6_ELI_DB, name: 'v6-eli', extra: ['200 EMA at Entry'] }),
         'v7-vcs':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V7_DATA_SOURCE, db: V7_DB, name: 'v7-vcs', extra: ['VWAP Anchor'] }),
+        'tclv':       () => computeTclv(env.NOTION_TOKEN),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
         'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),

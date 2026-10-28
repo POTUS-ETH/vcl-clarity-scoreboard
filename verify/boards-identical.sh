@@ -32,11 +32,15 @@ raise SystemExit(1)
 PY
 }
 FIB="v4-futures.html v3-grant.html"
-ALL="v4-futures.html v3-grant.html v6-obvs.html"
+ALL="v4-futures.html v3-grant.html v6-obvs.html tclv.html"   # tclv shares the ranking + stats helpers; its scorer is pinned by verify/tclvscore.test.js
 check "marioR scorer"  '^function marioR\(row\)\{.*?\n\}'                $FIB
 check "rankKey"        '^const rankKey = .*?;$'                            $ALL
 check "rankRows"       '^function rankRows\(rows, pool\)\{.*?\n\}'       $ALL
-check "stats helpers"  '^function seriesFor.*?\n^function paired.*?\n\}'  $ALL
+# Stats helpers are checked per family: V6 computes worst run / streak per pair on the ALL
+# view (POTUS 2026-09-27) and the fib-era pair does not, so the two families are allowed
+# to differ from each other but never within themselves.
+check "stats helpers (fib-era)" '^function seriesFor.*?\n^function paired.*?\n\}'  $FIB
+check "stats helpers (V6 family)" '^function seriesFor.*?\n^function paired.*?\n\}'  v6-obvs.html tclv.html
 # fib-era pair: method keys/labels must agree, and METHOD_INFO must cover every method
 python3 - <<'PY' || fail=1
 import re
@@ -57,4 +61,5 @@ raise SystemExit(1 if (bad or gap) else 0)
 PY
 # V6 scorer is pinned by its vectors, not by identity with another board
 node verify/v6score.test.js >/dev/null 2>&1 && echo "ok    v6 scorer vectors" || { echo "FAIL  v6 scorer vectors (run: node verify/v6score.test.js)"; fail=1; }
+node verify/tclvscore.test.js >/dev/null 2>&1 && echo "ok    tclv scorer vectors" || { echo "FAIL  tclv scorer vectors (run: node verify/tclvscore.test.js)"; fail=1; }
 [ "$fail" = 0 ] && echo "boards are one codebase" || { echo "BOARDS HAVE DRIFTED"; exit 1; }
