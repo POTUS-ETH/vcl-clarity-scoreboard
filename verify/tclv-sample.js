@@ -20,19 +20,20 @@ for(const date of dates){
     const S=snap(base*(1+(rnd()-0.5)*0.01),tick);                       // the stop: fib 0, typed
     const span=snap(base*(0.0012+rnd()*0.0025),tick);                   // fib span, ~0.12–0.37% of price
     const A=snap(S+sgn*span,tick), fib=x=>snap(S+sgn*x*span,tick);       // the swing: fib 1, typed
-    const u=rnd(); const row={id:'s'+(++n), n, Trade:`${pair} ${dir} ${date}`, date, Session:session, Pair:pair, Direction:dir, Timeframe:tf, Trader:(tf==='15s'||rnd()<0.15)?'POTUS':'Gonza',
-      Timezone:'Berlin (CET/CEST)', EntryTime:hhmm, StopPrice:S, Anchor:A, MaxRun:null, SwingLow:null,
-      L1Filled:false, HitEntry:false, HitSwingStop:false, EmaAligned:rnd()<0.6, Stopped:false, Notes:''};
-    if(u<0.24){ row.L1Filled=true; row.Stopped=rnd()<0.42; row.MaxRun=row.Stopped?fib(0.25):fib(0.382+rnd()*0.1); }
-    else if(u<0.42){ row.MaxRun=fib(0.42+rnd()*0.17); }
-    else if(u<0.66){ row.MaxRun=fib(0.62+rnd()*0.55); row.HitEntry=true; if(rnd()<0.5){ row.HitSwingStop=true; row.SwingLow=fib(0.30+rnd()*0.25); } }
-    else if(u<0.88){ row.MaxRun=fib(1.272+rnd()*0.9); if(rnd()<0.3) row.HitEntry=true; }
-    else { row.MaxRun=fib(0.7+rnd()*0.5); row.HitSwingStop=true; row.SwingLow=fib(0.45+rnd()*0.12); }
+    const E=fib(0.382), T=fib(1.272);
+    const u=rnd(); const row={id:'s'+(++n), n, Trade:`${pair} ${dir} ${date}`, date, Trader:(tf==='15s'||rnd()<0.15)?'POTUS':'Gonza', Session:session, Pair:pair, Direction:dir, Timeframe:tf,
+      Timezone:'Berlin (CET/CEST)', EntryTime:hhmm, StopPrice:S, Anchor:A, MaxRun:null, ExitPrice:null,
+      L1Filled:false, HitEntry:false, EmaAligned:rnd()<0.6, Notes:''};
+    if(u<0.24){ const stopped=rnd()<0.42; row.L1Filled=rnd()<0.8; row.MaxRun=stopped?fib(0.25):fib(0.382+rnd()*0.1); row.ExitPrice=stopped?(rnd()<0.3?snap(S-sgn*tick,tick):S):E; }
+    else if(u<0.40){ row.MaxRun=fib(0.50+rnd()*0.09); row.ExitPrice=rnd()<0.7?S:fib(0.40+rnd()*0.09); }          // never TP: the stop (L1 read off the exit) or an early close under the max run
+    else if(u<0.64){ row.MaxRun=fib(0.62+rnd()*0.55); row.HitEntry=rnd()<0.7; row.ExitPrice=rnd()<0.5?E:fib(0.30+rnd()*0.07); }   // back to entry, or out at the swing
+    else if(u<0.86){ row.MaxRun=fib(1.272+rnd()*0.9); row.ExitPrice=rnd()<0.6?T:fib(1.1+rnd()*0.8); if(rnd()<0.3) row.HitEntry=true; }  // 1.272 printed
+    else { row.MaxRun=fib(0.7+rnd()*0.5); row.ExitPrice=fib(0.45+rnd()*0.2); }                                      // trailed out above entry
     rows.push(row);
   }
 }
 // two rows the board should flag
-rows.push({id:'s'+(++n), n, Trade:'MNQ Long bad swing', date:'2026-10-27', Session:'London', Pair:'MNQ', Direction:'Long', Timeframe:'15s', Trader:'POTUS', Timezone:'Berlin (CET/CEST)', EntryTime:'0930', StopPrice:25410, Anchor:25380, MaxRun:25450, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:false, EmaAligned:true, Stopped:false, Notes:'swing typed on the wrong side'});
-rows.push({id:'s'+(++n), n, Trade:'MES Short swing blank', date:'2026-10-27', Session:'NY AM', Pair:'MES', Direction:'Short', Timeframe:'15s', Trader:'POTUS', Timezone:'Berlin (CET/CEST)', EntryTime:'1500', StopPrice:6856.25, Anchor:6843.75, MaxRun:6845, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:true, EmaAligned:false, Stopped:false, Notes:'swing ticked, no price'});
+rows.push({id:'s'+(++n), n, Trade:'MNQ Long bad swing', date:'2026-10-27', Trader:'POTUS', Session:'London', Pair:'MNQ', Direction:'Long', Timeframe:'15s', Timezone:'Berlin (CET/CEST)', EntryTime:'0930', StopPrice:25410, Anchor:25380, MaxRun:25450, ExitPrice:25440, L1Filled:false, HitEntry:false, EmaAligned:true, Notes:'swing typed on the wrong side'});
+rows.push({id:'s'+(++n), n, Trade:'MES Short exit past max run', date:'2026-10-27', Trader:'POTUS', Session:'NY AM', Pair:'MES', Direction:'Short', Timeframe:'15s', Timezone:'Berlin (CET/CEST)', EntryTime:'1500', StopPrice:6856.25, Anchor:6843.75, MaxRun:6845, ExitPrice:6840, L1Filled:false, HitEntry:false, EmaAligned:false, Notes:'exit beyond max run'});
 fs.writeFileSync(path.join(__dirname,'tclv-sample.json'), JSON.stringify({trades:rows, tests:[], source:'sample', generated:'2026-10-29'}, null, 1));
 console.log(rows.length,'sample trades → verify/tclv-sample.json');

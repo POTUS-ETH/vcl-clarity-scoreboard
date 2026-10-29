@@ -264,7 +264,7 @@ const MGMTS_OBVS=[
   {k:'bh',   fam:'full', label:'Base hit · 100% @ 0.618',                                  short:'BH',   mid:'Base\u00a0hit'},
   {k:'runE', fam:'p1',   label:'Run · 50% @ 0.618, stop to entry, runner to 1.272',        short:'RunE', mid:'Run\u00a0· entry\u00a0stop'},
   {k:'runS', fam:'p2',   label:'Run · 50% @ 0.618, stop under swing low, runner to 1.272', short:'RunS', mid:'Run\u00a0· swing\u00a0stop'}];
-const FOOT_OBVS='R math: you type the two ends of the fib — the stop at 0 and the swing at 1 — and the board solves L1 at 0.17, entry at 0.382, TP at 0.618 and the runner at 1.272, each snapped to the instrument\'s tick: MNQ and MES 0.25, MGC 0.10, MYM 1, crypto 0.02. 1R is the risk of those snapped orders, (entry − stop) + (L1 − stop), on every trade whether or not L1 filled — 0.552 of the fib before snapping, so a base hit pays about +0.43R, L1 back to entry about +0.38R, a run to 1.272 about +1.02R and one back to entry about +0.21R, each within a tick of the nominal figure. A target counts as hit when Max Run touches its snapped price. An entry-only trade that never reached 0.618 is a stop-out: the ladder stays live until target or stop. Where a runner exit is genuinely unknown — partial taken, no 1.272, no return to entry or swing — that method is left unscored on that trade and the row says why.';
+const FOOT_OBVS='R math: you type four prices — the stop at fib 0, the swing at fib 1, Max Run and your exit. The board solves L1 at 0.17, entry at 0.382, TP at 0.618 and the runner at 1.272, each snapped to the instrument\'s tick (MNQ and MES 0.25, MGC 0.10, MYM 1, crypto 0.02), and 1R is the risk of those snapped orders, (entry − stop) + (L1 − stop), on every trade whether or not L1 filled — 0.552 of the fib before snapping, so a base hit pays about +0.43R, L1 back to entry about +0.38R, a run to 1.272 about +1.02R and one back to entry about +0.21R. Max Run touching a snapped price is that order filling. The exit settles the rest: at or through the stop is the stop-out (both units, −1R), through the L1 price means L1 filled, and after the partial the runner closes at 1.272 if it printed, otherwise wherever you got out. As traded — half at 0.618, the rest at your exit — is the dashed line on the reach curve. Hit entry after partial is the one thing the exit cannot show; an exit at or below entry counts as yes.';
 let MGMTS=MGMTS_OBVS.slice();
 // Instrument class filter — futures and crypto share this log, so the top toggle splits
 // them. 'all' is legitimate: the R math is identical, only the tick grid differs.
@@ -290,30 +290,28 @@ let TRADER='all', TF='all';
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
 // ── TCLV scorer ───────────────────────────────────────────────────────────────
-// TCL 2.0, two fills on one fib. You type the two ends of the fib you draw — the stop at 0
-// and the swing at 1 — and the ladder is solved from them: L1 at 0.17, entry at 0.382, first
-// target 0.618, runner target 1.272. Every solved order is snapped to the instrument's tick,
-// because that is where an order can actually rest (POTUS 2026-10-29: "the proper spread for
-// where I can get on"), and 1R is the risk of those snapped orders — the full two-fill risk,
-// (entry − stop) + (L1 − stop), on every trade whether or not L1 filled. That is 0.552 of the
-// fib before snapping, so a base hit pays about +0.43R; on a tiny crypto fib the snap bites
-// visibly, which is the point of doing it. The fill is a fact, not a choice: it decides the
-// branch, never the sample.
+// TCL 2.0, two fills on one fib. Four typed prices: the two ends of the fib you draw — the
+// stop at 0 and the swing at 1 — plus Max Run and the exit. The ladder is solved from the
+// first two (L1 at 0.17, entry at 0.382, first target 0.618, runner target 1.272), every order
+// snapped to the instrument's tick, and 1R is the risk of those snapped orders — the full
+// two-fill risk, (entry − stop) + (L1 − stop), whether or not L1 filled. The exit settles the
+// rest (POTUS 2026-10-29, "a simple exit price"): at or through the stop is the stop-out,
+// through the L1 price means L1 filled, and after the partial the runner closes at 1.272 if
+// Max Run reached it, otherwise wherever the trade got out. One checkbox remains — Hit entry
+// after partial — because an exit cannot show whether price revisited entry on the way up.
 const TICK={MNQ:0.25, MES:0.25, MGC:0.1, MYM:1, BTC:0.02, ETH:0.02, SOL:0.02};
 const FIB={stop:0, l1:0.17, entry:0.382, tp:0.618, anchor:1, t1272:1.272, oneR:0.552};
 function computeR(row){
-  const S=num(row.StopPrice), A=num(row.Anchor), MR=num(row.MaxRun), SW=num(row.SwingLow);
+  const S=num(row.StopPrice), A=num(row.Anchor), MR=num(row.MaxRun), X=num(row.ExitPrice);
   const r={bh:null, runE:null, runS:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null, n:row.n??null, dir:row.Direction||null,
               tz:row.Timezone||null, entryTime:row.EntryTime||null,
-              l1:!!row.L1Filled, hitEntry:!!row.HitEntry, hitSwing:!!row.HitSwingStop, emaAligned:!!row.EmaAligned, stopped:!!row.Stopped,
+              l1:!!row.L1Filled, hitEntry:!!row.HitEntry, emaAligned:!!row.EmaAligned,
               trader:row.Trader||null, timeframe:row.Timeframe||null,
-              stop:S, anchor:A, r, raw:row, why:null, note:null};
+              stop:S, anchor:A, exit:X, r, raw:row, why:null, note:null};
   if(S==null||A==null){ if(S!=null||A!=null) base.why='stop price or 1 of fib price missing'; return base; }
   const dir = row.Direction==='Long' ? 1 : row.Direction==='Short' ? -1 : null;
   if(dir==null){ base.why='no direction'; return base; }
-  // The swing must sit on the target side of the stop. On the wrong side it is a logging
-  // error and the row stays unscored rather than silently flipping the trade.
   if(dir*(A-S)<=0){ base.badAnchor=true; base.why='1 of fib is on the wrong side of the stop for a '+row.Direction; return base; }
   const span=A-S, tick=TICK[row.Pair]||null;
   const snap=p=>tick ? +(Math.round(p/tick)*tick).toFixed(6) : p, at=x=>snap(S+x*span);
@@ -322,43 +320,45 @@ function computeR(row){
   const oneR=dir*(E-S)+dir*(L1-S);              // the two fills' risk, as the orders sit
   base.oneR=oneR; base.rangePct=oneR/E*100;
   if(!(oneR>0)||!(dir*(TP-E)>0)){ base.why='the ladder collapses on the '+row.Pair+' tick grid — fib too small to place'; return base; }
-  // Max Run touching a snapped order price counts as that order filling.
-  const reached=p=>MR!=null && dir*(MR-p)>=-1e-9;
+  const halfTick = tick ? tick/2 : 1e-9;
+  const reached=p=>MR!=null && dir*(MR-p)>=-1e-9;   // Max Run touching a snapped order price is that order filling
   base.maxRunR = MR!=null ? dir*(MR-E)/oneR : null;
-  // ── L1 filled: both units on. Back to entry closes everything at about +0.38R; the stop
-  // is −1R. Which of the two happened is a logged fact (Stopped out), not an inference from
-  // Max Run — a run that printed BEFORE the dip to L1 would otherwise read as a return.
-  if(base.l1){
-    const v = base.stopped ? -1 : dir*(E-L1)/oneR;
-    r.bh=v; r.runE=v; r.runS=v;
-    if(!base.stopped && MR!=null && dir*(MR-E)<-1e-9) base.why='L1 filled and not stopped, but Max Run never got back to entry';
+  if(X!=null && MR!=null && dir*(X-MR)>halfTick) base.why='exit is beyond Max Run — check Max Run';
+  // What the exit says. Through the L1 price means L1 filled whether or not the box was ticked
+  // (the order sat in the way); at or through the stop is the stop-out.
+  base.stopped = X!=null && dir*(X-S)<=halfTick;
+  const throughL1 = X!=null && dir*(X-L1)<=halfTick;
+  if(!base.l1 && throughL1) base.note='exit sits at or through the L1 price, so L1 must have filled — box left unticked, scored as filled';
+  base.l1Inferred = base.l1 || throughL1;
+  // ── L1 filled: both units on, both close at the exit. Back at entry is +0.38R; the stop is −1R.
+  if(base.l1Inferred){
+    if(X==null){ base.why='L1 filled but no exit price'; return base; }
+    const v=(dir*(X-E)+dir*(X-L1))/oneR; r.bh=v; r.runE=v; r.runS=v; base.exitR=v;
     return base;
   }
-  // ── Entry only. Nothing to read the trade against: no Max Run and no stop-out tick.
-  if(MR==null && !base.stopped){ base.why='no Max Run logged and Stopped out is not ticked — nothing to score against'; return base; }
-  // Never reached 0.618: the ladder stays live until target or stop, so this is a stop-out on
-  // every method. Price cannot reach fib 0 without crossing L1, so the L1 box belongs ticked.
+  // ── Entry only, 0.618 never printed. Price cannot reach the stop without filling L1, so this
+  // is a close above L1 at the exit — or, with no exit logged, the stop-out it must have been.
+  if(MR==null && X==null){ base.why='no Max Run and no exit price — nothing to score against'; return base; }
   if(!reached(TP)){
-    r.bh=-1; r.runE=-1; r.runS=-1;
-    base.note = base.stopped ? 'stopped out with no L1 fill — a stop-out fills 0.17 on the way, so this is −1R either way; tick L1 Filled too'
-                             : 'entry only, never reached 0.618 — a closed trade that never printed TP is a stop-out, −1R on every method';
+    if(X!=null && dir*(X-TP)>=-1e-9 && !base.why) base.why='exit is at or beyond 0.618 but Max Run is short of it — check Max Run';
+    const v = X!=null ? dir*(X-E)/oneR : -1;
+    r.bh=v; r.runE=v; r.runS=v; base.exitR = X!=null ? v : null;
+    if(!base.note) base.note = X!=null ? 'entry only, closed before 0.618 — every method scored at the exit'
+                                       : 'entry only, never reached 0.618, no exit price — a closed trade that never printed TP is a stop-out, −1R on every method';
     return base;
   }
   // ── 0.618 printed. Base hit banks it all; the runs bank half and settle the runner.
-  if(base.stopped) base.why='Stopped out is ticked but 0.618 printed with no L1 fill — scored from Max Run; check the row';
-  const half=0.5*dir*(TP-E), runnerAtTarget=half+0.5*dir*(T-E);
+  const half=0.5*dir*(TP-E), runnerT=0.5*dir*(T-E), runnerX = X!=null ? 0.5*dir*(X-E) : null;
   r.bh = dir*(TP-E)/oneR;
-  // Entry stop: a ticked return to entry settles the runner at about +0.21R; 1.272 printing
-  // with no return settles it at about +1.02R. A stop-out after the partial can only have
-  // been the stop at entry, so it reads the same as the return.
-  r.runE = (base.hitEntry||base.stopped) ? half/oneR : reached(T) ? runnerAtTarget/oneR : null;
-  // Swing stop: the runner closes at the swing low you typed.
-  if(base.hitSwing){
-    r.runS = SW!=null ? (half+0.5*dir*(SW-E))/oneR : null;
-    if(SW==null) base.why='Hit swing stop is ticked but Swing Low is blank';
-    else if(dir*(SW-S)<0) base.why='Swing Low sits beyond the stop — check the price';
-  } else r.runS = reached(T) ? runnerAtTarget/oneR : null;
-  if((r.runE==null||r.runS==null) && !base.why) base.note='partial taken, 1.272 not reached, no return to entry or swing — that runner exit is unknown, so the method is left unscored here';
+  base.exitR = runnerX!=null ? (half+runnerX)/oneR : null;      // as traded: half at 0.618, the rest at the exit
+  // 1.272 printed → the runner order filled there; otherwise the runner closed wherever the trade got out.
+  const runner = reached(T) ? runnerT : runnerX;
+  // Entry stop: a return to entry closes the runner there. The box says so; so does an exit at or below entry.
+  const backToEntry = base.hitEntry || (X!=null && dir*(X-E)<=halfTick);
+  if(!base.hitEntry && X!=null && dir*(X-E)<=halfTick && !base.note) base.note='exit is at or below entry, so price came back after the partial — box left unticked; the entry-stop run is scored at entry';
+  r.runE = backToEntry ? half/oneR : runner!=null ? (half+runner)/oneR : null;
+  r.runS = runner!=null ? (half+runner)/oneR : null;
+  if(runner==null && !base.why && !base.note) base.note='no exit price and 1.272 did not print — the runner exits are unknown';
   return base;
 }
 
@@ -400,18 +400,18 @@ function fullStats(series){
 // `what` is the rule. `test` is the line that was missing everywhere: which logged field
 // settles this outcome, at which level, and what happens on a miss. A reader cannot judge
 // a number without knowing what produced it.
-const LADDER_PREAMBLE='Two limit orders on the TCL fib: <b>entry at 0.382</b> — placed just in front of an AVWAP anchored over a swing high — and <b>L1 at 0.17</b>, with the <b>stop at fib 0</b> and the swing at 1. You type the stop and the swing; the orders are solved from them and snapped to the tick. <b>1R is the full two-fill risk</b> of those orders, whether or not L1 filled. First target 0.618, runner target 1.272. The fill is a fact, not a choice: L1 filled sends the trade down the +0.38R / −1R branch on every method alike.';
+const LADDER_PREAMBLE='Two limit orders on the TCL fib: <b>entry at 0.382</b> — placed just in front of an AVWAP anchored over a swing high — and <b>L1 at 0.17</b>, with the <b>stop at fib 0</b> and the swing at 1. You type the stop, the swing, Max Run and your exit; the orders are solved from the first two and snapped to the tick. <b>1R is the full two-fill risk</b> of those orders, whether or not L1 filled. First target 0.618, runner target 1.272. The exit settles the stop-out, the L1 fill and where the runner closed; one box — Hit entry after partial — settles the entry-stop run.';
 const MARIO_PREAMBLE=LADDER_PREAMBLE;
 const METHOD_INFO={};
 Object.assign(METHOD_INFO,{
-  bh:{what:'Entry only: close the whole position at 0.618. L1 filled: close everything back at entry (+0.38R) or take the stop (−1R).',
-      test:'Gated by <b>Max Run</b> touching the snapped 0.618 price. L1 and stop are logged facts. An entry-only trade that never reached 0.618 scores −1R.',
+  bh:{what:'Entry only: close the whole position at 0.618. L1 filled: both units close at your exit — back at entry +0.38R, the stop −1R.',
+      test:'Gated by <b>Max Run</b> touching the snapped 0.618 price. L1 is a logged fact, or read off an exit through the L1 price. An entry-only trade that never reached 0.618 scores at its exit.',
       fail:'The lowest-variance method on the board: +0.43R or −1R on entry-only trades, nothing in between.'},
-  runE:{what:'Entry only: half off at 0.618, stop to entry, runner to 1.272. Comes back to entry → +0.21R; 1.272 prints → +1.02R.',
-      test:'<b>Hit entry after partial</b> settles the runner; otherwise <b>Max Run</b> against 1.272. Neither → runner exit unknown, this method stays unscored on that trade.',
+  runE:{what:'Entry only: half off at 0.618, stop to entry, runner to 1.272. Comes back to entry → +0.21R; 1.272 prints → +1.02R; otherwise the runner closes wherever the trade got out.',
+      test:'<b>Hit entry after partial</b> — or an exit at or below entry — settles the runner at entry; otherwise <b>Max Run</b> against 1.272, else the runner is scored at your <b>Exit Price</b>.',
       fail:'Gives back the base-hit edge on every trade that reverses after the partial; needs 1.272 to print often enough to pay for that.'},
-  runS:{what:'Entry only: half off at 0.618, stop under the swing low, runner to 1.272. Comes back to the swing → runner closes there, valued from the Swing Low you typed; 1.272 prints → +1.02R.',
-      test:'<b>Hit swing stop after partial</b> plus <b>Swing Low</b> settle the runner; otherwise <b>Max Run</b> against 1.272.',
+  runS:{what:'Entry only: half off at 0.618, stop under the swing low, runner to 1.272. 1.272 prints → +1.02R; otherwise the runner closes at your exit — the swing stop, a trailed stop, wherever you got out.',
+      test:'<b>Max Run</b> against 1.272 settles a filled runner; otherwise the runner half is scored at your <b>Exit Price</b>.',
       fail:'Survives the pullback that takes out the entry stop, at the cost of a bigger give-back when the swing fails. The whole TCLV question is whether that trade is worth it.'},
 });
 
@@ -1042,14 +1042,15 @@ function reachCurveSVG(pool){
   // cannot tell you.
   // One pool for every line: a trade whose runner exit is unknown on either run is left
   // out of the fan altogether, so all three curves and the reach share one denominator.
-  const scored=pool.filter(t=>t.maxRunR!=null && MGMT.every(m=>RV(t,m.key)!=null));
-  const unknown=pool.filter(t=>t.maxRunR!=null && !MGMT.every(m=>RV(t,m.key)!=null)).length;
+  const whole=t=>t.maxRunR!=null && t.exitR!=null && MGMT.every(m=>RV(t,m.key)!=null);
+  const scored=pool.filter(whole);
+  const unknown=pool.filter(t=>t.maxRunR!=null && !whole(t)).length;
   if(!scored.length) return '';
   const LD=leaderOf(pool);
-  const keys=MGMT.map(m=>m.key);
-  const sel = keys.includes(REACH_KEY) ? REACH_KEY : (LD?LD.best.m.key:keys[0]);
-  const keptOf = k => (t=>RV(t,k));
-  const nameOf = k => (MGMT.find(m=>m.key===k)||{}).mid||k;
+  const keys=['trail', ...MGMT.map(m=>m.key)];
+  const sel = keys.includes(REACH_KEY) ? REACH_KEY : (LD?LD.best.m.key:'trail');
+  const keptOf = k => k==='trail' ? (t=>t.exitR) : (t=>RV(t,k));
+  const nameOf = k => k==='trail' ? 'as traded' : (MGMT.find(m=>m.key===k)||{}).mid||k;
   const run=scored.map(t=>t.maxRunR).sort((a,b)=>a-b);
   const offered=scored.reduce((a,t)=>a+Math.max(t.maxRunR,0),0);
   const series = keys.map(k=>{ const f=keptOf(k), vals=scored.map(f);
@@ -1059,7 +1060,8 @@ function reachCurveSVG(pool){
   const bySer=Object.fromEntries(series.map(x=>[x.k,x]));
   const selS=bySer[sel];
   const ranked=[...series].sort((a,b)=>a.gap-b.gap);
-  const bestM=ranked[0], worstM=ranked[ranked.length-1];
+  const bestM=ranked.find(x=>x.k!=='trail'), worstM=[...ranked].reverse().find(x=>x.k!=='trail'), tr=bySer.trail;
+  const trailBeats = tr.gap < bestM.gap - 1e-9;
   const med=a=>a[Math.floor(a.length/2)];
   const W=1000,H=256,padL=52,padR=24,padT=30,padB=34;
   const TOPROW=21;   // reached-% band, entirely above the plot area so it never meets a curve
@@ -1136,6 +1138,7 @@ function reachCurveSVG(pool){
   const head=`<div class="band" style="margin:4px 0 6px">
       <div class="bandnum" style="color:${M_COLOR[bestM.k]}">${nameOf(bestM.k)}</div>
       <div class="bandci"><b>smallest gap</b> to the reach — leaves <b>${bestM.gap.toFixed(2)}R</b> per trade on the table, keeps ${Math.round(bestM.capture*100)}% of the R price offered
+        · ${trailBeats?`<span style="color:${M_COLOR.trail}"><b>as traded beats it</b> at ${tr.gap.toFixed(2)}R — your actual exits kept more than any fixed rule</span>`:`as traded ${tr.gap.toFixed(2)}R`}
         · widest: ${nameOf(worstM.k)} ${worstM.gap.toFixed(2)}R</div></div>`;
   const stats=`<div class="rstats">
       <span><i>median run</i><b>${med(run).toFixed(2)}R</b></span>
@@ -1151,7 +1154,7 @@ function reachCurveSVG(pool){
       ${selPath}${grid}
     </svg>
     ${legend}${stats}
-    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit still held that level when it closed the trade: Base hit stops at 0.43R because it can never keep more; the two runs step up to 1.02R only on trades where 1.272 printed, and sit at 0.21R or at the swing-low value on the ones that came back. Names are ordered best to worst by how much of the offered R each exit captured — the figure beside each — and that order is by definition the expectancy order too. Click a name to make its line bold and read its numbers. The axis runs from entry (0R) to just past the 1.272 runner target. Marks sit at the fib's nominal R; with orders snapped to the tick, a trade's own figure lands within a tick of its mark.${below?` <b>${below} trade${below===1?'':'s'}</b> carry a Max Run below entry — check the log.`:''}${offChart?` <b>${offChart} trade${offChart===1?'':'s'}</b> ran past ${maxR}R, the longest to ${longest.toFixed(1)}R.`:''}${unknown?` <b>${unknown} trade${unknown===1?'':'s'}</b> left out: a runner exit is unknown on them, so no single pool could carry all three lines.`:''} Everything outside the axis is still counted in every number here.</div>
+    <div class="fsub" style="margin:6px 0 0">Green is how often price reached each level at all — the same for every method, because it is what price did. Each thin line is how often one exit still held that level when it closed the trade: Base hit stops at 0.43R because it can never keep more; the two runs step up to 1.02R only on trades where 1.272 printed, and otherwise sit wherever the runner got out. The dashed line is the trade as traded: half at 0.618, the rest at your exit. Names are ordered best to worst by how much of the offered R each exit captured — the figure beside each — and that order is by definition the expectancy order too. Click a name to make its line bold and read its numbers. The axis runs from entry (0R) to just past the 1.272 runner target. Marks sit at the fib's nominal R; with orders snapped to the tick, a trade's own figure lands within a tick of its mark.${below?` <b>${below} trade${below===1?'':'s'}</b> carry a Max Run below entry — check the log.`:''}${offChart?` <b>${offChart} trade${offChart===1?'':'s'}</b> ran past ${maxR}R, the longest to ${longest.toFixed(1)}R.`:''}${unknown?` <b>${unknown} trade${unknown===1?'':'s'}</b> left out: no exit price, or a runner exit unknown, so no single pool could carry every line.`:''} Everything outside the axis is still counted in every number here.</div>
   </div>`;
 }
 
@@ -1243,8 +1246,8 @@ function tradeFields(t){
     pair:t.pair||w.Pair||null, dir:t.dir||w.Direction||null, trader:t.trader||w.Trader||null,
     time:w.EntryTime||null, tz:w.Timezone||null, min:t.minFromOpen??null,
     entry:t.entry??null, anchor:t.anchor??null, stop:t.stop??null, l1Price:t.l1Price??null, tp:t.tp??null, t1272:t.t1272??null,
-    maxRun:num(w.MaxRun), swingLow:num(w.SwingLow),
-    l1:!!w.L1Filled, hitEntry:!!w.HitEntry, hitSwing:!!w.HitSwingStop, ema:!!w.EmaAligned, stopped:!!w.Stopped, why:t.why||null, note:t.note||null };
+    maxRun:num(w.MaxRun), exit:num(w.ExitPrice),
+    l1:!!w.L1Filled, l1Inferred:!!t.l1Inferred, hitEntry:!!w.HitEntry, ema:!!w.EmaAligned, stopped:!!t.stopped, why:t.why||null, note:t.note||null };
 }
 function dayDetail(key,pool){
   const day=SEL_DAY[key];
@@ -1257,10 +1260,9 @@ function dayDetail(key,pool){
     const cell=(label,val)=>val==null?'':`<span>${label}</span><b>${val}</b>`;
     const fields=[
       cell('stop · fib 0',px(f.stop)), cell('1 of fib · swing',px(f.anchor)), cell('entry · 0.382',px(f.entry)), cell('L1 · 0.17',px(f.l1Price)),
-      cell('TP · 0.618',px(f.tp)), cell('runner · 1.272',px(f.t1272)), cell('max run',px(f.maxRun)), cell('swing low',px(f.swingLow)),
-      cell('L1 filled',f.l1?'yes':'no'), cell('stopped out',f.stopped?'yes':'no'),
-      cell('hit entry after partial',f.hitEntry?'yes':'no'), cell('hit swing stop after partial',f.hitSwing?'yes':'no'),
-      cell('EMAs aligned',f.ema?'yes':'no'), f.min==null?'':cell('min from open',String(f.min)),
+      cell('TP · 0.618',px(f.tp)), cell('runner · 1.272',px(f.t1272)), cell('max run',px(f.maxRun)), cell('exit',px(f.exit)),
+      cell('L1 filled',f.l1?'yes':f.l1Inferred?'yes (from the exit)':'no'), cell('stopped out',f.stopped?'yes (exit at the stop)':'no'),
+      cell('hit entry after partial',f.hitEntry?'yes':'no'), cell('EMAs aligned',f.ema?'yes':'no'), f.min==null?'':cell('min from open',String(f.min)),
       f.why?`<span>fix</span><b class="flag" style="cursor:default">${f.why}</b>`:'',
       f.note?`<span>note</span><b class="mut" style="font-weight:400">${f.note}</b>`:'',
     ].filter(Boolean).join('');
@@ -1449,7 +1451,7 @@ function evidenceBar(pool, all){
   const drops=dropCounts(pool), dropN=Object.values(drops).reduce((a,b)=>a+b,0);
   const notes=[];
   if(dropN) notes.push(`${dropN} row${dropN>1?'s':''} excluded from scoring`);
-  const l1n=pool.filter(t=>t.l1).length;
+  const l1n=pool.filter(t=>t.l1Inferred||t.l1).length;
   if(pool.length) notes.push(`L1 filled on ${l1n} of ${pool.length} (${Math.round(100*l1n/pool.length)}%)`);
   const flagged=pool.filter(t=>t.why), assumed=pool.filter(t=>t.note&&!t.why);
   if(flagged.length) notes.push(`<span class="flag" title="${flagged.map(t=>'#'+(t.n??'?')+' '+t.why).join(' · ').replace(/"/g,'&quot;')}">${flagged.length} row${flagged.length>1?'s':''} need${flagged.length>1?'':'s'} a look: ${flagged.map(t=>'#'+(t.n??'?')).join(', ')}</span>`);
@@ -1513,7 +1515,7 @@ function primerBlock(){
     <div class="primhd" id="primTog"><span>How to read this board</span><span class="mini">${PRIMER_OPEN?'– collapse':'+ expand'}</span></div>
     ${PRIMER_OPEN?`<div class="primbody">
       <p><b>Every row is the same trades read a different way.</b> Every exit rule scored against one log — not ten separate samples. Do not add the n column up.</p>
-      <p><b>One ruler.</b> The fib is the ladder: stop at 0, L1 at 0.17, entry at 0.382, swing at 1. You type the stop and the swing; the rest is solved and snapped to the tick, and 1R is the full two-fill risk of those orders on every trade whether or not L1 filled — about 0.552 of the fib, so an entry-only base hit is about +0.43R and an L1 fill closed back at entry about +0.38R. Three exits are scored on the same trades: close it all at 0.618; take half there and run the rest to 1.272 with the stop at entry; or the same run with the stop under the swing low. Futures and crypto share the log and the ruler; the board splits them by instrument.</p>
+      <p><b>One ruler.</b> The fib is the ladder: stop at 0, L1 at 0.17, entry at 0.382, swing at 1. You type the stop, the swing, Max Run and your exit; the orders are solved and snapped to the tick, and 1R is the full two-fill risk of those orders on every trade whether or not L1 filled — about 0.552 of the fib, so an entry-only base hit is about +0.43R and an L1 fill closed back at entry about +0.38R. Three exits are scored on the same trades: close it all at 0.618; take half there and run the rest to 1.272 with the stop at entry; or the same run with the stop under the swing low. The exit price settles what each would have paid; the trade as traded is drawn beside them on the reach curve.</p>
       <p><b>Ranked by expectancy</b> — mean R per trade. The 95% interval is printed on every row so you can see how much of a mean rests on one outlier; it no longer decides the order. A wide interval that crosses zero is a lean, not a verdict, and the card above says so.</p>
       <p><b>Worst run and streak sit behind a divider</b> because they depend on the order the trades happened in. Reshuffle the log and they change; expectancy and win% do not. When more than one pair is in view they are computed per pair and the worst pair is shown, named — a streak that alternates instruments is a fact about the day, not about either instrument.</p>
     </div>`:''}

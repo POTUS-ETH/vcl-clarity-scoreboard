@@ -698,14 +698,14 @@ async function computeTclv(token) {
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'tclv', [
     '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
-    'Stop Price','1 of Fib Price','Max Run','Swing Low',
-    'L1 Filled','Hit entry after partial','Hit swing stop after partial','EMAs aligned','Stopped out',
+    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
+    'L1 Filled','Hit entry after partial','EMAs aligned',
     'Notes',
   ]);
   const rows = [], tests = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
-    if (getProp(t, 'Stop Price') == null) continue;        // an empty "+ New" row
+    if (getProp(t, 'Stop Price (0 of Fib)') == null) continue;        // an empty "+ New" row
     const row = {
       id:        t.id,
       n:         getProp(t, '#'),
@@ -718,19 +718,17 @@ async function computeTclv(token) {
       Timeframe: getProp(t, 'Timeframe'),
       Timezone:  getProp(t, 'Timezone'),
       EntryTime: getProp(t, 'Entry Time (HHMM)'),
-      // The three typed prices: the two ends of the fib (stop at 0, swing at 1) and Max Run.
+      // The four typed prices: the two ends of the fib (stop at 0, swing at 1), Max Run and the exit.
       // The board solves entry / L1 / 0.618 / 1.272 from the first two and snaps each to the
       // instrument's tick (POTUS 2026-10-29); the log's own formulas do the same, for display.
-      StopPrice:  getProp(t, 'Stop Price'),
+      StopPrice:  getProp(t, 'Stop Price (0 of Fib)'),
       Anchor:     getProp(t, '1 of Fib Price'),
       MaxRun:     getProp(t, 'Max Run'),
-      SwingLow:   getProp(t, 'Swing Low'),
+      ExitPrice:  getProp(t, 'Exit Price'),         // settles the stop-out, the L1 fill and the runner
       // Facts, not choices: which branch scores the trade.
       L1Filled:     !!getProp(t, 'L1 Filled'),
       HitEntry:     !!getProp(t, 'Hit entry after partial'),
-      HitSwingStop: !!getProp(t, 'Hit swing stop after partial'),
       EmaAligned:   !!getProp(t, 'EMAs aligned'),
-      Stopped:      !!getProp(t, 'Stopped out'),
       // The log's own solved columns, passed through so the board can cross-check its
       // arithmetic against Notion's and flag a row where the two disagree.
       solved: { entry: getProp(t, 'Entry Price'), l1: getProp(t, 'L1 Price'), tp: getProp(t, 'TP 0.618'),
