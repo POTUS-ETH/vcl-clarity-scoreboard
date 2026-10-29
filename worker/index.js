@@ -347,8 +347,8 @@ const V6_ELI_DB = 'f4a4161311c4482993f7ee2b47f49c7e';
 const V7_DATA_SOURCE = '0815f8b9-2260-430b-ac4c-2317a8a07f39';
 const V7_DB = '60965b27d54644a9b0d2a82f5afae256';
 // TCLV — the TCL 2.0 two-fill ladder entered off a swing-high AVWAP. Entry + anchor are
-// typed; stop / L1 / 0.618 / 1.272 / 1R are solved (by the board, and by display formulas
-// on the log). Five outcomes per trade come from Max Run plus four checkboxes.
+// typed — the stop at 0 and the swing at 1; entry / L1 / 0.618 / 1.272 / 1R are solved and
+// snapped to the tick (by the board, and by display formulas on the log). Five outcomes per trade come from Max Run plus four checkboxes.
 const TCLV_DATA_SOURCE = 'fea7e1b5-ca3c-4268-8a53-c76a8d378987';
 const TCLV_DB = '2acca67e074b441eba19594847b502bd';
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
@@ -698,14 +698,14 @@ async function computeTclv(token) {
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'tclv', [
     '#','Trade','Date','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
-    'Entry Price','1 of Fib Price','Max Run','Swing Low',
+    'Stop Price','1 of Fib Price','Max Run','Swing Low',
     'L1 Filled','Hit entry after partial','Hit swing stop after partial','EMAs aligned','Stopped out',
     'Notes',
   ]);
   const rows = [], tests = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
-    if (getProp(t, 'Entry Price') == null) continue;       // an empty "+ New" row
+    if (getProp(t, 'Stop Price') == null) continue;        // an empty "+ New" row
     const row = {
       id:        t.id,
       n:         getProp(t, '#'),
@@ -717,8 +717,10 @@ async function computeTclv(token) {
       Timeframe: getProp(t, 'Timeframe'),
       Timezone:  getProp(t, 'Timezone'),
       EntryTime: getProp(t, 'Entry Time (HHMM)'),
-      // The three typed prices. Everything on the ladder is solved from the first two.
-      EntryPrice: getProp(t, 'Entry Price'),
+      // The three typed prices: the two ends of the fib (stop at 0, swing at 1) and Max Run.
+      // The board solves entry / L1 / 0.618 / 1.272 from the first two and snaps each to the
+      // instrument's tick (POTUS 2026-10-29); the log's own formulas do the same, for display.
+      StopPrice:  getProp(t, 'Stop Price'),
       Anchor:     getProp(t, '1 of Fib Price'),
       MaxRun:     getProp(t, 'Max Run'),
       SwingLow:   getProp(t, 'Swing Low'),
@@ -730,7 +732,7 @@ async function computeTclv(token) {
       Stopped:      !!getProp(t, 'Stopped out'),
       // The log's own solved columns, passed through so the board can cross-check its
       // arithmetic against Notion's and flag a row where the two disagree.
-      solved: { stop: getProp(t, 'Stop Price'), l1: getProp(t, 'L1 Price'), tp: getProp(t, 'TP 0.618'),
+      solved: { entry: getProp(t, 'Entry Price'), l1: getProp(t, 'L1 Price'), tp: getProp(t, 'TP 0.618'),
                 t1272: getProp(t, 'Target 1.272'), oneR: getProp(t, '1R (price)'), rangePct: getProp(t, 'Range %') },
       Notes:     getProp(t, 'Notes'),
     };
