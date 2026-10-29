@@ -700,7 +700,7 @@ async function computeTclv(token) {
     '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
     'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
     'L1 Filled','EMAs aligned',
-    'TP Time (HHMM)','1.272 Time (HHMM)','Back to Entry Time (HHMM)','Exit Time (HHMM)',
+    'TP Time (HHMM)','Back to Entry Time (HHMM)','Exit Time (HHMM)',
     'Notes',
   ]);
   const rows = [], tests = [];
@@ -722,7 +722,6 @@ async function computeTclv(token) {
       // The clocks that give every exit its own time in trade (POTUS 2026-10-29). Back to Entry
       // Time doubles as the old checkbox: non-blank means price came back to entry after the partial.
       TpTime:    getProp(t, 'TP Time (HHMM)'),
-      T1272Time: getProp(t, '1.272 Time (HHMM)'),
       BackTime:  getProp(t, 'Back to Entry Time (HHMM)'),
       ExitTime:  getProp(t, 'Exit Time (HHMM)'),
       // The four typed prices: the two ends of the fib (stop at 0, swing at 1), Max Run and the exit.

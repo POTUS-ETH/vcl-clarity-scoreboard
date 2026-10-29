@@ -19,7 +19,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1906",
-   "T1272Time": null,
    "BackTime": "1914",
    "ExitTime": "1930",
    "Notes": ""
@@ -43,7 +42,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "2006",
-   "T1272Time": "2014",
    "BackTime": null,
    "ExitTime": "2027",
    "Notes": ""
@@ -67,7 +65,6 @@
    "L1Filled": true,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1050",
    "Notes": ""
@@ -91,7 +88,6 @@
    "L1Filled": true,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1547",
    "Notes": ""
@@ -115,7 +111,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "2001",
    "Notes": ""
@@ -139,7 +134,6 @@
    "L1Filled": true,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1558",
    "Notes": ""
@@ -163,7 +157,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1009",
-   "T1272Time": "1036",
    "BackTime": null,
    "ExitTime": "1052",
    "Notes": ""
@@ -187,7 +180,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1010",
    "Notes": ""
@@ -211,7 +203,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0937",
    "Notes": ""
@@ -235,7 +226,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1020",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1037",
    "Notes": ""
@@ -259,7 +249,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1806",
-   "T1272Time": null,
    "BackTime": "1811",
    "ExitTime": "1833",
    "Notes": ""
@@ -283,7 +272,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "0212",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0220",
    "Notes": ""
@@ -307,7 +295,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "0137",
-   "T1272Time": null,
    "BackTime": "0146",
    "ExitTime": "0158",
    "Notes": ""
@@ -331,7 +318,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1629",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1643",
    "Notes": ""
@@ -355,7 +341,6 @@
    "L1Filled": true,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1930",
    "Notes": ""
@@ -379,7 +364,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1551",
-   "T1272Time": null,
    "BackTime": "1556",
    "ExitTime": "1607",
    "Notes": ""
@@ -403,7 +387,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1532",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1539",
    "Notes": ""
@@ -427,7 +410,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1640",
-   "T1272Time": null,
    "BackTime": "1643",
    "ExitTime": "1702",
    "Notes": ""
@@ -451,7 +433,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1823",
-   "T1272Time": null,
    "BackTime": "1838",
    "ExitTime": "1840",
    "Notes": ""
@@ -475,7 +456,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1027",
-   "T1272Time": null,
    "BackTime": "1031",
    "ExitTime": "1058",
    "Notes": ""
@@ -499,7 +479,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0921",
    "Notes": ""
@@ -523,7 +502,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "2050",
    "Notes": ""
@@ -547,7 +525,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1548",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1611",
    "Notes": ""
@@ -571,7 +548,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1912",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1936",
    "Notes": ""
@@ -595,7 +571,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0127",
    "Notes": ""
@@ -619,7 +594,6 @@
    "L1Filled": true,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0240",
    "Notes": ""
@@ -643,7 +617,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1022",
    "Notes": ""
@@ -667,7 +640,6 @@
    "L1Filled": true,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1837",
    "Notes": ""
@@ -691,7 +663,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1441",
-   "T1272Time": "1508",
    "BackTime": null,
    "ExitTime": "1519",
    "Notes": ""
@@ -715,7 +686,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1528",
    "Notes": ""
@@ -739,7 +709,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0227",
    "Notes": ""
@@ -763,7 +732,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1007",
-   "T1272Time": null,
    "BackTime": "1020",
    "ExitTime": "1013",
    "Notes": ""
@@ -787,7 +755,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1034",
-   "T1272Time": "1054",
    "BackTime": null,
    "ExitTime": "1101",
    "Notes": ""
@@ -811,7 +778,6 @@
    "L1Filled": true,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1603",
    "Notes": ""
@@ -835,7 +801,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": "1819",
-   "T1272Time": "1829",
    "BackTime": null,
    "ExitTime": "1839",
    "Notes": ""
@@ -859,7 +824,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1813",
    "Notes": ""
@@ -883,7 +847,6 @@
    "L1Filled": false,
    "EmaAligned": true,
    "TpTime": null,
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "0950",
    "Notes": "swing typed on the wrong side"
@@ -907,7 +870,6 @@
    "L1Filled": false,
    "EmaAligned": false,
    "TpTime": "1506",
-   "T1272Time": null,
    "BackTime": null,
    "ExitTime": "1520",
    "Notes": "exit beyond max run"

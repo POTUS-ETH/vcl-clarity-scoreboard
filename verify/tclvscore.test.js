@@ -15,8 +15,8 @@ const cases=[
  // name, row, expected {bh,runE,runS}, expected exitR (as traded), why/note regex (null = no flag expected)
  ['TP printed, runner came back to entry (exit 100)',            {...L,MaxRun:130,ExitPrice:100,BackTime:'0945',TpTime:'0935',ExitTime:'0945'},  {bh:BH,runE:BE,runS:BE}, BE, null, {bh:5,runE:15,runS:15,trail:15}],
  ['TP printed, exit at the swing (90), entry box unticked',       {...L,MaxRun:130,ExitPrice:90},                 {bh:BH,runE:BE,runS:(11.75-5)/oneR}, (11.75-5)/oneR, /came back after the partial/],
- ['1.272 printed, exit at the target',                            {...L,MaxRun:189,ExitPrice:189,TpTime:'0935',T1272Time:'0950',ExitTime:'0950'},                {bh:BH,runE:RUN,runS:RUN}, RUN, null, {bh:5,runE:20,runS:20,trail:20}],
- ['1.272 printed, trailed out higher (195), came back to entry first', {...L,MaxRun:200,ExitPrice:195,BackTime:'0940',TpTime:'0935',T1272Time:'1000',ExitTime:'1010'}, {bh:BH,runE:BE,runS:RUN}, (11.75+47.5)/oneR, null, {bh:5,runE:10,runS:30,trail:40}],
+ ['1.272 printed, exit at the target',                            {...L,MaxRun:189,ExitPrice:189,TpTime:'0935',ExitTime:'0950'},                {bh:BH,runE:RUN,runS:RUN}, RUN, null, {bh:5,runE:20,runS:20,trail:20}],
+ ['1.272 printed, trailed out higher (195), came back to entry first', {...L,MaxRun:200,ExitPrice:195,BackTime:'0940',TpTime:'0935',ExitTime:'1010'}, {bh:BH,runE:BE,runS:RUN}, (11.75+47.5)/oneR, null, {bh:5,runE:10,runS:40,trail:40}],
  ['no 1.272, trailed out at 140',                                 {...L,MaxRun:150,ExitPrice:140},                {bh:BH,runE:(11.75+20)/oneR,runS:(11.75+20)/oneR}, (11.75+20)/oneR, null],
  ['never reached TP, exit at the stop → L1 inferred, −1R',       {...L,MaxRun:120,ExitPrice:61.8},               {bh:-1,runE:-1,runS:-1}, -1, /L1 must have filled/],
  ['never reached TP, manual close at 110',                        {...L,MaxRun:120,ExitPrice:110},                {bh:10/oneR,runE:10/oneR,runS:10/oneR}, 10/oneR, /closed before 0.618/],
