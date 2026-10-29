@@ -6,38 +6,42 @@
 const fs=require('fs'), path=require('path');
 const src=fs.readFileSync(process.argv[2]||path.join(__dirname,'..','tclv.html'),'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 const num=x=>(x===null||x===undefined||x==='')?null:Number(x);
-eval(src.match(/const TICK=\{[^\n]*\n/)[0]+src.match(/const FIB=\{[^\n]*\n/)[0]+src.match(/function computeR\(row\)\{[\s\S]*?\n\}/)[0]);
+eval(src.match(/const TICK=\{[^\n]*\n/)[0]+src.match(/const FIB=\{[^\n]*\n/)[0]+src.match(/function computeR\(row\)\{[\s\S]*?\n\}/)[0]
+    +src.match(/function hhmmToMin\([^\n]*\n/)[0]+src.match(/function minsBetween\([^\n]*\n/)[0]+src.match(/function sameTimes\([^\n]*\n/)[0]);
 const oneR=55.15, BH=23.5/oneR, BE=11.75/oneR, L1R=21.25/oneR, RUN=(11.75+44.5)/oneR;
-const L={Direction:'Long',Pair:'MNQ',StopPrice:61.8,Anchor:161.8};
-const SH={Direction:'Short',Pair:'MNQ',StopPrice:138.2,Anchor:38.2};   // mirror: entry 100, L1 121.25, TP 76.5, runner 11.0
+const L={Direction:'Long',Pair:'MNQ',StopPrice:61.8,Anchor:161.8,EntryTime:'0930'};
+const SH={Direction:'Short',Pair:'MNQ',StopPrice:138.2,Anchor:38.2,EntryTime:'0930'};   // mirror: entry 100, L1 121.25, TP 76.5, runner 11.0
 const cases=[
  // name, row, expected {bh,runE,runS}, expected exitR (as traded), why/note regex (null = no flag expected)
- ['TP printed, runner came back to entry (exit 100)',            {...L,MaxRun:130,ExitPrice:100,HitEntry:true},  {bh:BH,runE:BE,runS:BE}, BE, null],
+ ['TP printed, runner came back to entry (exit 100)',            {...L,MaxRun:130,ExitPrice:100,BackTime:'0945',TpTime:'0935',ExitTime:'0945'},  {bh:BH,runE:BE,runS:BE}, BE, null, {bh:5,runE:15,runS:15,trail:15}],
  ['TP printed, exit at the swing (90), entry box unticked',       {...L,MaxRun:130,ExitPrice:90},                 {bh:BH,runE:BE,runS:(11.75-5)/oneR}, (11.75-5)/oneR, /came back after the partial/],
- ['1.272 printed, exit at the target',                            {...L,MaxRun:189,ExitPrice:189},                {bh:BH,runE:RUN,runS:RUN}, RUN, null],
- ['1.272 printed, trailed out higher (195), came back to entry first', {...L,MaxRun:200,ExitPrice:195,HitEntry:true}, {bh:BH,runE:BE,runS:RUN}, (11.75+47.5)/oneR, null],
+ ['1.272 printed, exit at the target',                            {...L,MaxRun:189,ExitPrice:189,TpTime:'0935',T1272Time:'0950',ExitTime:'0950'},                {bh:BH,runE:RUN,runS:RUN}, RUN, null, {bh:5,runE:20,runS:20,trail:20}],
+ ['1.272 printed, trailed out higher (195), came back to entry first', {...L,MaxRun:200,ExitPrice:195,BackTime:'0940',TpTime:'0935',T1272Time:'1000',ExitTime:'1010'}, {bh:BH,runE:BE,runS:RUN}, (11.75+47.5)/oneR, null, {bh:5,runE:10,runS:30,trail:40}],
  ['no 1.272, trailed out at 140',                                 {...L,MaxRun:150,ExitPrice:140},                {bh:BH,runE:(11.75+20)/oneR,runS:(11.75+20)/oneR}, (11.75+20)/oneR, null],
  ['never reached TP, exit at the stop → L1 inferred, −1R',       {...L,MaxRun:120,ExitPrice:61.8},               {bh:-1,runE:-1,runS:-1}, -1, /L1 must have filled/],
  ['never reached TP, manual close at 110',                        {...L,MaxRun:120,ExitPrice:110},                {bh:10/oneR,runE:10/oneR,runS:10/oneR}, 10/oneR, /closed before 0.618/],
  ['never reached TP, no exit → stop-out',                         {...L,MaxRun:120},                              {bh:-1,runE:-1,runS:-1}, null, /never reached 0.618/],
- ['L1 filled, closed back at entry',                              {...L,L1Filled:true,MaxRun:105,ExitPrice:100},  {bh:L1R,runE:L1R,runS:L1R}, L1R, null],
+ ['L1 filled, closed back at entry',                              {...L,L1Filled:true,MaxRun:105,ExitPrice:100,ExitTime:'0952'},  {bh:L1R,runE:L1R,runS:L1R}, L1R, null, {bh:22,runE:22,runS:22,trail:22}],
  ['L1 filled, stopped at 61.8',                                   {...L,L1Filled:true,MaxRun:90,ExitPrice:61.8},  {bh:-1,runE:-1,runS:-1}, -1, null],
  ['L1 filled, slipped a tick through the stop (61.55)',           {...L,L1Filled:true,MaxRun:90,ExitPrice:61.55}, {bh:(-38.45-17.2)/oneR,runE:(-38.45-17.2)/oneR,runS:(-38.45-17.2)/oneR}, (-38.45-17.2)/oneR, null],
  ['L1 filled, no exit → flagged',                                 {...L,L1Filled:true,MaxRun:105},                {bh:null,runE:null,runS:null}, null, /no exit price/],
  ['TP printed, no exit, no box → runners unknown',                {...L,MaxRun:130},                              {bh:BH,runE:null,runS:null}, null, /runner exits are unknown/],
- ['TP printed, no exit, entry box ticked',                        {...L,MaxRun:130,HitEntry:true},                {bh:BH,runE:BE,runS:null}, null, /runner exits are unknown/],
+ ['TP printed, no exit, entry box ticked',                        {...L,MaxRun:130,BackTime:'0945'},                {bh:BH,runE:BE,runS:null}, null, /runner exits are unknown/],
  ['TP touched exactly at its snapped price (123.50), exit 100',   {...L,MaxRun:123.5,ExitPrice:100},              {bh:BH,runE:BE,runS:BE}, BE, /came back after the partial/],
  ['one tick short of the snapped TP (123.25), closed at 110',     {...L,MaxRun:123.25,ExitPrice:110},             {bh:10/oneR,runE:10/oneR,runS:10/oneR}, 10/oneR, /closed before 0.618/],
  ['exit beyond Max Run → flagged',                                {...L,MaxRun:130,ExitPrice:140},                {bh:BH,runE:(11.75+20)/oneR,runS:(11.75+20)/oneR}, (11.75+20)/oneR, /beyond Max Run/],
  ['no Max Run, no exit → unscored',                               {...L},                                         {bh:null,runE:null,runS:null}, null, /nothing to score/],
- ['short mirror: TP printed, back to entry',                      {...SH,MaxRun:70,ExitPrice:100,HitEntry:true},  {bh:BH,runE:BE,runS:BE}, BE, null],
+ ['short mirror: TP printed, back to entry',                      {...SH,MaxRun:70,ExitPrice:100,BackTime:'0945'},  {bh:BH,runE:BE,runS:BE}, BE, null],
  ['short mirror: exit at the swing above entry (110)',            {...SH,MaxRun:70,ExitPrice:110},                {bh:BH,runE:BE,runS:(11.75-5)/oneR}, (11.75-5)/oneR, /came back after the partial/],
  ['short mirror: 1.272 printed, exit at 11',                      {...SH,MaxRun:11,ExitPrice:11},                 {bh:BH,runE:RUN,runS:RUN}, RUN, null],
+ ['crosses midnight: 23:50 entry, out 00:10, trailed to 140', {...L,EntryTime:'2350',MaxRun:150,ExitPrice:140,TpTime:'2358',ExitTime:'0010'}, {bh:BH,runE:(11.75+20)/oneR,runS:(11.75+20)/oneR}, (11.75+20)/oneR, null, {bh:8,runE:20,runS:20,trail:20}],
+ ['exit at the swing with no back time: entry-stop run takes the exit clock', {...L,MaxRun:130,ExitPrice:90,TpTime:'0935',ExitTime:'0944'}, {bh:BH,runE:BE,runS:(11.75-5)/oneR}, (11.75-5)/oneR, /came back after the partial/, {bh:5,runE:14,runS:14,trail:14}],
  ['swing on the wrong side of the stop → unscored',               {...L,Anchor:60,MaxRun:130,ExitPrice:100},      null, null, /wrong side/],
 ];
 let fails=0;
-for(const [name,row,exp,exitR,why] of cases){
+for(const [name,row,exp,exitR,why,tIn] of cases){
   const out=computeR(row); const bad=[];
+  if(tIn) for(const k of Object.keys(tIn)){ const g=out.tIn&&out.tIn[k]; if(g!==tIn[k]) bad.push(`tIn.${k}: got ${g}, expected ${tIn[k]}`); }
   if(exp===null){ if(!Object.values(out.r).every(v=>v===null)||out.badAnchor!==true) bad.push('expected unscored, got '+JSON.stringify(out.r)); }
   else for(const k of Object.keys(exp)){
     const g=out.r[k], e=exp[k];

@@ -699,7 +699,8 @@ async function computeTclv(token) {
   assertSchema(trades, 'tclv', [
     '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
     'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
-    'L1 Filled','Hit entry after partial','EMAs aligned',
+    'L1 Filled','EMAs aligned',
+    'TP Time (HHMM)','1.272 Time (HHMM)','Back to Entry Time (HHMM)','Exit Time (HHMM)',
     'Notes',
   ]);
   const rows = [], tests = [];
@@ -718,6 +719,12 @@ async function computeTclv(token) {
       Timeframe: getProp(t, 'Timeframe'),
       Timezone:  getProp(t, 'Timezone'),
       EntryTime: getProp(t, 'Entry Time (HHMM)'),
+      // The clocks that give every exit its own time in trade (POTUS 2026-10-29). Back to Entry
+      // Time doubles as the old checkbox: non-blank means price came back to entry after the partial.
+      TpTime:    getProp(t, 'TP Time (HHMM)'),
+      T1272Time: getProp(t, '1.272 Time (HHMM)'),
+      BackTime:  getProp(t, 'Back to Entry Time (HHMM)'),
+      ExitTime:  getProp(t, 'Exit Time (HHMM)'),
       // The four typed prices: the two ends of the fib (stop at 0, swing at 1), Max Run and the exit.
       // The board solves entry / L1 / 0.618 / 1.272 from the first two and snaps each to the
       // instrument's tick (POTUS 2026-10-29); the log's own formulas do the same, for display.
@@ -727,7 +734,6 @@ async function computeTclv(token) {
       ExitPrice:  getProp(t, 'Exit Price'),         // settles the stop-out, the L1 fill and the runner
       // Facts, not choices: which branch scores the trade.
       L1Filled:     !!getProp(t, 'L1 Filled'),
-      HitEntry:     !!getProp(t, 'Hit entry after partial'),
       EmaAligned:   !!getProp(t, 'EMAs aligned'),
       // The log's own solved columns, passed through so the board can cross-check its
       // arithmetic against Notion's and flag a row where the two disagree.
