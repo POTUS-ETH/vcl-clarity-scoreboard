@@ -228,6 +228,8 @@ table.sp tr.sptot{color:#c3c9d4}
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <div class="tg" id="classTg"><button data-c="all" class="on">ALL</button><button data-c="futures">FUTURES</button><button data-c="crypto">CRYPTO</button></div>
       <div class="tg" id="pairTg"></div>
+      <div class="tg" id="traderTg" title="who took the trade"></div>
+      <div class="tg" id="tfTg" title="chart timeframe"></div>
       <div class="mini" id="status">loading…</div>
     </div>
   </div>
@@ -281,6 +283,9 @@ const FUTURES=['MNQ','MES','MGC','MYM'];
 const isFutures=p=>FUTURES.includes(p);
 let ALL_TRADES=[], TRADES=[];
 let PAIR='all';
+// Two people test TCLV — POTUS on the 15s, Gonza on the 1m (POTUS 2026-10-29) — so the board
+// flips by who took the trade and by chart timeframe, on top of class and pair.
+let TRADER='all', TF='all';
 
 function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 
@@ -302,6 +307,7 @@ function computeR(row){
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null, n:row.n??null, dir:row.Direction||null,
               tz:row.Timezone||null, entryTime:row.EntryTime||null,
               l1:!!row.L1Filled, hitEntry:!!row.HitEntry, hitSwing:!!row.HitSwingStop, emaAligned:!!row.EmaAligned, stopped:!!row.Stopped,
+              trader:row.Trader||null, timeframe:row.Timeframe||null,
               stop:S, anchor:A, r, raw:row, why:null, note:null};
   if(S==null||A==null){ if(S!=null||A!=null) base.why='stop price or 1 of fib price missing'; return base; }
   const dir = row.Direction==='Long' ? 1 : row.Direction==='Short' ? -1 : null;
@@ -360,6 +366,8 @@ function applyFilters(){
   let pool=ALL_TRADES.slice();
   if(PAIR!=='all') pool=pool.filter(t=>t.pair===PAIR);
   if(CLASS!=='all') pool=pool.filter(t=>isFutures(t.pair)===(CLASS==='futures'));
+  if(TRADER!=='all') pool=pool.filter(t=>t.trader===TRADER);
+  if(TF!=='all') pool=pool.filter(t=>t.timeframe===TF);
   TRADES = decorate(pool);
 }
 
@@ -1232,7 +1240,7 @@ function miniCal(key,pool){
 function tradeFields(t){
   const w=t.raw||{};
   return {
-    pair:t.pair||w.Pair||null, dir:t.dir||w.Direction||null,
+    pair:t.pair||w.Pair||null, dir:t.dir||w.Direction||null, trader:t.trader||w.Trader||null,
     time:w.EntryTime||null, tz:w.Timezone||null, min:t.minFromOpen??null,
     entry:t.entry??null, anchor:t.anchor??null, stop:t.stop??null, l1Price:t.l1Price??null, tp:t.tp??null, t1272:t.t1272??null,
     maxRun:num(w.MaxRun), swingLow:num(w.SwingLow),
@@ -1259,7 +1267,7 @@ function dayDetail(key,pool){
     return `<div class="dd-t">
       <div class="dd-hd">
         <span><span class="pill">${f.pair||'—'}</span> <b>${f.dir||'—'}</b>
-          <span class="mini">${t.session||''}${f.time?' · '+f.time:''}${f.tz?' '+f.tz:''}</span></span>
+          <span class="mini">${f.trader?f.trader+' · ':''}${t.session||''}${f.time?' · '+f.time:''}${f.tz?' '+f.tz:''}</span></span>
         <span class="dd-r ${cls(R)}">${fR(R)}</span>
       </div>
       <div class="dd-g">${fields}</div>
@@ -1437,6 +1445,7 @@ function evidenceBar(pool, all){
   const src = all || pool;
   const mix = [...new Set(src.map(t=>t.pair||t.Pair).filter(Boolean))].sort()
     .map(k=>`${k} ${src.filter(t=>(t.pair||t.Pair)===k).length}`).join(' · ');
+  const who=[...new Set(src.map(t=>t.trader).filter(Boolean))].sort().map(k=>`${k} ${src.filter(t=>t.trader===k).length}`).join(' · ');
   const drops=dropCounts(pool), dropN=Object.values(drops).reduce((a,b)=>a+b,0);
   const notes=[];
   if(dropN) notes.push(`${dropN} row${dropN>1?'s':''} excluded from scoring`);
@@ -1447,7 +1456,7 @@ function evidenceBar(pool, all){
   if(assumed.length) notes.push(`<span title="${assumed.map(t=>'#'+(t.n??'?')+' '+t.note).join(' · ').replace(/"/g,'&quot;')}" style="cursor:help">${assumed.length} scored on the ladder's own logic — hover, or open a day</span>`);
   return `<div class="ebar">
     ${verdictLine(pool)}
-    <div class="eb2">${mix}${PAIR==='all'?'':' · filtered to '+PAIR}${CLASS==='all'?'':' · '+CLASS.toUpperCase()}${notes.length?' — '+notes.join(' · '):''}</div>
+    <div class="eb2">${mix}${who?' · by trader: '+who:''}${PAIR==='all'?'':' · filtered to '+PAIR}${CLASS==='all'?'':' · '+CLASS.toUpperCase()}${TRADER==='all'?'':' · '+TRADER}${TF==='all'?'':' · '+TF}${notes.length?' — '+notes.join(' · '):''}</div>
   </div>`;
 }
 
@@ -1573,7 +1582,7 @@ function wireClassTg(){
   document.querySelectorAll('#classTg button').forEach(b=>{
     b.onclick=()=>{ const v=b.dataset.c; if(v===CLASS) return;
       document.querySelectorAll('#classTg button').forEach(x=>x.classList.toggle('on',x===b));
-      CLASS=v; buildPairTg(); applyFilters(); writeStatus(); render(); };
+      CLASS=v; buildPairTg(); buildFacetTgs(); applyFilters(); writeStatus(); render(); };
   });
 }
 // The pair toggle is built from the log and scoped to the current class, not declared in
@@ -1610,9 +1619,35 @@ function buildPairTg(){
 // filter click showed the unfiltered count until the next 5s tick — the number on screen
 // disagreed with the board under it.
 let LAST_SRC='live';
+// ── trader + timeframe facets ────────────────────────────────────────────────
+// Built from the data like the pair toggle, canonical order first, and hidden while the log
+// offers only one choice — a filter offering one choice is not a filter.
+const FACETS=[
+  {id:'traderTg', field:'trader',    order:['POTUS','Gonza'], get:()=>TRADER, set:v=>{TRADER=v;}},
+  {id:'tfTg',     field:'timeframe', order:['15s','1m'],      get:()=>TF,     set:v=>{TF=v;}},
+];
+function buildFacetTgs(){
+  FACETS.forEach(f=>{
+    const el=document.getElementById(f.id); if(!el) return;
+    const seen=[...new Set(ALL_TRADES.map(t=>t[f.field]).filter(Boolean))];
+    const opts=f.order.filter(o=>seen.includes(o)).concat(seen.filter(o=>!f.order.includes(o)).sort());
+    if(opts.length<2){ el.innerHTML=''; el.style.display='none'; f.set('all'); return; }
+    el.style.display='';
+    if(f.get()!=='all' && !opts.includes(f.get())) f.set('all');
+    const sig=['all',...opts].join('|');
+    if(el.dataset.sig===sig){ el.querySelectorAll('button').forEach(b=>b.classList.toggle('on', b.dataset.v===f.get())); return; }
+    el.dataset.sig=sig;
+    el.innerHTML=['all',...opts].map(o=>`<button data-v="${o}"${o===f.get()?' class="on"':''}>${o==='all'?'ALL':o}</button>`).join('');
+    el.querySelectorAll('button').forEach(b=>{
+      b.onclick=()=>{ const v=b.dataset.v; if(v===f.get()) return;
+        el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
+        f.set(v); applyFilters(); writeStatus(); render(); };
+    });
+  });
+}
 function writeStatus(){
   const st=document.getElementById('status'); if(!st) return;
-  st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${CLASS==='all'?'':' · '+CLASS.toUpperCase()} · ${LAST_SRC} · ${new Date().toLocaleTimeString()}`;
+  st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${CLASS==='all'?'':' · '+CLASS.toUpperCase()}${TRADER==='all'?'':' · '+TRADER}${TF==='all'?'':' · '+TF} · ${LAST_SRC} · ${new Date().toLocaleTimeString()}`;
 }
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view='+BOARD.view;
 let firstLoad=true;
@@ -1647,7 +1682,7 @@ async function pollOnce(){
     const {j,src}=await fetchTrades();
     const rows=(j&&j.trades)||[];
     ALL_TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-    buildPairTg();  // may reset PAIR if its option vanished — must run before filtering
+    buildPairTg(); buildFacetTgs();  // may reset a selection whose option vanished — must run before filtering
     applyFilters();
     LAST_SRC=src; writeStatus();
     render();

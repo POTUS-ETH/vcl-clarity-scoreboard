@@ -697,7 +697,7 @@ async function computeTclv(token) {
   const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'tclv', [
-    '#','Trade','Date','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
+    '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
     'Stop Price','1 of Fib Price','Max Run','Swing Low',
     'L1 Filled','Hit entry after partial','Hit swing stop after partial','EMAs aligned','Stopped out',
     'Notes',
@@ -711,6 +711,7 @@ async function computeTclv(token) {
       n:         getProp(t, '#'),
       Trade:     title,
       date:      getProp(t, 'Date'),
+      Trader:    getProp(t, 'Trader'),          // POTUS on the 15s, Gonza on the 1m
       Session:   getProp(t, 'Session'),
       Pair:      getProp(t, 'Pair'),
       Direction: getProp(t, 'Direction'),

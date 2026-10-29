@@ -20,7 +20,7 @@ for(const date of dates){
     const S=snap(base*(1+(rnd()-0.5)*0.01),tick);                       // the stop: fib 0, typed
     const span=snap(base*(0.0012+rnd()*0.0025),tick);                   // fib span, ~0.12–0.37% of price
     const A=snap(S+sgn*span,tick), fib=x=>snap(S+sgn*x*span,tick);       // the swing: fib 1, typed
-    const u=rnd(); const row={id:'s'+(++n), n, Trade:`${pair} ${dir} ${date}`, date, Session:session, Pair:pair, Direction:dir, Timeframe:tf,
+    const u=rnd(); const row={id:'s'+(++n), n, Trade:`${pair} ${dir} ${date}`, date, Session:session, Pair:pair, Direction:dir, Timeframe:tf, Trader:(tf==='15s'||rnd()<0.15)?'POTUS':'Gonza',
       Timezone:'Berlin (CET/CEST)', EntryTime:hhmm, StopPrice:S, Anchor:A, MaxRun:null, SwingLow:null,
       L1Filled:false, HitEntry:false, HitSwingStop:false, EmaAligned:rnd()<0.6, Stopped:false, Notes:''};
     if(u<0.24){ row.L1Filled=true; row.Stopped=rnd()<0.42; row.MaxRun=row.Stopped?fib(0.25):fib(0.382+rnd()*0.1); }
@@ -32,7 +32,7 @@ for(const date of dates){
   }
 }
 // two rows the board should flag
-rows.push({id:'s'+(++n), n, Trade:'MNQ Long bad swing', date:'2026-10-27', Session:'London', Pair:'MNQ', Direction:'Long', Timeframe:'15s', Timezone:'Berlin (CET/CEST)', EntryTime:'0930', StopPrice:25410, Anchor:25380, MaxRun:25450, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:false, EmaAligned:true, Stopped:false, Notes:'swing typed on the wrong side'});
-rows.push({id:'s'+(++n), n, Trade:'MES Short swing blank', date:'2026-10-27', Session:'NY AM', Pair:'MES', Direction:'Short', Timeframe:'15s', Timezone:'Berlin (CET/CEST)', EntryTime:'1500', StopPrice:6856.25, Anchor:6843.75, MaxRun:6845, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:true, EmaAligned:false, Stopped:false, Notes:'swing ticked, no price'});
+rows.push({id:'s'+(++n), n, Trade:'MNQ Long bad swing', date:'2026-10-27', Session:'London', Pair:'MNQ', Direction:'Long', Timeframe:'15s', Trader:'POTUS', Timezone:'Berlin (CET/CEST)', EntryTime:'0930', StopPrice:25410, Anchor:25380, MaxRun:25450, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:false, EmaAligned:true, Stopped:false, Notes:'swing typed on the wrong side'});
+rows.push({id:'s'+(++n), n, Trade:'MES Short swing blank', date:'2026-10-27', Session:'NY AM', Pair:'MES', Direction:'Short', Timeframe:'15s', Trader:'POTUS', Timezone:'Berlin (CET/CEST)', EntryTime:'1500', StopPrice:6856.25, Anchor:6843.75, MaxRun:6845, SwingLow:null, L1Filled:false, HitEntry:false, HitSwingStop:true, EmaAligned:false, Stopped:false, Notes:'swing ticked, no price'});
 fs.writeFileSync(path.join(__dirname,'tclv-sample.json'), JSON.stringify({trades:rows, tests:[], source:'sample', generated:'2026-10-29'}, null, 1));
 console.log(rows.length,'sample trades → verify/tclv-sample.json');
