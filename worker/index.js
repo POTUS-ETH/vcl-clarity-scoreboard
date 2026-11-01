@@ -700,7 +700,8 @@ async function computeTclv(token) {
     '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
     'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
     'L1 Filled','EMAs aligned',
-    'TP Time (HHMM)','Back to Entry Time (HHMM)','Exit Time (HHMM)',
+    '0.618 Time (HHMM)','1.272 Time (HHMM)','Back to Entry Time (HHMM)','L1 to Entry Time (HHMM)','Exit Time (HHMM)',
+    'Session VWAP at Entry','Day POC at Entry','Day VAH at Entry','Day VAL at Entry','Session POC at Entry',
     'Notes',
   ]);
   const rows = [], tests = [];
@@ -721,9 +722,17 @@ async function computeTclv(token) {
       EntryTime: getProp(t, 'Entry Time (HHMM)'),
       // The clocks that give every exit its own time in trade (POTUS 2026-10-29). Back to Entry
       // Time doubles as the old checkbox: non-blank means price came back to entry after the partial.
-      TpTime:    getProp(t, 'TP Time (HHMM)'),
+      TpTime:    getProp(t, '0.618 Time (HHMM)'),
+      T1272Time: getProp(t, '1.272 Time (HHMM)'),
       BackTime:  getProp(t, 'Back to Entry Time (HHMM)'),
+      L1EntryTime: getProp(t, 'L1 to Entry Time (HHMM)'),
       ExitTime:  getProp(t, 'Exit Time (HHMM)'),
+      // Context at the fill (POTUS 2026-11-01): the board buckets each entry against these.
+      SessionVwap: getProp(t, 'Session VWAP at Entry'),
+      DayPoc:      getProp(t, 'Day POC at Entry'),
+      DayVah:      getProp(t, 'Day VAH at Entry'),
+      DayVal:      getProp(t, 'Day VAL at Entry'),
+      SessionPoc:  getProp(t, 'Session POC at Entry'),
       // The four typed prices: the two ends of the fib (stop at 0, swing at 1), Max Run and the exit.
       // The board solves entry / L1 / 0.618 / 1.272 from the first two and snaps each to the
       // instrument's tick (POTUS 2026-10-29); the log's own formulas do the same, for display.

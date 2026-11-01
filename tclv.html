@@ -264,7 +264,7 @@ const MGMTS_OBVS=[
   {k:'bh',   fam:'full', label:'Base hit · 100% @ 0.618',                                  short:'BH',   mid:'Base\u00a0hit'},
   {k:'runE', fam:'p1',   label:'Run · 50% @ 0.618, stop to entry, runner to 1.272',        short:'RunE', mid:'Run\u00a0· entry\u00a0stop'},
   {k:'runS', fam:'p2',   label:'Run · 50% @ 0.618, stop under swing low, runner to 1.272', short:'RunS', mid:'Run\u00a0· swing\u00a0stop'}];
-const FOOT_OBVS='R math: you type four prices — the stop at fib 0, the swing at fib 1, Max Run and your exit. The board solves L1 at 0.17, entry at 0.382, TP at 0.618 and the runner at 1.272, each snapped to the instrument\'s tick (MNQ and MES 0.25, MGC 0.10, MYM 1, crypto 0.02), and 1R is the risk of those snapped orders, (entry − stop) + (L1 − stop), on every trade whether or not L1 filled — 0.552 of the fib before snapping, so a base hit pays about +0.43R, L1 back to entry about +0.38R, a run to 1.272 about +1.02R and one back to entry about +0.21R. Max Run touching a snapped price is that order filling. The exit settles the rest: at or through the stop is the stop-out (both units, −1R), through the L1 price means L1 filled, and after the partial the runner closes at 1.272 if it printed, otherwise wherever you got out. As traded — half at 0.618, the rest at your exit — is the dashed line on the reach curve. A typed Back to Entry Time is the one thing the exit cannot show; an exit at or below entry counts as yes. The three clocks — TP, back to entry, exit — give every method its own time in trade; a run leaves at the exit, which is the 1.272 print when the runner fills there.';
+const FOOT_OBVS='R math: you type four prices — the stop at fib 0, the swing at fib 1, Max Run and your exit. The board solves L1 at 0.17, entry at 0.382, TP at 0.618 and the runner at 1.272, each snapped to the instrument\'s tick (MNQ and MES 0.25, MGC 0.10, MYM 1, crypto 0.02), and 1R is the risk of those snapped orders, (entry − stop) + (L1 − stop), on every trade whether or not L1 filled — 0.552 of the fib before snapping, so a base hit pays about +0.43R, L1 back to entry about +0.38R, a run to 1.272 about +1.02R and one back to entry about +0.21R. Max Run touching a snapped price is that order filling. The exit settles the rest: at or through the stop is the stop-out (both units, −1R), through the L1 price means L1 filled, and after the partial the runner closes at 1.272 if it printed, otherwise wherever you got out. As traded — half at 0.618, the rest at your exit — is the dashed line on the reach curve. A typed Back to Entry Time is the one thing the exit cannot show; an exit at or below entry counts as yes. The event clocks — 0.618, 1.272, back to entry, L1 to entry, exit — give every method its own time in trade.';
 let MGMTS=MGMTS_OBVS.slice();
 // Instrument class filter — futures and crypto share this log, so the top toggle splits
 // them. 'all' is legitimate: the R math is identical, only the tick grid differs.
@@ -299,8 +299,8 @@ function num(x){ return (x===null||x===undefined||x==='')?null:Number(x); }
 // through the L1 price means L1 filled, and after the partial the runner closes at 1.272 if
 // Max Run reached it, otherwise wherever the trade got out. One more typed fact remains — Back
 // to Entry Time — because an exit cannot show whether price revisited entry on the way up; it
-// doubles as that exit's clock. Three clocks — TP, back to entry, exit — give every method its
-// own time in trade; a run's exit clock is the exit, which is the 1.272 print when it fills there.
+// doubles as that exit's clock. The event clocks — 0.618, 1.272, back to entry, L1 to entry,
+// exit — give every method its own time in trade.
 const TICK={MNQ:0.25, MES:0.25, MGC:0.1, MYM:1, BTC:0.02, ETH:0.02, SOL:0.02};
 const FIB={stop:0, l1:0.17, entry:0.382, tp:0.618, anchor:1, t1272:1.272, oneR:0.552};
 function computeR(row){
@@ -309,7 +309,8 @@ function computeR(row){
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null, n:row.n??null, dir:row.Direction||null,
               tz:row.Timezone||null, entryTime:row.EntryTime||null,
               l1:!!row.L1Filled, hitEntry:hhmmToMin(row.BackTime)!=null, emaAligned:!!row.EmaAligned,
-              times:{entry:row.EntryTime||null, tp:row.TpTime||null, back:row.BackTime||null, exit:row.ExitTime||null}, tIn:null,
+              times:{entry:row.EntryTime||null, tp:row.TpTime||null, t1272:row.T1272Time||null, back:row.BackTime||null, l1entry:row.L1EntryTime||null, exit:row.ExitTime||null}, tIn:null,
+              vwap:num(row.SessionVwap), dayPoc:num(row.DayPoc), dayVah:num(row.DayVah), dayVal:num(row.DayVal), sessPoc:num(row.SessionPoc),
               trader:row.Trader||null, timeframe:row.Timeframe||null,
               stop:S, anchor:A, exit:X, r, raw:row, why:null, note:null};
   if(S==null||A==null){ if(S!=null||A!=null) base.why='stop price or 1 of fib price missing'; return base; }
@@ -324,6 +325,13 @@ function computeR(row){
   base.oneR=oneR; base.rangePct=oneR/E*100;
   if(!(oneR>0)||!(dir*(TP-E)>0)){ base.why='the ladder collapses on the '+row.Pair+' tick grid — fib too small to place'; return base; }
   const halfTick = tick ? tick/2 : 1e-9;
+  // Context at the fill (POTUS 2026-11-01): where the entry sat against the session VWAP, the
+  // day's value area and the session POC. Raw above/below — the cards pair it with direction.
+  const sideOf=p=>p==null?null:(E-p>halfTick?'above':E-p<-halfTick?'below':'at');
+  base.vwapSide=sideOf(base.vwap); base.sessPocSide=sideOf(base.sessPoc);
+  base.vaZone = (base.dayVah!=null&&base.dayVal!=null)
+    ? (E>base.dayVah+halfTick?'above VAH':E<base.dayVal-halfTick?'below VAL':(base.dayPoc!=null?(E>=base.dayPoc?'inside · above POC':'inside · below POC'):'inside VA'))
+    : null;
   const reached=p=>MR!=null && dir*(MR-p)>=-1e-9;   // Max Run touching a snapped order price is that order filling
   base.maxRunR = MR!=null ? dir*(MR-E)/oneR : null;
   if(X!=null && MR!=null && dir*(X-MR)>halfTick) base.why='exit is beyond Max Run — check Max Run';
@@ -337,7 +345,7 @@ function computeR(row){
   if(base.l1Inferred){
     if(X==null){ base.why='L1 filled but no exit price'; return base; }
     const v=(dir*(X-E)+dir*(X-L1))/oneR; r.bh=v; r.runE=v; r.runS=v; base.exitR=v;
-    base.tIn=sameTimes(base.times,'exit');
+    base.tIn=sameTimes(base.times, base.times.l1entry?'l1entry':'exit');
     return base;
   }
   // ── Entry only, 0.618 never printed. Price cannot reach the stop without filling L1, so this
@@ -366,7 +374,7 @@ function computeR(row){
   if(runner==null && !base.why && !base.note) base.note='no exit price and 1.272 did not print — the runner exits are unknown';
   // Time in trade per method: the clock of the event that closed it, measured from the entry.
   const mb=k=>minsBetween(base.times.entry, base.times[k]);
-  const tExit=mb('exit'), tRun=tExit;   // a run leaves at the exit — the 1.272 print when the runner fills there (POTUS: the exit covers it)
+  const tExit=mb('exit'), tRun=(reached(T)&&base.times.t1272)?mb('t1272'):tExit;   // a run leaves at the 1.272 print when it filled there, otherwise at the exit
   base.tIn={ bh:mb('tp'), trail:tExit, runS:tRun, runE: backToEntry ? (base.times.back ? mb('back') : tExit) : tRun };
   return base;
 }
@@ -610,6 +618,16 @@ function anchorCard(pool){
 function hhmmToMin(s){ const d=String(s??'').replace(/\D/g,''); if(d.length<3||d.length>4) return null; const h=+d.slice(0,-2), m=+d.slice(-2); return (h<24&&m<60)?h*60+m:null; }
 function minsBetween(a,b){ const A=hhmmToMin(a), B=hhmmToMin(b); return (A==null||B==null)?null:(B-A+1440)%1440; }
 function sameTimes(times,k){ const v=minsBetween(times.entry,times[k]); return {bh:v,runE:v,runS:v,trail:v}; }
+// Which trade of the session this was — first of London, second of London — counted per trader,
+// per day, per session, in entry-clock order (POTUS 2026-11-01: "an auto-calc"). Rows without an
+// entry clock get no number. Runs once per load on the whole log, so a filter never renumbers.
+function numberTradesInSession(rows){
+  const groups={};
+  rows.forEach(t=>{ t.nInSession=null; const k=`${t.trader||''}|${t.date||''}|${t.session||''}`; (groups[k]=groups[k]||[]).push(t); });
+  Object.values(groups).forEach(g=>{ g.filter(t=>hhmmToMin(t.entryTime)!=null).sort((a,b)=>hhmmToMin(a.entryTime)-hhmmToMin(b.entryTime)).forEach((t,i)=>{ t.nInSession=i+1; }); });
+  return rows;
+}
+const ORD=n=>n==null?null:n>=4?'4th or later':['1st','2nd','3rd'][n-1];
 // ── time in trade ────────────────────────────────────────────────────────────
 // Each exit closes the trade at a different moment: the base hit at the TP print, the entry-stop
 // run at the return to entry, either run otherwise at your exit; the L1 branch at your exit for all.
@@ -617,7 +635,7 @@ function timeCard(pool){
   const rows=[...MGMT.map(m=>({name:m.mid, vals:pool.map(t=>t.tIn&&t.tIn[m.key]).filter(v=>v!=null)})),
               {name:'as traded', vals:pool.map(t=>t.tIn&&t.tIn.trail).filter(v=>v!=null)}];
   if(!rows.some(r=>r.vals.length)) return `<div class="card" style="margin-bottom:12px"><div class="lbl">Time in trade</div>
-    <div class="empty-note">No trade carries its clocks yet. Fill <b>TP Time</b>, <b>Back to Entry Time</b> and <b>Exit Time (HHMM)</b> on ${BOARD.log} and this fills in.</div></div>`;
+    <div class="empty-note">No trade carries its clocks yet. Fill the clocks — <b>0.618 Time</b>, <b>1.272 Time</b>, <b>Back to Entry Time</b>, <b>L1 to Entry Time</b>, <b>Exit Time (HHMM)</b> — on ${BOARD.log} and this fills in.</div></div>`;
   const med=a=>{ const z=[...a].sort((x,y)=>x-y); return z.length?z[Math.floor(z.length/2)]:null; };
   const fmt=v=>v==null?'—':v<90?v+' min':(v/60).toFixed(1)+' h';
   const body=rows.map(r=>`<tr><td>${r.name}</td><td class="spn"><b>${fmt(med(r.vals))}</b></td>
@@ -626,7 +644,7 @@ function timeCard(pool){
   const missing=pool.filter(t=>t.tIn&&t.tIn.trail==null).length;
   return `<div class="card" style="margin-bottom:12px"><div class="lbl">Time in trade — when each exit would have closed it</div>
     <table class="sp"><thead><tr><th>Exit</th><th>Median</th><th>Mean</th><th>Longest</th><th>n</th></tr></thead><tbody>${body}</tbody></table>
-    <div class="mnote">Minutes from the entry clock to the moment that exit closes the trade: the base hit at the TP print, the entry-stop run at the return to entry, either run otherwise at your exit (the 1.272 print when the runner fills there); the L1 branch at your exit for every method. Each row counts only the trades whose settling clock was logged${missing?` — ${missing} trade${missing===1?'':'s'} carry no exit time yet`:''}.</div></div>`;
+    <div class="mnote">Minutes from the entry clock to the moment that exit closes the trade: the base hit at the 0.618 print, the entry-stop run at the return to entry, a run at the 1.272 print when it filled there and otherwise at your exit; an L1 trade at its close back at entry, or at your exit. Each row counts only the trades whose settling clock was logged${missing?` — ${missing} trade${missing===1?'':'s'} carry no exit time yet`:''}.</div></div>`;
 }
 // ── minutes from the session open ────────────────────────────────────────────
 // The trader logs the clock they read (Timezone) and the entry time on it. The board turns
@@ -677,6 +695,24 @@ function emaAlignedCard(pool){
     note:'the EMAs aligned checkbox as you logged it — what the chart showed, not whether it worked',
     emptyNote:'No trades yet.'});
 }
+// ── context at entry ─────────────────────────────────────────────────────────
+// Five prices logged as they stood at the fill, bucketed against the entry. Paired with the
+// direction where a side means opposite things to a long and a short. How these are best shown
+// is still open (POTUS: "we can figure the visual digestibility out later"); the data is kept.
+function vwapCard(pool){ return bucketCard({pool, label:'Session VWAP at entry', keyFn:t=>t.vwapSide?`${t.dir} · ${t.vwapSide} VWAP`:null,
+  order:['Long · above VWAP','Long · below VWAP','Long · at VWAP','Short · above VWAP','Short · below VWAP','Short · at VWAP'],
+  note:'the session-open VWAP price you log at the fill, read against the entry; paired with direction so a long above and a short below read apart',
+  emptyNote:'No trade carries a session VWAP yet. Set <b>Session VWAP at Entry</b> on '+BOARD.log+' and the buckets appear here.'}); }
+function valueAreaCard(pool){ return bucketCard({pool, label:'Day value area at entry', keyFn:t=>t.vaZone, order:['above VAH','inside · above POC','inside · below POC','inside VA','below VAL'],
+  note:'where the entry sat in the full-day profile you log at the fill: above the value area high, inside it either side of the POC, or below the value area low',
+  emptyNote:'No trade carries the day profile yet. Set <b>Day POC / VAH / VAL at Entry</b> on '+BOARD.log+' and the buckets appear here.'}); }
+function sessPocCard(pool){ return bucketCard({pool, label:'Session POC at entry', keyFn:t=>t.sessPocSide?`${t.dir} · ${t.sessPocSide} session POC`:null,
+  order:['Long · above session POC','Long · below session POC','Long · at session POC','Short · above session POC','Short · below session POC','Short · at session POC'],
+  note:'the POC of the session profile anchored at its first candle, as you log it at the fill, read against the entry',
+  emptyNote:'No trade carries a session POC yet. Set <b>Session POC at Entry</b> on '+BOARD.log+' and the buckets appear here.'}); }
+function nthCard(pool){ return bucketCard({pool, label:'Which trade of the session', keyFn:t=>ORD(t.nInSession), order:['1st','2nd','3rd','4th or later'],
+  note:'counted by the board per trader, per day, per session, in entry-clock order — nothing to fill in',
+  emptyNote:'Needs an <b>Entry Time (HHMM)</b> on the rows to count them.'}); }
 // ── winning method by day ────────────────────────────────────────────────────
 // Per day, which method banked the most R across that day's trades. Ties are the rule,
 // not the exception, and they are real: every method that misses its target is scored at
@@ -1280,7 +1316,8 @@ function tradeFields(t){
     time:w.EntryTime||null, tz:w.Timezone||null, min:t.minFromOpen??null,
     entry:t.entry??null, anchor:t.anchor??null, stop:t.stop??null, l1Price:t.l1Price??null, tp:t.tp??null, t1272:t.t1272??null,
     maxRun:num(w.MaxRun), exit:num(w.ExitPrice),
-    tpTime:w.TpTime||null, backTime:w.BackTime||null, exitTime:w.ExitTime||null, tIn:t.tIn||null,
+    tpTime:w.TpTime||null, t1272Time:w.T1272Time||null, backTime:w.BackTime||null, l1EntryTime:w.L1EntryTime||null, exitTime:w.ExitTime||null, tIn:t.tIn||null,
+    vwap:t.vwap??null, dayPoc:t.dayPoc??null, dayVah:t.dayVah??null, dayVal:t.dayVal??null, sessPoc:t.sessPoc??null, nInSession:t.nInSession??null,
     l1:!!w.L1Filled, l1Inferred:!!t.l1Inferred, hitEntry:!!w.HitEntry, ema:!!w.EmaAligned, stopped:!!t.stopped, why:t.why||null, note:t.note||null };
 }
 function dayDetail(key,pool){
@@ -1297,7 +1334,9 @@ function dayDetail(key,pool){
       cell('TP · 0.618',px(f.tp)), cell('runner · 1.272',px(f.t1272)), cell('max run',px(f.maxRun)), cell('exit',px(f.exit)),
       cell('L1 filled',f.l1?'yes':f.l1Inferred?'yes (from the exit)':'no'), cell('stopped out',f.stopped?'yes (exit at the stop)':'no'),
       cell('back to entry',f.backTime?f.backTime:(f.hitEntry?'yes (from the exit)':'no')), cell('EMAs aligned',f.ema?'yes':'no'), f.min==null?'':cell('min from open',String(f.min)),
-      cell('TP time',f.tpTime), cell('exit time',f.exitTime), f.tIn&&f.tIn.trail!=null?cell('in trade',f.tIn.trail+' min'):'',
+      cell('0.618 time',f.tpTime), cell('1.272 time',f.t1272Time), cell('L1 to entry time',f.l1EntryTime), cell('exit time',f.exitTime),
+      cell('session VWAP',px(f.vwap)), cell('day POC',px(f.dayPoc)), cell('day VAH',px(f.dayVah)), cell('day VAL',px(f.dayVal)), cell('session POC',px(f.sessPoc)),
+      f.nInSession==null?'':cell('trade of session',ORD(f.nInSession)+(t.session?' of '+t.session:'')), f.tIn&&f.tIn.trail!=null?cell('in trade',f.tIn.trail+' min'):'',
       f.why?`<span>fix</span><b class="flag" style="cursor:default">${f.why}</b>`:'',
       f.note?`<span>note</span><b class="mut" style="font-weight:400">${f.note}</b>`:'',
     ].filter(Boolean).join('');
@@ -1591,6 +1630,10 @@ function render(){
     ${CARDS.anchor?anchorCard(pool):''}
     ${CARDS.minutes?minutesCard(pool):''}
     ${CARDS.emas?emaAlignedCard(pool):''}
+    ${vwapCard(pool)}
+    ${valueAreaCard(pool)}
+    ${sessPocCard(pool)}
+    ${nthCard(pool)}
     ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
   // Nothing changed — leave the DOM alone. Skipping the write also skips the rewiring
@@ -1720,6 +1763,7 @@ async function pollOnce(){
     const {j,src}=await fetchTrades();
     const rows=(j&&j.trades)||[];
     ALL_TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    numberTradesInSession(ALL_TRADES);
     buildPairTg(); buildFacetTgs();  // may reset a selection whose option vanished — must run before filtering
     applyFilters();
     LAST_SRC=src; writeStatus();
