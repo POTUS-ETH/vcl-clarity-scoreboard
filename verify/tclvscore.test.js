@@ -56,8 +56,8 @@ for(const [name,row,exp,exitR,why,tIn] of cases){
 }
 // Geometry: the snapped ladder on four instruments. SOL is the one where the snap bites.
 const geo=[
- ['MNQ span 100',          {Direction:'Long',Pair:'MNQ',StopPrice:61.8,Anchor:161.8},        {entry:100,l1Price:78.75,tp:123.5,t1272:189,oneR:55.15}],
- ['MNQ typed on the grid', {Direction:'Long',Pair:'MNQ',StopPrice:31898,Anchor:32090.25},    {entry:31971.5,l1Price:31930.75,tp:32016.75,t1272:32142.5,oneR:106.25}],
+ ['MNQ span 100',          {Direction:'Long',Pair:'MNQ',StopPrice:61.8,Anchor:161.8},        {entry:100,l1Price:78.75,tp:123.5,t1272:189,oneR:55.15,rangePct:100}],
+ ['MNQ typed on the grid', {Direction:'Long',Pair:'MNQ',StopPrice:31898,Anchor:32090.25},    {entry:31971.5,l1Price:31930.75,tp:32016.75,t1272:32142.5,oneR:106.25,rangePct:192.25/31971.5*100}],
  ['MGC span 6.3',          {Direction:'Long',Pair:'MGC',StopPrice:4000,Anchor:4006.3},       {entry:4002.4,l1Price:4001.1,tp:4003.9,t1272:4008,oneR:3.5}],
  ['SOL span 0.50 (snap bites)', {Direction:'Long',Pair:'SOL',StopPrice:190,Anchor:190.5},    {entry:190.2,l1Price:190.08,tp:190.3,t1272:190.64,oneR:0.28}],
 ];

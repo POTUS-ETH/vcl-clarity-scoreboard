@@ -322,7 +322,7 @@ function computeR(row){
   const E=at(FIB.entry), L1=at(FIB.l1), TP=at(FIB.tp), T=at(FIB.t1272);
   base.entry=E; base.l1Price=L1; base.tp=TP; base.t1272=T;
   const oneR=dir*(E-S)+dir*(L1-S);              // the two fills' risk, as the orders sit
-  base.oneR=oneR; base.rangePct=oneR/E*100;
+  base.oneR=oneR; base.rangePct=Math.abs(span)/E*100;   // the whole fib, 1 to 0, as a % of entry (POTUS 2026-11-05)
   if(!(oneR>0)||!(dir*(TP-E)>0)){ base.why='the ladder collapses on the '+row.Pair+' tick grid — fib too small to place'; return base; }
   const halfTick = tick ? tick/2 : 1e-9;
   // Context at the fill (POTUS 2026-11-01): where the entry sat against the session VWAP, the
@@ -865,7 +865,7 @@ function rangeCard(pool){
   const bounds=prs.map(pr=>`${pr} thirds: ${RANGE_TERCILES.map((k,i)=>`${k.toLowerCase()} ${bandOf(pr,i).txt}`).join(' · ')}`);
   return `<div class="card answer" style="margin-bottom:12px"><div class="lbl">Optimal range · expectancy by box size</div>${head}
     <table class="ptab"><tr><td></td>${heads.map(k=>`<td class="pr mut">${k}</td>`).join('')}</tr>${body}${avgRow}</table>
-    <div class="mini" style="margin-top:8px">box = 1R, the full two-fill ladder risk (0.552 of the fib), as a % of entry price · ▸ marks each method's best third (3+ trades) · every row is scored on the same trades, so agreeing rows are one signal seen many ways, not many signals · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div></div>`;
+    <div class="mini" style="margin-top:8px">box = the whole fib, 1 to 0, as a % of entry price · ▸ marks each method's best third (3+ trades) · every row is scored on the same trades, so agreeing rows are one signal seen many ways, not many signals · ${bounds.join(' · ')}${skipped.length?` · not yet bucketed: ${skipped.join(', ')}`:''}</div></div>`;
 }
 function fR(x){ return (x>=0?'+':'')+x.toFixed(2)+'R'; }
 function cls(x){ return x>0?'pos':(x<0?'neg':'mut'); }
