@@ -1599,7 +1599,9 @@ function primerBlock(){
 function render(){
   const pool=TRADES, board=document.getElementById('board');
   if(!pool.length){
-    const e='<div class="card"><div class="empty-note">No trades match this filter yet — try switching the PAIR toggle, or log trades to '+BOARD.log+'.</div></div>';
+    const e='<div class="card"><div class="empty-note">'+(LAST_HINT
+      ? '<b>'+LAST_HINT+'</b>'+(LAST_ACCESS?' <span class="mini" title="'+LAST_ACCESS.replace(/"/g,'&quot;')+'" style="cursor:help">(hover for what Notion answered)</span>':'')
+      : 'No trades match this filter yet — try switching the PAIR toggle, or log trades to '+BOARD.log+'.')+'</div></div>';
     if(e!==_lastBoardHTML){ _lastBoardHTML=e; board.innerHTML=e; }   // cache here too, or
     return;                                                          // empty→data→empty restores a stale string
   }
@@ -1700,6 +1702,9 @@ function buildPairTg(){
 // filter click showed the unfiltered count until the next 5s tick — the number on screen
 // disagreed with the board under it.
 let LAST_SRC='live';
+// What the worker said about reading the log. Null when every endpoint answered; otherwise the
+// hint replaces the empty state, so "not shared with the integration" never looks like "no trades".
+let LAST_HINT=null, LAST_ACCESS='';
 // ── trader + timeframe facets ────────────────────────────────────────────────
 // Built from the data like the pair toggle, canonical order first, and hidden while the log
 // offers only one choice — a filter offering one choice is not a filter.
@@ -1728,7 +1733,7 @@ function buildFacetTgs(){
 }
 function writeStatus(){
   const st=document.getElementById('status'); if(!st) return;
-  st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${CLASS==='all'?'':' · '+CLASS.toUpperCase()}${TRADER==='all'?'':' · '+TRADER}${TF==='all'?'':' · '+TF} · ${LAST_SRC} · ${new Date().toLocaleTimeString()}`;
+  st.textContent=`${TRADES.length} of ${ALL_TRADES.length} trade${ALL_TRADES.length===1?'':'s'} · ${PAIR.toUpperCase()}${CLASS==='all'?'':' · '+CLASS.toUpperCase()}${TRADER==='all'?'':' · '+TRADER}${TF==='all'?'':' · '+TF} · ${LAST_SRC}${LAST_HINT?' · log not readable':''} · ${new Date().toLocaleTimeString()}`;
 }
 const WORKER='https://vcl-clarity-scoreboard.potus-eth.workers.dev/?view='+BOARD.view;
 let firstLoad=true;
@@ -1761,6 +1766,7 @@ async function pollOnce(){
   const st=document.getElementById('status');
   try{
     const {j,src}=await fetchTrades();
+    LAST_HINT=(j&&j.hint)||null; LAST_ACCESS=(j&&j.access)?JSON.stringify(j.access):'';
     const rows=(j&&j.trades)||[];
     ALL_TRADES=rows.map(computeR).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     numberTradesInSession(ALL_TRADES);

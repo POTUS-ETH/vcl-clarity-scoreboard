@@ -690,10 +690,18 @@ async function computeV4Futures(token) {
 }
 
 async function computeTclv(token) {
-  const [dsRows, dbRows] = await Promise.all([
-    queryAllDataSource(TCLV_DATA_SOURCE, token).catch(() => []),
-    queryAll(TCLV_DB, token).catch(() => []),
-  ]);
+  // Both endpoints, and the failures are KEPT. A log the integration cannot see answers 404,
+  // which used to be swallowed into "0 rows" — indistinguishable on the board from "0 trades"
+  // (POTUS 2026-11-05: "I dont see scoreboard refreshing with new data"; the TCLV page had never
+  // been shared with the integration). The payload now says what Notion answered, and the
+  // board shows it in place of the empty state.
+  const [dsR, dbR] = await Promise.allSettled([queryAllDataSource(TCLV_DATA_SOURCE, token), queryAll(TCLV_DB, token)]);
+  const dsRows = dsR.status === 'fulfilled' ? dsR.value : [], dbRows = dbR.status === 'fulfilled' ? dbR.value : [];
+  const brief = e => String((e && e.message) || e).replace(/\s+/g, ' ').slice(0, 220);
+  const access = { dataSource: dsR.status === 'fulfilled' ? 'ok' : brief(dsR.reason), database: dbR.status === 'fulfilled' ? 'ok' : brief(dbR.reason) };
+  const hint = (dsR.status !== 'fulfilled' && dbR.status !== 'fulfilled')
+    ? 'Notion refused both reads of Trade Log — TCLV, so the board has nothing to show. Share the TCLV page with the same integration the V6 boards use (page ••• → Connections) and this fills in on the next poll.'
+    : null;
   const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
   assertSchema(trades, 'tclv', [
@@ -754,7 +762,7 @@ async function computeTclv(token) {
     if (title.toUpperCase().startsWith('TEST')) tests.push(row); else rows.push(row);
   }
   rows.sort((a, b) => (a.n ?? 1e9) - (b.n ?? 1e9));
-  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows, tests };
+  return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, access, hint, fetched: trades.length, tradeCount: rows.length, trades: rows, tests };
 }
 
 async function computeV6Obvs(token, ids = { ds: V6_OBVS_DATA_SOURCE, db: V6_OBVS_DB, name: 'v6-obvs', extra: ['200 EMA at Entry'] }) {
