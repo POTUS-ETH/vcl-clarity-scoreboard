@@ -365,7 +365,7 @@ const TCLV_MAIN = { name: 'tclv', ds: TCLV_DATA_SOURCE, db: TCLV_DB, log: 'Trade
 const TCLV_MURRAY = { name: 'tclv-murray', ds: '41f7e541-46b5-81e8-b7cd-000b7207bd8c', db: '41f7e54146b58164bc27fb5cf9d1703f',
   log: 'Trade Log — TCLV (Murray)', page: 'the TCLV - Murray page',
   required: ['#','Trade','Date','Session','Pair','Direction',
-    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price','L1 Filled','Hit entry after partial','Notes'] };
+    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price','L1 Filled','Hit entry after partial','EMAs aligned','Notes'] };
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 

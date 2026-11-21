@@ -14,7 +14,8 @@
    "ExitPrice": 6835.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": false
   },
   {
    "id": "s9",
@@ -30,7 +31,8 @@
    "ExitPrice": 6832.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": true
   },
   {
    "id": "s10",
@@ -46,7 +48,8 @@
    "ExitPrice": 6852.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": false
   },
   {
    "id": "s14",
@@ -62,7 +65,8 @@
    "ExitPrice": 25266,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": false
   },
   {
    "id": "s15",
@@ -78,7 +82,8 @@
    "ExitPrice": 6867,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": true
   },
   {
    "id": "s17",
@@ -94,7 +99,8 @@
    "ExitPrice": 4024.8,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": false
   },
   {
    "id": "s18",
@@ -110,7 +116,8 @@
    "ExitPrice": 4008.2,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": true
   },
   {
    "id": "s24",
@@ -126,7 +133,8 @@
    "ExitPrice": 25408.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": false
   },
   {
    "id": "s25",
@@ -142,7 +150,8 @@
    "ExitPrice": 4010.7,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": false
   },
   {
    "id": "s28",
@@ -158,7 +167,8 @@
    "ExitPrice": 25289.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": false
   },
   {
    "id": "s30",
@@ -174,7 +184,8 @@
    "ExitPrice": 4004.9,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": true
   },
   {
    "id": "s33",
@@ -190,7 +201,8 @@
    "ExitPrice": 3992.6,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": true
+   "HitEntry": true,
+   "EmaAligned": true
   },
   {
    "id": "s36",
@@ -206,7 +218,8 @@
    "ExitPrice": 4004.5,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": true
   },
   {
    "id": "s37",
@@ -222,7 +235,8 @@
    "ExitPrice": 25387,
    "L1Filled": false,
    "Notes": "",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": false
   },
   {
    "id": "s39",
@@ -238,7 +252,8 @@
    "ExitPrice": 25440,
    "L1Filled": false,
    "Notes": "swing typed on the wrong side",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": true
   },
   {
    "id": "s40",
@@ -254,7 +269,8 @@
    "ExitPrice": 6840,
    "L1Filled": false,
    "Notes": "exit beyond max run",
-   "HitEntry": false
+   "HitEntry": false,
+   "EmaAligned": false
   }
  ],
  "tests": [],

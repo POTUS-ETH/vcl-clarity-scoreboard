@@ -281,7 +281,7 @@ const BOARDS={
           cards:{minutes:true, emas:true, time:true, context:true, nth:true}},
   murray:{view:'tclv-murray', title:'TCLV - Murray', log:'Trade Log — TCLV (Murray)', futuresOnly:false,
           sub:'TCL 2.0 ladder · two fills · stop 0 / L1 0.17 / entry 0.382 / TP 0.618 / runner 1.272 · 1R = the full ladder',
-          cards:{minutes:false, emas:false, time:false, context:false, nth:false}},
+          cards:{minutes:false, emas:true, time:false, context:false, nth:false}},
 };
 const BOARD=BOARDS[new URLSearchParams(location.search).get('board')]||BOARDS.tclv;
 const CARDS=Object.assign({ema:false, anchor:false}, BOARD.cards);
