@@ -66,6 +66,10 @@ for(const [name,row,exp] of geo){
   for(const k of Object.keys(exp)) if(g[k]==null||Math.abs(g[k]-exp[k])>1e-6) bad.push(`${k}: got ${g[k]}, expected ${exp[k]}`);
   console.log((bad.length?'FAIL ':'ok   ')+'geometry '+name+(bad.length?'':`  → base hit ${g.r.bh.toFixed(4)}R`)); if(bad.length){fails++; bad.forEach(b=>console.log('    '+b));}
 }
+// Client logs carry a Hit-entry checkbox instead of the Back to Entry clock: same branch, same R.
+{ const c=computeR({...L,MaxRun:130,ExitPrice:140,HitEntry:true}), want=11.75/oneR;
+  const ok=Math.abs(c.r.runE-want)<1e-9 && Math.abs(c.r.runS-(11.75+20)/oneR)<1e-9 && c.backInferred===false;
+  console.log((ok?'ok   ':'FAIL ')+'client log: Hit-entry checkbox settles the entry-stop run at +0.21R'); if(!ok){fails++; console.log('    ',c.r,c.backInferred);} }
 // Context at the fill, and the trade-of-session count.
 { const c=computeR({...L,MaxRun:130,ExitPrice:140,SessionVwap:95,DayPoc:98,DayVah:110,DayVal:80,SessionPoc:101});
   const ok=c.vwapSide==='above'&&c.vaZone==='inside · above POC'&&c.sessPocSide==='below';

@@ -272,9 +272,19 @@ let MGMTS=MGMTS_OBVS.slice();
 // TCLV is its own file: the scorer is the TCL 2.0 two-fill ladder, not the single-fill R
 // ladder the V6 family shares. Everything downstream of computeR — stats, matrix, fan,
 // session, range, calendar — is the same code as v6-obvs.html.
-const BOARD={view:'tclv', title:'TCLV', log:'Trade Log — TCLV', futuresOnly:false,
-  sub:'TCL 2.0 ladder off a swing-high AVWAP · two fills · futures 15s + crypto 1m · stop 0 / L1 0.17 / entry 0.382 / TP 0.618 / runner 1.272 · 1R = the full ladder'};
-const CARDS={ema:false, anchor:false, minutes:true, emas:true};
+// `?board=` picks the log. The main board carries the clocks, the context prices and the two
+// testers; a client board (Murray, 2026-11-21) is the same scorer on a log that holds only what
+// scoring needs, so every card that reads a column it does not have is switched off.
+const BOARDS={
+  tclv:  {view:'tclv', title:'TCLV', log:'Trade Log — TCLV', futuresOnly:false,
+          sub:'TCL 2.0 ladder off a swing-high AVWAP · two fills · futures 15s + crypto 1m · stop 0 / L1 0.17 / entry 0.382 / TP 0.618 / runner 1.272 · 1R = the full ladder',
+          cards:{minutes:true, emas:true, time:true, context:true, nth:true}},
+  murray:{view:'tclv-murray', title:'TCLV - Murray', log:'Trade Log — TCLV (Murray)', futuresOnly:false,
+          sub:'TCL 2.0 ladder · two fills · stop 0 / L1 0.17 / entry 0.382 / TP 0.618 / runner 1.272 · 1R = the full ladder',
+          cards:{minutes:false, emas:false, time:false, context:false, nth:false}},
+};
+const BOARD=BOARDS[new URLSearchParams(location.search).get('board')]||BOARDS.tclv;
+const CARDS=Object.assign({ema:false, anchor:false}, BOARD.cards);
 document.title=BOARD.title;
 { const h=document.querySelector('h1'), sb=document.querySelector('.sub');
   if(h) h.textContent=BOARD.title.toUpperCase(); if(sb) sb.textContent=BOARD.sub; }
@@ -308,7 +318,7 @@ function computeR(row){
   const r={bh:null, runE:null, runS:null};
   const base={pair:row.Pair||null, session:row.Session||null, date:row.date||null, n:row.n??null, dir:row.Direction||null,
               tz:row.Timezone||null, entryTime:row.EntryTime||null,
-              l1:!!row.L1Filled, hitEntry:hhmmToMin(row.BackTime)!=null, emaAligned:!!row.EmaAligned,
+              l1:!!row.L1Filled, hitEntry:!!row.HitEntry || hhmmToMin(row.BackTime)!=null, emaAligned:!!row.EmaAligned,
               times:{entry:row.EntryTime||null, tp:row.TpTime||null, t1272:row.T1272Time||null, back:row.BackTime||null, l1entry:row.L1EntryTime||null, exit:row.ExitTime||null}, tIn:null,
               vwap:num(row.SessionVwap), dayPoc:num(row.DayPoc), dayVah:num(row.DayVah), dayVal:num(row.DayVal), sessPoc:num(row.SessionPoc),
               trader:row.Trader||null, timeframe:row.Timeframe||null,
@@ -368,6 +378,7 @@ function computeR(row){
   const runner = reached(T) ? runnerT : runnerX;
   // Entry stop: a return to entry closes the runner there. The box says so; so does an exit at or below entry.
   const backToEntry = base.hitEntry || (X!=null && dir*(X-E)<=halfTick);
+  base.backInferred = !base.hitEntry && backToEntry;
   if(!base.hitEntry && X!=null && dir*(X-E)<=halfTick && !base.note) base.note='exit is at or below entry, so price came back after the partial — box left unticked; the entry-stop run is scored at entry';
   r.runE = backToEntry ? half/oneR : runner!=null ? (half+runner)/oneR : null;
   r.runS = runner!=null ? (half+runner)/oneR : null;
@@ -1318,7 +1329,7 @@ function tradeFields(t){
     maxRun:num(w.MaxRun), exit:num(w.ExitPrice),
     tpTime:w.TpTime||null, t1272Time:w.T1272Time||null, backTime:w.BackTime||null, l1EntryTime:w.L1EntryTime||null, exitTime:w.ExitTime||null, tIn:t.tIn||null,
     vwap:t.vwap??null, dayPoc:t.dayPoc??null, dayVah:t.dayVah??null, dayVal:t.dayVal??null, sessPoc:t.sessPoc??null, nInSession:t.nInSession??null,
-    l1:!!w.L1Filled, l1Inferred:!!t.l1Inferred, hitEntry:!!w.HitEntry, ema:!!w.EmaAligned, stopped:!!t.stopped, why:t.why||null, note:t.note||null };
+    l1:!!w.L1Filled, l1Inferred:!!t.l1Inferred, hitBox:!!w.HitEntry, backInferred:!!t.backInferred, ema:!!w.EmaAligned, stopped:!!t.stopped, why:t.why||null, note:t.note||null };
 }
 function dayDetail(key,pool){
   const day=SEL_DAY[key];
@@ -1333,7 +1344,7 @@ function dayDetail(key,pool){
       cell('stop · fib 0',px(f.stop)), cell('1 of fib · swing',px(f.anchor)), cell('entry · 0.382',px(f.entry)), cell('L1 · 0.17',px(f.l1Price)),
       cell('TP · 0.618',px(f.tp)), cell('runner · 1.272',px(f.t1272)), cell('max run',px(f.maxRun)), cell('exit',px(f.exit)),
       cell('L1 filled',f.l1?'yes':f.l1Inferred?'yes (from the exit)':'no'), cell('stopped out',f.stopped?'yes (exit at the stop)':'no'),
-      cell('back to entry',f.backTime?f.backTime:(f.hitEntry?'yes (from the exit)':'no')), cell('EMAs aligned',f.ema?'yes':'no'), f.min==null?'':cell('min from open',String(f.min)),
+      cell('back to entry',f.backTime?f.backTime:f.hitBox?'yes':f.backInferred?'yes (from the exit)':'no'), CARDS.emas?cell('EMAs aligned',f.ema?'yes':'no'):'', f.min==null?'':cell('min from open',String(f.min)),
       cell('0.618 time',f.tpTime), cell('1.272 time',f.t1272Time), cell('L1 to entry time',f.l1EntryTime), cell('exit time',f.exitTime),
       cell('session VWAP',px(f.vwap)), cell('day POC',px(f.dayPoc)), cell('day VAH',px(f.dayVah)), cell('day VAL',px(f.dayVal)), cell('session POC',px(f.sessPoc)),
       f.nInSession==null?'':cell('trade of session',ORD(f.nInSession)+(t.session?' of '+t.session:'')), f.tIn&&f.tIn.trail!=null?cell('in trade',f.tIn.trail+' min'):'',
@@ -1621,7 +1632,7 @@ function render(){
       ${MATRIX_OPEN?matrixTable(pool):''}
     </div>
     <div class="card" style="margin-bottom:12px"><div class="lbl">Session profile</div>${sessionProfile(pool)}</div>
-    ${timeCard(pool)}
+    ${CARDS.time?timeCard(pool):''}
     <div class="card" style="margin-bottom:12px">
       ${intervalStripSVG(pool)}
       <div style="height:1px;background:#1d2430;margin:14px 0"></div>
@@ -1632,10 +1643,10 @@ function render(){
     ${CARDS.anchor?anchorCard(pool):''}
     ${CARDS.minutes?minutesCard(pool):''}
     ${CARDS.emas?emaAlignedCard(pool):''}
-    ${vwapCard(pool)}
-    ${valueAreaCard(pool)}
-    ${sessPocCard(pool)}
-    ${nthCard(pool)}
+    ${CARDS.context?vwapCard(pool):''}
+    ${CARDS.context?valueAreaCard(pool):''}
+    ${CARDS.context?sessPocCard(pool):''}
+    ${CARDS.nth?nthCard(pool):''}
     ${dayWinnerCard(pool)}
     <div class="foot" id="foot"></div>`;
   // Nothing changed — leave the DOM alone. Skipping the write also skips the rewiring

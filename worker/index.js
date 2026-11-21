@@ -351,6 +351,21 @@ const V7_DB = '60965b27d54644a9b0d2a82f5afae256';
 // snapped to the tick (by the board, and by display formulas on the log). Five outcomes per trade come from Max Run plus four checkboxes.
 const TCLV_DATA_SOURCE = 'fea7e1b5-ca3c-4268-8a53-c76a8d378987';
 const TCLV_DB = '2acca67e074b441eba19594847b502bd';
+// One scorer, several logs. The main TCLV log carries the clocks, the context prices and the
+// tester columns; a client log (Murray, 2026-11-21) carries only what scoring needs — the four
+// prices, Date / Session / Pair / Direction, L1 Filled and a Hit-entry checkbox. Each asserts
+// exactly its own columns, so a rename on either log fails loudly on that view alone.
+const TCLV_MAIN = { name: 'tclv', ds: TCLV_DATA_SOURCE, db: TCLV_DB, log: 'Trade Log — TCLV', page: 'the TCLV page',
+  required: ['#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
+    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
+    'L1 Filled','EMAs aligned',
+    '0.618 Time (HHMM)','1.272 Time (HHMM)','Back to Entry Time (HHMM)','L1 to Entry Time (HHMM)','Exit Time (HHMM)',
+    'Session VWAP at Entry','Day POC at Entry','Day VAH at Entry','Day VAL at Entry','Session POC at Entry',
+    'Notes'] };
+const TCLV_MURRAY = { name: 'tclv-murray', ds: '41f7e541-46b5-81e8-b7cd-000b7207bd8c', db: '41f7e54146b58164bc27fb5cf9d1703f',
+  log: 'Trade Log — TCLV (Murray)', page: 'the TCLV - Murray page',
+  required: ['#','Trade','Date','Session','Pair','Direction',
+    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price','L1 Filled','Hit entry after partial','Notes'] };
 const V4_FUTURES_DATA_SOURCE = '36c587c3-62eb-4387-bd8c-f792ce46cf46'; // VCL Clarity V4 — FUTURES (MNQ/MES/MGC, 15s only)
 const V4_FUTURES_DB = '8a5b399ef07d442498a69e3a83f4e052';     // same log, classic /databases endpoint
 
@@ -689,29 +704,22 @@ async function computeV4Futures(token) {
   return { updated: new Date().toISOString(), generatedAt: new Date().toISOString(), source, fetched: trades.length, tradeCount: rows.length, trades: rows };
 }
 
-async function computeTclv(token) {
+async function computeTclv(token, cfg = TCLV_MAIN) {
   // Both endpoints, and the failures are KEPT. A log the integration cannot see answers 404,
   // which used to be swallowed into "0 rows" — indistinguishable on the board from "0 trades"
   // (POTUS 2026-11-05: "I dont see scoreboard refreshing with new data"; the TCLV page had never
   // been shared with the integration). The payload now says what Notion answered, and the
   // board shows it in place of the empty state.
-  const [dsR, dbR] = await Promise.allSettled([queryAllDataSource(TCLV_DATA_SOURCE, token), queryAll(TCLV_DB, token)]);
+  const [dsR, dbR] = await Promise.allSettled([queryAllDataSource(cfg.ds, token), queryAll(cfg.db, token)]);
   const dsRows = dsR.status === 'fulfilled' ? dsR.value : [], dbRows = dbR.status === 'fulfilled' ? dbR.value : [];
   const brief = e => String((e && e.message) || e).replace(/\s+/g, ' ').slice(0, 220);
   const access = { dataSource: dsR.status === 'fulfilled' ? 'ok' : brief(dsR.reason), database: dbR.status === 'fulfilled' ? 'ok' : brief(dbR.reason) };
   const hint = (dsR.status !== 'fulfilled' && dbR.status !== 'fulfilled')
-    ? 'Notion refused both reads of Trade Log — TCLV, so the board has nothing to show. Share the TCLV page with the same integration the V6 boards use (page ••• → Connections) and this fills in on the next poll.'
+    ? `Notion refused both reads of ${cfg.log}, so the board has nothing to show. Share ${cfg.page} with the same integration the V6 boards use (page ••• → Connections) and this fills in on the next poll.`
     : null;
   const trades = dbRows.length > dsRows.length ? dbRows : dsRows;
   const source = `${dbRows.length > dsRows.length ? 'database' : 'data_source'} (ds ${dsRows.length}, db ${dbRows.length})`;
-  assertSchema(trades, 'tclv', [
-    '#','Trade','Date','Trader','Session','Pair','Direction','Timeframe','Timezone','Entry Time (HHMM)',
-    'Stop Price (0 of Fib)','1 of Fib Price','Max Run','Exit Price',
-    'L1 Filled','EMAs aligned',
-    '0.618 Time (HHMM)','1.272 Time (HHMM)','Back to Entry Time (HHMM)','L1 to Entry Time (HHMM)','Exit Time (HHMM)',
-    'Session VWAP at Entry','Day POC at Entry','Day VAH at Entry','Day VAL at Entry','Session POC at Entry',
-    'Notes',
-  ]);
+  assertSchema(trades, cfg.name, cfg.required);
   const rows = [], tests = [];
   for (const t of trades) {
     const title = getProp(t, 'Trade') || '';
@@ -751,6 +759,7 @@ async function computeTclv(token) {
       // Facts, not choices: which branch scores the trade.
       L1Filled:     !!getProp(t, 'L1 Filled'),
       EmaAligned:   !!getProp(t, 'EMAs aligned'),
+      HitEntry:     !!getProp(t, 'Hit entry after partial'),   // client logs: the checkbox in place of Back to Entry Time
       // The log's own solved columns, passed through so the board can cross-check its
       // arithmetic against Notion's and flag a row where the two disagree.
       solved: { entry: getProp(t, 'Entry Price'), l1: getProp(t, 'L1 Price'), tp: getProp(t, 'TP 0.618'),
@@ -1132,7 +1141,8 @@ export default {
         'v6-obvs':    () => computeV6Obvs(env.NOTION_TOKEN),
         'v6-eli':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V6_ELI_DATA_SOURCE, db: V6_ELI_DB, name: 'v6-eli', extra: ['200 EMA at Entry'] }),
         'v7-vcs':     () => computeV6Obvs(env.NOTION_TOKEN, { ds: V7_DATA_SOURCE, db: V7_DB, name: 'v7-vcs', extra: ['VWAP Anchor'] }),
-        'tclv':       () => computeTclv(env.NOTION_TOKEN),
+        'tclv':       () => computeTclv(env.NOTION_TOKEN, TCLV_MAIN),
+        'tclv-murray': () => computeTclv(env.NOTION_TOKEN, TCLV_MURRAY),
         'v3-craig':  () => computeCraig(env.NOTION_TOKEN),
         'v3-raw':    () => computeV3Raw2(env.NOTION_TOKEN),
         'v3-shots':  () => computeV3Shots(env.NOTION_TOKEN),
