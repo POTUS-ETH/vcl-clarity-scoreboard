@@ -15,7 +15,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": false,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s9",
@@ -32,7 +33,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s10",
@@ -49,7 +51,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": false,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s14",
@@ -66,7 +69,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": false,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s15",
@@ -83,7 +87,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s17",
@@ -100,7 +105,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s18",
@@ -117,7 +123,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s24",
@@ -134,7 +141,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s25",
@@ -151,7 +159,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s28",
@@ -168,7 +177,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s30",
@@ -185,7 +195,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s33",
@@ -202,7 +213,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": true,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s36",
@@ -219,7 +231,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": false,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s37",
@@ -236,7 +249,8 @@
    "L1Filled": false,
    "Notes": "",
    "HitEntry": false,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   },
   {
    "id": "s39",
@@ -253,7 +267,8 @@
    "L1Filled": false,
    "Notes": "swing typed on the wrong side",
    "HitEntry": false,
-   "EmaAligned": true
+   "EmaAligned": true,
+   "Timeframe": "15s"
   },
   {
    "id": "s40",
@@ -270,7 +285,8 @@
    "L1Filled": false,
    "Notes": "exit beyond max run",
    "HitEntry": false,
-   "EmaAligned": false
+   "EmaAligned": false,
+   "Timeframe": "15s"
   }
  ],
  "tests": [],
